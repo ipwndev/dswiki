@@ -5,7 +5,7 @@ Font  terminus12bold;
 Font  terminus12italic;
 Font  terminus12bolditalic;
 
-const CharStat CS   ={ PA_RGB(0,0,0), PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12regular};
+const CharStat CS   ={ PA_RGB(0,0,0), PA_RGB(23,23,31), 0, Deg0, NONE, 0, 0, 0, &terminus12regular};
 const CharStat CSb  ={ PA_RGB(0,0,0), PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12bold};
 const CharStat CSi  ={ PA_RGB(0,0,0), PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12italic};
 const CharStat CSbi ={ PA_RGB(0,0,0), PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12bolditalic};
@@ -356,7 +356,7 @@ void SwitchNewLine(CharStat *Status, BLOCK* CharArea, s16 Origin, u8 Height)
 	}
 }
 
-u8 CheckBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat)
+u8 CheckLowerBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat)
 {
 	u8 OutScreen=0;
 
@@ -414,6 +414,8 @@ u8 CheckBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat)
 	return OutScreen;
 }
 
+/** Modifiziert 'CharArea', basierend auf der linken oberen Ecke, derart, dass ein Zeichen der Breite 'Width' und Höhe 'Height' in die 'PrintArea' geschrieben werden kann. Notfalls wird der Block in die nächste Zeile umgebrochen. Die rechte untere Ecke wird angepasst, damit in 'CheckLowerBound' geprüft werden kann, ob das Zeichen die 'PrintArea' nach unten verließe. 'iDrawChar' richtet sich aber *nur* nach der oberen linken Ecke.
+  */
 void GetCharArea(CharStat* Status, BLOCK* PrintArea , BLOCK* CharArea, s16 Origin, u8 Width, u8 Height)
 {
 	switch(Status->Rotate)
@@ -566,13 +568,12 @@ void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CS, BLOCK CharArea)
 u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 {
 	u16   Uni=0;
-	u32   Length=0;
-	u8    semi=0;
 	s16   Origin=0;
 	u8    Width;
 	u8    Height = CStat->FONT->Height;
 	u32   Skip=0;
 	u8*   DATA;
+	u8    ForceInnerWordWrap = 1;
 
 	BLOCK PrintArea = {{0,0},{Screen->Width-1,Screen->Height-1}};
 	BLOCK CharArea  = {{0,0},{0,0}};
@@ -599,7 +600,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 			break;
 	}
 
-	Skip=ToUTF(Str,&Uni,B2U16,Lang);
+	Skip=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 	while(Uni)
 	{
 		if(Uni==0x0D)
@@ -610,6 +611,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 			}
 			SwitchNewLine(CStat,&CharArea,Origin,Height);
+			ForceInnerWordWrap = 1;
 			continue;
 		}
 		else
@@ -617,36 +619,38 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 			if(Uni==0x0A)
 			{
 				SwitchNewLine(CStat,&CharArea,Origin,Height);
+				ForceInnerWordWrap = 1;
 				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 				continue;
 			}
 		}
 		DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
 		Width = DATA[0] + CStat->W_Space;
-		GetCharArea(CStat,&PrintArea,&CharArea,Origin,Width,Height);
 
-		if(CheckBound(&PrintArea,&CharArea,CStat))
+		GetCharArea(CStat,&PrintArea,&CharArea,Origin,Width,Height);
+		if(CheckLowerBound(&PrintArea,&CharArea,CStat))
 			break;
+
 		iDrawChar(&Uni,Screen,CStat,CharArea);
-		Length++;
+
 		switch(CStat->Rotate)
 		{
 			case Deg0:
-				CharArea.Start.x +=Width;
+				CharArea.Start.x += Width;
 				break;
 			case Deg90:
-				CharArea.End.y   -=Width;
+				CharArea.End.y   -= Width;
 				break;
 			case Deg180:
-				CharArea.End.x   -=Width;
+				CharArea.End.x   -= Width;
 				break;
 			case Deg270:
-				CharArea.Start.y +=Width;
+				CharArea.Start.y += Width;
 				break;
 		}
 		Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 	}
-	return Length;
+	return 0;
 }
 
 u32 SimPrint(char* Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang)
