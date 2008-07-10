@@ -24,22 +24,22 @@ int main(int argc, char ** argv)
 	PA_SetTextCol (1, 0, 0, 0);
 	PA_SetTextCol (0, 0, 0, 0);
 
-	FontInit(&terminus12regular,ter12r);
+	FontInit(&terminus12regular,unifont);
 	FontInit(&terminus12bold,ter12b);
 	FontInit(&terminus12italic,ter12i);
 	FontInit(&terminus12bolditalic,ter12bi);
 
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
-	VirScreen UpWin =  {  0, 0, 256, 192, {{ 0, 0},{255,191}}, Deg0, &UpScreen};
-	VirScreen DnWin =  {  0, 0, 256, 192, {{ 0, 0},{255,191}}, Deg0, &DnScreen};
+	VirScreen UpWin =  { 0, 0, 256, 192, {{ 0, 0},{255,191}}, Deg0, &UpScreen};
+	VirScreen DnWin =  { 0, 0, 256, 192, {{ 0, 0},{255,191}}, Deg0, &DnScreen};
 	BLOCK area = {{0, 0},{255,191}};
 
-	SimPrint("¼My Mauspu (12¾)³€ ut@masdel öäüÖÄÜß aliquid zyxwvutsr «¢“”nµ─·» tractatos. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Nunc ac ante sed ante imperdiet auctor. Fusce dignissim, magna eu feugiat tincidunt, nibh metus tincidunt augue, quis ullamcorper lorem pede a ante. Proin congue nisl a arcu. Donec et elit. Etiam ac eros nec metus molestie aliquam. Nullam vestibulum molestie magna. In varius quam in nulla luctus tristique. Nam et eros. Sed vitae sem a velit mattis dapibus. Sed blandit, sapien auctor adipiscing viverra, purus urna fermentum wisi, id luctus tortor augue et ligula. In quis ¼g¼g¼g¼g¼g. Sed urna arcu, ¼€€€g¼g¼g¼g¼g in.\nΌταν ανεπιθύμητη.\nहोभर आशाआपस\nक.福建西部 北方方言的明显特\nSome\nMore\nText\nTo\nGet\nTo\nThe\nBottom\nAnd\nFar\nBelowy", &DnScreen,4,0,PA_RGB(0,0,0),UTF8);
-	SimPrint("    Mauspu", &DnScreen,4,0,PA_RGB(0,5,23),UTF8);
+	SimPrint("¼ von (12¾)³€ ut@ma öäüÖÄÜß €€€€€€€€€€€€ aliquid zyxwvutsr «¢“”nµ─·» tractatos. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Nunc ac ante sed ante imperdiet auctor. Fusce dignissim, ░ ▒ ▓ █ magna eu feugiat tincidunt, nibh metus tincidunt augue, quis ullamcorper lorem pede a ante. Proin congue nisl a arcu. Donec et elit. Etiam ac eros nec metus molestie aliquam. Nullam vestibulum molestie magna. In varius quam in nulla luctus tristique. Nam et eros. Sed vitae sem a velit mattis dapibus. Sed blandit, sapien auctor adipiscing viverra, purus urna fermentum wisi, id luctus tortor augue et ligula. In quis ¼g¼g¼g¼g¼g. Sed urna arcu, ¼€€€g¼g¼g¼g¼g in.\nΌταν ανεπιθύμητη.\nहोभरआशाआपस\nक.福建西部北方方言的明显特\nSome\nMore\nText\nTo\nGet\nTo\nThe\nBottom\nAnd\nFar\nBelowy", &DnScreen,4,0,PA_RGB(0,0,0),UTF8);
 
 	while (1)
 		;
+
 	bool keyboardActive = false;
 	PA_InitKeyboard(2);
 	PA_KeyboardIn(24, 95);
