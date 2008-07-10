@@ -1,14 +1,8 @@
 #include "chrlib.h"
 
 Font  terminus12regular;
-Font  terminus12bold;
-Font  terminus12italic;
-Font  terminus12bolditalic;
 
-const CharStat CS   ={ PA_RGB(0,0,0), PA_RGB(23,23,31), 0, Deg0, NONE, 0, 0, 0, &terminus12regular};
-const CharStat CSb  ={ PA_RGB(0,0,0), PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12bold};
-const CharStat CSi  ={ PA_RGB(0,0,0), PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12italic};
-const CharStat CSbi ={ PA_RGB(0,0,0), PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12bolditalic};
+const CharStat CS   ={ PA_RGB(0,0,0), PA_RGB(23,23,23), 0, Deg0, NONE, 0, 0, 0, &terminus12regular};
 
 // char U[255];
 // char N[255];
@@ -572,6 +566,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 	u8    Width;
 	u8    Height = CStat->FONT->Height;
 	u32   Skip=0;
+	u32   SkipSave = Skip;
 	u8*   DATA;
 	u8    ForceInnerWordWrap = 1;
 
@@ -614,41 +609,65 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 			ForceInnerWordWrap = 1;
 			continue;
 		}
-		else
+		if(Uni==0x0A)
 		{
-			if(Uni==0x0A)
+			SwitchNewLine(CStat,&CharArea,Origin,Height);
+			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+			ForceInnerWordWrap = 1;
+			continue;
+		}
+		if(Uni==0x20)
+		{
+			DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
+			Width = DATA[0];
+			switch(CStat->Rotate)
 			{
-				SwitchNewLine(CStat,&CharArea,Origin,Height);
-				ForceInnerWordWrap = 1;
-				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
-				continue;
+				case Deg0:
+					CharArea.Start.x += Width + CStat->W_Space;
+					break;
+				case Deg90:
+					CharArea.End.y   -= Width + CStat->W_Space;
+					break;
+				case Deg180:
+					CharArea.End.x   -= Width + CStat->W_Space;
+					break;
+				case Deg270:
+					CharArea.Start.y += Width + CStat->W_Space;
+					break;
 			}
+			ForceInnerWordWrap = 0;
+			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+			continue;
 		}
-		DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
-		Width = DATA[0] + CStat->W_Space;
 
-		GetCharArea(CStat,&PrintArea,&CharArea,Origin,Width,Height);
-		if(CheckLowerBound(&PrintArea,&CharArea,CStat))
-			break;
-
-		iDrawChar(&Uni,Screen,CStat,CharArea);
-
-		switch(CStat->Rotate)
+		if (ForceInnerWordWrap)
 		{
-			case Deg0:
-				CharArea.Start.x += Width;
+			DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
+			Width = DATA[0];
+
+			GetCharArea(CStat,&PrintArea,&CharArea,Origin,Width,Height);
+			if(CheckLowerBound(&PrintArea,&CharArea,CStat))
 				break;
-			case Deg90:
-				CharArea.End.y   -= Width;
-				break;
-			case Deg180:
-				CharArea.End.x   -= Width;
-				break;
-			case Deg270:
-				CharArea.Start.y += Width;
-				break;
+
+			iDrawChar(&Uni,Screen,CStat,CharArea);
+
+			switch(CStat->Rotate)
+			{
+				case Deg0:
+					CharArea.Start.x += Width + CStat->W_Space;
+					break;
+				case Deg90:
+					CharArea.End.y   -= Width + CStat->W_Space;
+					break;
+				case Deg180:
+					CharArea.End.x   -= Width + CStat->W_Space;
+					break;
+				case Deg270:
+					CharArea.Start.y += Width + CStat->W_Space;
+					break;
+			}
+			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 		}
-		Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 	}
 	return 0;
 }
