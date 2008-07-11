@@ -6,6 +6,7 @@
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
 
+char blindtext[2000] = "Weit hinter den Wortbergen\n\nWeit hinten, hinter den Wortbergen, fern der Länder Vokalien und Konsonantien leben die Blindtexte. Abgeschieden wohnen Sie in Buchstabhausen an der Küste des Semantik, eines großen Sprachozeans.\nEin kleines Bächlein namens Duden fließt durch ihren Ort und versorgt sie mit den nötigen Regelialien. Es ist ein paradiesmatisches Land, in dem einem gebratene Satzteile in den Mund fliegen. Nicht einmal von der allmächtigen Interpunktion werden die Blindtexte beherrscht - ein geradezu unorthographisches Leben. Eines Tages aber\n\nbeschloß eine kleine Zeile Blindtext, ihr Name war Lorem Ipsum, hinaus zu gehen in die weite Grammatik. Der große Oxmox riet ihr davon ab, da es dort wimmele von bösen Kommata, wilden Fragezeichen und hinterhältigen Semikoli, doch das Blindtextchen ließ sich nicht beirren. Es packte seine sieben Versalien, schob sich sein Initial in den Gürtel und machte sich auf den Weg. kkhsdklhdksh dksjdhksjdhksjjhkshkshd\n\n z";
 
 int main(int argc, char ** argv)
 {
@@ -24,22 +25,24 @@ int main(int argc, char ** argv)
 	PA_SetTextCol (1, 0, 0, 0);
 	PA_SetTextCol (0, 0, 0, 0);
 
-	FontInit(&terminus12regular,ter12r);
+	FontInit(&terminus12regular,ter12rp);
 
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
 	VirScreen   UpWin =  { 0, 0, 256, 192, {{ 0, 0},{255,191}}, Deg0, &UpScreen};
 	VirScreen   DnWin =  { 0, 0, 256, 192, {{ 0, 0},{255,191}}, Deg0, &DnScreen};
+	VirScreen SmUpWin =  { 32, 24, 192, 144, {{ 32, 24},{223,167}}, Deg0, &UpScreen};
 	VirScreen SmDnWin =  { 32, 24, 192, 144, {{ 32, 24},{223,167}}, Deg0, &DnScreen};
 	BLOCK area = {{0, 0},{255,191}};
 
-	DrawBlock(&SmDnWin,area,PA_RGB(27,27,31),1);
+ 	DrawBlock(&SmUpWin,area,PA_RGB(27,27,31),1);
 	CharStat C=CS;
 	C.Color=PA_RGB(0,0,0);
-	iPrint("variusqua minnullal uctustristique.Nameteros.Sed ¼ von (12¾)³€ ut@ma öäüÖÄÜß                   €€€€€€€€€€€€ aliquid zyxwvutsr «¢“”nµ─·»            tractatos. Lorem     ipsum       dolor sit    amet, consectetuer       adipiscing      elit.      Nunc ac       ante sed ante imperdiet auctor. Fusce dignissim, ░ ▒ ▓ █ magna eu feugiat tincidunt, nibh metus tincidunt augue, quis ullamcorper lorem pede a ante. Proin congue nisl a arcu. Donec et elit. Etiam ac eros nec metus molestie aliquam. Nullam vestibulum molestie magna. In varius quam in nulla luctus tristique. Nam et eros. Sed vitae sem a velit mattis dapibus. Sed blandit, sapien auctor adipiscing viverra, purus urna fermentum wisi, id luctus tortor augue et ligula. In quis ¼g¼g¼g¼g¼g. Sed urna arcu, ¼€€€g¼g¼g¼g¼g in.\nΌταν ανεπιθύμητη.\nहोभरआशाआपस\nक.福建西部北方方言的明显特\nSome\nMore\nText\nTo\nGet\nTo\nThe\nBottom\nAnd\nFar\nBelowy", &SmDnWin, &C, 0, UTF8);
+	u32 num = 0;
+	num = iPrint(&blindtext[num], &UpWin, &C, 0, UTF8);
+	num = iPrint(&blindtext[num],   &DnWin, &C, 0, UTF8);
 
-	while (1)
-		;
+	while (1);
 
 	bool keyboardActive = false;
 	PA_InitKeyboard(2);
@@ -47,7 +50,7 @@ int main(int argc, char ** argv)
 	PA_KeyboardOut();
 
 	ArticleSearchResult* suchergebnis = NULL;
-	ArticleSearchResult* redirection  = NULL;
+	ArticleSearchResult* redirection = NULL;
 	char* markup = NULL;
 
 	PA_OutputText(1,0,0,"Lade \"%c3dewiki.dat%c0\"...");

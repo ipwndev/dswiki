@@ -410,8 +410,9 @@ u8 CheckLowerBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat)
 
 /** Modifiziert 'CharArea', basierend auf der linken oberen Ecke, derart, dass ein Zeichen der Breite 'Width' und Höhe 'Height' in die 'PrintArea' geschrieben werden kann. Notfalls wird der Block in die nächste Zeile umgebrochen. Die rechte untere Ecke wird angepasst, damit in 'CheckLowerBound' geprüft werden kann, ob das Zeichen die 'PrintArea' nach unten verließe. 'iDrawChar' richtet sich aber *nur* nach der oberen linken Ecke.
   */
-void GetCharArea(CharStat* Status, BLOCK* PrintArea , BLOCK* CharArea, s16 Origin, u8 Width, u8 Height)
+u8 CheckWrap(CharStat* Status, BLOCK* PrintArea , BLOCK* CharArea, s16 Origin, u8 Width, u8 Height)
 {
+	u8 wrap = 0;
 	switch(Status->Rotate)
 	{
 		case Deg0:
@@ -419,6 +420,7 @@ void GetCharArea(CharStat* Status, BLOCK* PrintArea , BLOCK* CharArea, s16 Origi
 			{
 				CharArea->Start.x=Origin;
 				CharArea->Start.y+=(Height+Status->H_Space);
+				wrap = 1;
 			}
 			CharArea->End.x = CharArea->Start.x + Width  + Status->W_Space;
 			CharArea->End.y = CharArea->Start.y + Height + Status->H_Space;
@@ -428,6 +430,7 @@ void GetCharArea(CharStat* Status, BLOCK* PrintArea , BLOCK* CharArea, s16 Origi
 			{
 				CharArea->End.y   = Origin;
 				CharArea->Start.x+=(Height+Status->H_Space);
+				wrap = 1;
 			}
 			CharArea->End.x   = CharArea->Start.x + Height + Status->H_Space;
 			CharArea->Start.y = CharArea->End.y   - Width  - Status->W_Space;
@@ -437,6 +440,7 @@ void GetCharArea(CharStat* Status, BLOCK* PrintArea , BLOCK* CharArea, s16 Origi
 			{
 				CharArea->End.x = Origin;
 				CharArea->End.y-=(Height+Status->H_Space);
+				wrap = 1;
 			}
 			CharArea->Start.x = CharArea->End.x - Width - Status->W_Space;
 			CharArea->Start.y = CharArea->End.y - Height- Status->H_Space;
@@ -446,11 +450,13 @@ void GetCharArea(CharStat* Status, BLOCK* PrintArea , BLOCK* CharArea, s16 Origi
 			{
 				CharArea->Start.y=Origin;
 				CharArea->End.x-=(Height+Status->H_Space);
+				wrap = 1;
 			}
 			CharArea->End.y=CharArea->Start.y + Width + Status->W_Space;
 			CharArea->Start.x=CharArea->End.x - Height- Status->H_Space;
 			break;
 	}
+	return wrap;
 }
 
 
@@ -565,13 +571,14 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 	s16   Origin=0;
 	u8    Width;
 	u8    Height = CStat->FONT->Height;
-	u32   Skip=0;
-	u32   SkipSave = Skip;
+	u32       Skip = 0;
+	u32   SaveSkip = Skip;
 	u8*   DATA;
 	u8    ForceInnerWordWrap = 1;
 
 	BLOCK PrintArea = {{0,0},{Screen->Width-1,Screen->Height-1}};
-	BLOCK CharArea  = {{0,0},{0,0}};
+	BLOCK     CharArea  = {{0,0},{0,0}};
+	BLOCK SaveCharArea  = {{0,0},{0,0}};
 
 	switch(CStat->Rotate)
 	{
@@ -595,57 +602,60 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 			break;
 	}
 
-	Skip=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+	Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 	while(Uni)
 	{
-		if(Uni==0x0D)
+		if (ForceInnerWordWrap) // Writing
 		{
-			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
-			if(Uni==0x0A)
+			if(Uni==0x0D)
 			{
 				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+				if(Uni==0x0A)
+				{
+					Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+				}
+				SwitchNewLine(CStat,&CharArea,Origin,Height);
+				continue;
 			}
-			SwitchNewLine(CStat,&CharArea,Origin,Height);
-			ForceInnerWordWrap = 1;
-			continue;
-		}
-		if(Uni==0x0A)
-		{
-			SwitchNewLine(CStat,&CharArea,Origin,Height);
-			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
-			ForceInnerWordWrap = 1;
-			continue;
-		}
-		if(Uni==0x20)
-		{
-			DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
-			Width = DATA[0];
-			switch(CStat->Rotate)
+			if(Uni==0x0A)
 			{
-				case Deg0:
-					CharArea.Start.x += Width + CStat->W_Space;
-					break;
-				case Deg90:
-					CharArea.End.y   -= Width + CStat->W_Space;
-					break;
-				case Deg180:
-					CharArea.End.x   -= Width + CStat->W_Space;
-					break;
-				case Deg270:
-					CharArea.Start.y += Width + CStat->W_Space;
-					break;
+				SwitchNewLine(CStat,&CharArea,Origin,Height);
+				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+				continue;
 			}
-			ForceInnerWordWrap = 0;
-			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
-			continue;
-		}
+			if(Uni==0x20)
+			{
+				DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
+				Width = DATA[0];
+				switch(CStat->Rotate)
+				{
+					case Deg0:
+						CharArea.Start.x += Width + CStat->W_Space;
+						break;
+					case Deg90:
+						CharArea.End.y   -= Width + CStat->W_Space;
+						break;
+					case Deg180:
+						CharArea.End.x   -= Width + CStat->W_Space;
+						break;
+					case Deg270:
+						CharArea.Start.y += Width + CStat->W_Space;
+						break;
+				}
+				ForceInnerWordWrap = 0;
+				SaveSkip = Skip;
+				SaveCharArea.Start.x = CharArea.Start.x;
+				SaveCharArea.Start.y = CharArea.Start.y;
+				SaveCharArea.End.x   = CharArea.End.x;
+				SaveCharArea.End.y   = CharArea.End.y;
+				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+				continue;
+			}
 
-		if (ForceInnerWordWrap)
-		{
 			DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
 			Width = DATA[0];
 
-			GetCharArea(CStat,&PrintArea,&CharArea,Origin,Width,Height);
+			CheckWrap(CStat,&PrintArea,&CharArea,Origin,Width,Height);
 			if(CheckLowerBound(&PrintArea,&CharArea,CStat))
 				break;
 
@@ -668,8 +678,51 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 			}
 			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 		}
+		else // Collecting
+		{
+			if((Uni==0x0D)||(Uni==0x0A)||(Uni==0x20))
+			{
+				Skip = SaveSkip;
+				CharArea.Start.x = SaveCharArea.Start.x;
+				CharArea.Start.y = SaveCharArea.Start.y;
+				CharArea.End.x   = SaveCharArea.End.x;
+				CharArea.End.y   = SaveCharArea.End.y;
+				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+				ForceInnerWordWrap = 1;
+				continue;
+			}
+
+			DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
+			Width = DATA[0];
+
+			if (CheckWrap(CStat,&PrintArea,&CharArea,Origin,Width,Height))
+			{
+				ForceInnerWordWrap = 1;
+				Skip = SaveSkip;
+			}
+			else
+			{
+				switch(CStat->Rotate)
+				{
+					case Deg0:
+						CharArea.Start.x += Width + CStat->W_Space;
+						break;
+					case Deg90:
+						CharArea.End.y   -= Width + CStat->W_Space;
+						break;
+					case Deg180:
+						CharArea.End.x   -= Width + CStat->W_Space;
+						break;
+					case Deg270:
+						CharArea.Start.y += Width + CStat->W_Space;
+						break;
+				}
+			}
+
+			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+		}
 	}
-	return 0;
+	return Skip-1;
 }
 
 u32 SimPrint(char* Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang)
