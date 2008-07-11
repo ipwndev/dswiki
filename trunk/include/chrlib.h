@@ -100,7 +100,7 @@ u32    len(char* Str);
 u16    WordWidth(char* Word, CharStat *CStat, Lid Lang);
 void   SwitchNewLine(CharStat *Status, BLOCK* CharArea, s16 Origin, u8 Height);
 u8     CheckLowerBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat);
-void   GetCharArea(CharStat* Status, BLOCK* PrintArea , BLOCK* CharArea, s16 Origin, u8 Width, u8 Height);
+u8     CheckWrap(CharStat* Status, BLOCK* PrintArea , BLOCK* CharArea, s16 Origin, u8 Width, u8 Height);
 u32    iPrint(char* Str, VirScreen* Screen, CharStat* Status, u32 Num, Lid Lang);
 void   iDrawChar(u16* Uni,VirScreen* Screen,CharStat* CS, BLOCK CharArea);
 u32    SimPrint(char* Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang);
