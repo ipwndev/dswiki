@@ -1,127 +1,25 @@
 #include "chrlib.h"
 
-Font  terminus12regular;
+Font terminus12regular;
 
-const CharStat CS   ={ PA_RGB(0,0,0), PA_RGB(23,23,23), 0, Deg0, NONE, 0, 0, 0, &terminus12regular};
-
-// char U[255];
-// char N[255];
-
-// char* U2A(char* Ui)
-// {
-// 	u8    t;
-// 	char* R=Ui;
-// 	char  S[]="0123456789ABCDEF";
-//
-// 	for(t=0;t<4;t++)
-// 	{
-// 		U[2*t]  =S[((*R&0xF0)>>4)];
-// 		U[2*t+1]=S[ (*R&0xF)     ];
-// 		R++;
-// 		//t++;
-// 	}
-// 	U[2*(t+1)]=0;
-// 	return U;
-// }
-
-// u32 UTFLen(char* Str)
-// {
-// 	char* Ptr   =Str;
-// 	u32  Length=0;
-// 	while(Ptr[0]|Ptr[1])
-// 	{
-// 		Ptr+=2;
-// 		Length++;
-// 	}
-// 	return Length;
-// }
-
-
-// u16 WordWidth(char* Word, CharStat *CStat, Lid Lang)
-// {
-// 	u16* ptrW=(u16*) Word;
-// 	u8*  ptr =(u8*) Word;
-// 	u16  Width=0;
-//
-// 	switch(Lang)
-// 	{
-// 		case UTF:
-// 			while(ptrW[0])
-// 			{
-// 				if(*ptrW<128)
-// //					Width+=(CStat->FONT->semiWidth + CStat->W_Space);
-// 					Width+=0;
-// 				else
-// 					Width+=0;
-// //					Width+=(CStat->FONT->Width + CStat->W_Space);
-// 				ptrW++;
-// 			}
-// 			break;
-// 		case UTF8:
-// 			while(ptr[0])
-// 			{
-// 				if(*ptr<128)
-// 				{
-// //					Width+=(CStat->FONT->semiWidth + CStat->W_Space);
-// 					ptr++;
-// 				}
-// 				else
-// 				{
-// 					if(*ptr>0xE0)
-// 					{
-// //             Width+=(CStat->FONT->Width + CStat->W_Space);
-// 						ptr+=3;
-// 					}
-// 					else
-// 					{
-// //             Width+=(CStat->FONT->Width + CStat->W_Space);
-// 						ptr+=2;
-// 					}
-// 				}
-// 			}
-// 			break;
-// 		case BIG5:
-// 		case GBK:
-// 		case JIS:
-// 			while(ptr[0])
-// 			{
-// 				if(*ptr<128)
-// 				{
-// //           Width+=(CStat->FONT->semiWidth + CStat->W_Space);
-// 					ptr++;
-// 				}
-// 				else
-// 				{
-// //           Width+=(CStat->FONT->Width + CStat->W_Space);
-// 					ptr+=2;
-// 				}
-// 			}
-// 			break;
-// 	}
-// 	return Width;
-// }
-
-
-u8 FontInit(Font* FONT,const u8* ptr)
+u8 FontInit(Font* FONT, const u8* ptr)
 {
 	FONT->Name       = (u16*)ptr;
 	FONT->Height     = ptr[32];
-	FONT->W_Space    = 0;
 	FONT->Index      = (u32*)(ptr+64);
 	FONT->Data       = (u8*)ptr+0x40040;
 	FONT->Ptr        = (u8*)ptr;
 	return 1;
 }
 
-
-u8 ToUTF(char* Chr,u16* UTF16, const u16* Table, Lid LID)
+u8 ToUTF(char* Chr, u16* UTF16, const u16* Table, Lid Lang)
 {
-	u16   Row = 0 ;
-	u16   Col = 0 ;
-	u16   Line = 0 ;
-	u8    Length=2;
+	u16  Row    = 0;
+	u16  Col    = 0;
+	u16  Line   = 0;
+	u8   Length = 2;
 
-	switch(LID)
+	switch(Lang)
 	{
 		case UTF:
 			UTF16[0]=Chr[1];
@@ -257,100 +155,69 @@ u8 ToUTF(char* Chr,u16* UTF16, const u16* Table, Lid LID)
 	return Length;
 }
 
-// u32 UTF2UTF8(u16* Uni,u8* Utf)
-// {
-// 	u32 Length=0;
-// 	u32 i=0;
-//
-// 	while(Uni[Length])
-// 	{
-// 		if((Uni[Length]>0)&&(Uni[Length]<=0x7F))
-// 		{
-// 			Utf[i++]=  Uni[Length++];
-// 		}
-// 		else if((Uni[Length]>0x7F)&&(Uni[Length]<=0x7FF))
-// 		{
-// 			Utf[i++]= (Uni[Length  ] >>6 ) | 0xC0;
-// 			Utf[i++]= (Uni[Length++]&0x3F) | 0x80;
-// 		}
-// 		else
-// 		{
-// 			Utf[i++]= (Uni[Length  ] >>12) | 0xE0;
-// 			Utf[i++]=((Uni[Length  ] >>6 ) & 0x3F) | 0x80 ;
-// 			Utf[i++]= (Uni[Length++]       & 0x3F) | 0x80 ;
-// 		}
-// 	}
-// 	Utf[i]=0;
-// 	Utf[i+1]=0;
-// 	return Length;
-// }
-
-// u32 UTF82UTF(u8* U8,u16* U)
-// {
-// 	u32 i=0;
-// 	u32 Length=0;
-// 	char* U8c = (char*) U8;
-// 	while(U8c[i])
-// 	{
-// 		i+=ToUTF(&U8c[i],&U[Length++],0,UTF8);
-// 	}
-// 	U[Length]=0;
-// 	return Length;
-// }
-
-// u8 STR[16];
-//
-// u8* ValueStr(u32 Value)
-// {
-// 	u8 t=15;
-// 	STR[t]=0;
-// 	while(Value)
-// 	{
-// 		STR[--t]=(Value%10)+48;
-// 		Value/=10;
-// 	}
-// 	return &STR[t];
-// }
-//
-// u32 len(char* Str)
-// {
-// 	char* Ptr=Str;
-// 	u32 Length=0;
-// 	u8 Below=1;
-// 	while((*Ptr)&&Below)
-// 	{
-// 		Length++;
-// 		Ptr++;
-// 		if(Length==0x10000)
-// 			Below=0;
-// 	}
-// 	return Length;
-// }
-
-void SwitchNewLine(CharStat *Status, BLOCK* CharArea, s16 Origin, u8 Height)
+u32 UTF2UTF8(u16* Uni, char* U8)
 {
-	switch(Status->Rotate)
+	u32 Length=0;
+	u32 i=0;
+
+	while(Uni[Length])
+	{
+		if((Uni[Length]>0)&&(Uni[Length]<=0x7F))
+		{
+			U8[i++]=  Uni[Length++];
+		}
+		else if((Uni[Length]>0x7F)&&(Uni[Length]<=0x7FF))
+		{
+			U8[i++]= (Uni[Length  ] >>6 ) | 0xC0;
+			U8[i++]= (Uni[Length++]&0x3F) | 0x80;
+		}
+		else
+		{
+			U8[i++]= (Uni[Length  ] >>12) | 0xE0;
+			U8[i++]=((Uni[Length  ] >>6 ) & 0x3F) | 0x80 ;
+			U8[i++]= (Uni[Length++]       & 0x3F) | 0x80 ;
+		}
+	}
+	U8[i]=0;
+	return Length;
+}
+
+u32 UTF82UTF(char* U8, u16* Uni)
+{
+	u32 i=0;
+	u32 Length=0;
+	while(U8[i])
+	{
+		i+=ToUTF(&U8[i],&Uni[Length++],0,UTF8);
+	}
+	Uni[Length]=0;
+	return Length;
+}
+
+void SwitchNewLine(CharStat* CStat, BLOCK* CharArea, s16 Origin, u8 Height)
+{
+	switch(CStat->Rotate)
 	{
 		case Deg0:
-			CharArea->Start.x =Origin;
-			CharArea->Start.y+=(Height+Status->H_Space);
+			CharArea->Start.x  = Origin;
+			CharArea->Start.y += (Height+CStat->H_Space);
 			break;
 		case Deg90:
-			CharArea->End.y   =Origin;
-			CharArea->Start.x+=(Height+Status->H_Space);
+			CharArea->End.y    = Origin;
+			CharArea->Start.x += (Height+CStat->H_Space);
 			break;
 		case Deg180:
-			CharArea->End.x   =Origin;
-			CharArea->End.y  -=(Height+Status->H_Space);
+			CharArea->End.x    = Origin;
+			CharArea->End.y   -= (Height+CStat->H_Space);
 			break;
 		case Deg270:
-			CharArea->Start.y =Origin;
-			CharArea->End.x  -=(Height+Status->H_Space);
+			CharArea->Start.y  = Origin;
+			CharArea->End.x   -= (Height+CStat->H_Space);
 			break;
 	}
 }
 
-u8 CheckLowerBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat)
+u8 CheckLowerBound(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, u8 Height)
 {
 	u8 OutScreen=0;
 
@@ -364,7 +231,7 @@ u8 CheckLowerBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat)
 			}
 			else
 			{
-				if(CharArea->End.y > PrintArea->End.y+1)
+				if(CharArea->Start.y + Height - 1 > PrintArea->End.y)
 					OutScreen=1;
 			}
 			break;
@@ -376,7 +243,7 @@ u8 CheckLowerBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat)
 			}
 			else
 			{
-				if(CharArea->End.x > PrintArea->End.x+1)
+				if(CharArea->Start.x + Height - 1 > PrintArea->End.x)
 					OutScreen=1;
 			}
 			break;
@@ -388,7 +255,7 @@ u8 CheckLowerBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat)
 			}
 			else
 			{
-				if(CharArea->Start.y < PrintArea->Start.y-1)
+				if(CharArea->End.y - Height + 1 < PrintArea->Start.y)
 					OutScreen=1;
 			}
 			break;
@@ -400,7 +267,7 @@ u8 CheckLowerBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat)
 			}
 			else
 			{
-				if(CharArea->Start.x < PrintArea->Start.x-1)
+				if(CharArea->End.x - Height + 1 < PrintArea->Start.x)
 					OutScreen=1;
 			}
 			break;
@@ -408,59 +275,44 @@ u8 CheckLowerBound(BLOCK* PrintArea, BLOCK *CharArea,CharStat* CStat)
 	return OutScreen;
 }
 
-/** Modifiziert 'CharArea', basierend auf der linken oberen Ecke, derart, dass ein Zeichen der Breite 'Width' und Höhe 'Height' in die 'PrintArea' geschrieben werden kann. Notfalls wird der Block in die nächste Zeile umgebrochen. Die rechte untere Ecke wird angepasst, damit in 'CheckLowerBound' geprüft werden kann, ob das Zeichen die 'PrintArea' nach unten verließe. 'iDrawChar' richtet sich aber *nur* nach der oberen linken Ecke.
-  */
-u8 CheckWrap(CharStat* Status, BLOCK* PrintArea , BLOCK* CharArea, s16 Origin, u8 Width, u8 Height)
+u8 CheckWrap(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height)
 {
 	u8 wrap = 0;
-	switch(Status->Rotate)
+	switch(CStat->Rotate)
 	{
 		case Deg0:
 			if((CharArea->Start.x+Width)>PrintArea->End.x+1)
 			{
-				CharArea->Start.x=Origin;
-				CharArea->Start.y+=(Height+Status->H_Space);
+				SwitchNewLine(CStat,CharArea,Origin,Height);
 				wrap = 1;
 			}
-			CharArea->End.x = CharArea->Start.x + Width  + Status->W_Space;
-			CharArea->End.y = CharArea->Start.y + Height + Status->H_Space;
 			break;
 		case Deg90:
 			if(CharArea->End.y<PrintArea->Start.y+Width-1)
 			{
-				CharArea->End.y   = Origin;
-				CharArea->Start.x+=(Height+Status->H_Space);
+				SwitchNewLine(CStat,CharArea,Origin,Height);
 				wrap = 1;
 			}
-			CharArea->End.x   = CharArea->Start.x + Height + Status->H_Space;
-			CharArea->Start.y = CharArea->End.y   - Width  - Status->W_Space;
 			break;
 		case Deg180:
 			if(CharArea->End.x<PrintArea->Start.x+Width-1)
 			{
-				CharArea->End.x = Origin;
-				CharArea->End.y-=(Height+Status->H_Space);
+				SwitchNewLine(CStat,CharArea,Origin,Height);
 				wrap = 1;
 			}
-			CharArea->Start.x = CharArea->End.x - Width - Status->W_Space;
-			CharArea->Start.y = CharArea->End.y - Height- Status->H_Space;
 			break;
 		case Deg270:
 			if(CharArea->Start.y+Width>PrintArea->End.y+1)
 			{
-				CharArea->Start.y=Origin;
-				CharArea->End.x-=(Height+Status->H_Space);
+				SwitchNewLine(CStat,CharArea,Origin,Height);
 				wrap = 1;
 			}
-			CharArea->End.y=CharArea->Start.y + Width + Status->W_Space;
-			CharArea->Start.x=CharArea->End.x - Height- Status->H_Space;
 			break;
 	}
 	return wrap;
 }
 
-
-void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CS, BLOCK CharArea)
+void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CStat, BLOCK CharArea)
 {
 	u8*  DATA;
 	u8   idx;
@@ -471,8 +323,8 @@ void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CS, BLOCK CharArea)
 	u8   h,w;
 	u8   bbx_w, bbx_h;
 	u16  X=0,Y=0;
-	CharStat CopyCS=*CS;
-	DATA=&CS->FONT->Data[CS->FONT->Index[*Uni]];
+	CharStat CopyCStat=*CStat;
+	DATA=&CStat->FONT->Data[CStat->FONT->Index[*Uni]];
 
 	idx=0;
 
@@ -481,7 +333,7 @@ void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CS, BLOCK CharArea)
 	bbx_w = (DATA[1]>>4)+1;
 	bbx_h = (DATA[1]&0xF)+1;
 
-	switch(CS->Fx)
+	switch(CStat->Fx)
 	{
 		case NONE:
 		case HOLLOW:
@@ -494,7 +346,7 @@ void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CS, BLOCK CharArea)
 					msk=0x80>>(idx & 7);
 					if(DATA[ptr] & msk)
 					{
-						switch(CS->Rotate)
+						switch(CStat->Rotate)
 						{
 							case Deg0:
 								X=CharArea.Start.x + w + xoff;
@@ -512,33 +364,33 @@ void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CS, BLOCK CharArea)
 								X=CharArea.End.x   -(h + yoff);
 								Y=CharArea.Start.y +(w + xoff);
 						}
-						switch(CS->Fx)
+						switch(CStat->Fx)
 						{
 							case NONE:
-								DrawPoint(Screen ,X , Y, CS->Color);
+								DrawPoint(Screen ,X , Y, CStat->Color);
 								break;
 							case HOLLOW:
-								DrawPoint(Screen ,X-1 , Y,   CS->BgColor);
-								DrawPoint(Screen ,X   , Y-1, CS->BgColor);
-								DrawPoint(Screen ,X+1 , Y,   CS->BgColor);
-								DrawPoint(Screen ,X   , Y+1, CS->BgColor);
+								DrawPoint(Screen ,X-1 , Y,   CStat->BgColor);
+								DrawPoint(Screen ,X   , Y-1, CStat->BgColor);
+								DrawPoint(Screen ,X+1 , Y,   CStat->BgColor);
+								DrawPoint(Screen ,X   , Y+1, CStat->BgColor);
 								break;
 							case SHADOW:
-								switch(CS->Rotate)
+								switch(CStat->Rotate)
 								{
 									case Deg0:
-										DrawPoint(Screen ,X+1 , Y+1, CS->BgColor);
+										DrawPoint(Screen ,X+1 , Y+1, CStat->BgColor);
 										break;
 									case Deg90:
-										DrawPoint(Screen ,X+1 , Y-1, CS->BgColor);
+										DrawPoint(Screen ,X+1 , Y-1, CStat->BgColor);
 										break;
 									case Deg180:
-										DrawPoint(Screen ,X-1 , Y-1, CS->BgColor);
+										DrawPoint(Screen ,X-1 , Y-1, CStat->BgColor);
 										break;
 									case Deg270:
-										DrawPoint(Screen ,X-1 , Y+1, CS->BgColor);
+										DrawPoint(Screen ,X-1 , Y+1, CStat->BgColor);
 								}
-								DrawPoint(Screen ,X , Y, CS->Color);
+								DrawPoint(Screen ,X , Y, CStat->Color);
 								break;
 							case BACKGR:
 								break;
@@ -549,36 +401,38 @@ void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CS, BLOCK CharArea)
 			}
 			break;
 		case BACKGR:
-			DrawBlock(Screen,CharArea, CS->BgColor, 1);
+			DrawBlock(Screen,CharArea, CStat->BgColor, 1);
 			break;
 	}
-	switch(CS->Fx)
+	switch(CStat->Fx)
 	{
 		case NONE:
 		case SHADOW:
 			break;
 		case HOLLOW:
 		case BACKGR:
-			CopyCS.Fx=NONE;
-			iDrawChar(Uni,Screen,&CopyCS,CharArea);
+			CopyCStat.Fx=NONE;
+			iDrawChar(Uni,Screen,&CopyCStat,CharArea);
 			break;
 	}
 }
 
 u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 {
-	u16   Uni=0;
-	s16   Origin=0;
-	u8    Width;
-	u8    Height = CStat->FONT->Height;
-	u32       Skip = 0;
-	u32   SaveSkip = Skip;
 	u8*   DATA;
+	u16   Uni                = 0;
+	s16   Origin             = 0;
+	u8    Width              = 0;
+	u8    Height             = CStat->FONT->Height;
+	u32   Skip               = 0;
+	u32   SaveSkipWord       = 0;
+	u32   SaveSkipLetter     = 0;
 	u8    ForceInnerWordWrap = 1;
+	u8    HardWrap           = 0;
 
-	BLOCK PrintArea = {{0,0},{Screen->Width-1,Screen->Height-1}};
-	BLOCK     CharArea  = {{0,0},{0,0}};
-	BLOCK SaveCharArea  = {{0,0},{0,0}};
+	BLOCK    PrintArea = {{0,0},{Screen->Width-1,Screen->Height-1}};
+	BLOCK     CharArea = {{0,0},{0,0}};
+	BLOCK SaveCharArea = {{0,0},{0,0}};
 
 	switch(CStat->Rotate)
 	{
@@ -603,15 +457,20 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 	}
 
 	Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
-	while(Uni)
-	{
-		if (ForceInnerWordWrap) // Writing
+	while(1) {
+		if (ForceInnerWordWrap||HardWrap) // Writing
 		{
+			if(Uni==0x00)
+			{
+				break;
+			}
 			if(Uni==0x0D)
 			{
+				SaveSkipLetter = Skip;
 				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 				if(Uni==0x0A)
 				{
+					SaveSkipLetter = Skip;
 					Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 				}
 				SwitchNewLine(CStat,&CharArea,Origin,Height);
@@ -620,6 +479,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 			if(Uni==0x0A)
 			{
 				SwitchNewLine(CStat,&CharArea,Origin,Height);
+				SaveSkipLetter = Skip;
 				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 				continue;
 			}
@@ -643,7 +503,8 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 						break;
 				}
 				ForceInnerWordWrap = 0;
-				SaveSkip = Skip;
+				SaveSkipLetter = Skip;
+				SaveSkipWord = Skip;
 				SaveCharArea.Start.x = CharArea.Start.x;
 				SaveCharArea.Start.y = CharArea.Start.y;
 				SaveCharArea.End.x   = CharArea.End.x;
@@ -656,7 +517,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 			Width = DATA[0];
 
 			CheckWrap(CStat,&PrintArea,&CharArea,Origin,Width,Height);
-			if(CheckLowerBound(&PrintArea,&CharArea,CStat))
+			if(CheckLowerBound(CStat,&PrintArea,&CharArea,Height))
 				break;
 
 			iDrawChar(&Uni,Screen,CStat,CharArea);
@@ -676,13 +537,14 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 					CharArea.Start.y += Width + CStat->W_Space;
 					break;
 			}
+			SaveSkipLetter = Skip;
 			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 		}
 		else // Collecting
 		{
-			if((Uni==0x0D)||(Uni==0x0A)||(Uni==0x20))
+			if((Uni==0x00)||(Uni==0x0D)||(Uni==0x0A)||(Uni==0x20)) // Rewind
 			{
-				Skip = SaveSkip;
+				Skip = SaveSkipWord;
 				CharArea.Start.x = SaveCharArea.Start.x;
 				CharArea.Start.y = SaveCharArea.Start.y;
 				CharArea.End.x   = SaveCharArea.End.x;
@@ -692,13 +554,14 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 				continue;
 			}
 
+			// collecting a normal character
 			DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
 			Width = DATA[0];
 
 			if (CheckWrap(CStat,&PrintArea,&CharArea,Origin,Width,Height))
 			{
 				ForceInnerWordWrap = 1;
-				Skip = SaveSkip;
+				Skip = SaveSkipWord;
 			}
 			else
 			{
@@ -718,18 +581,16 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 						break;
 				}
 			}
-
 			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 		}
 	}
-	return Skip-1;
+
+	return SaveSkipLetter;
 }
 
 u32 SimPrint(char* Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang)
 {
-	VirScreen vscr={x,y,Dev->Width-x,Dev->Height-y,{{0,0},{0,0}},Deg0,Dev};
-	InitVS(&vscr);
-	CharStat C=CS;
-	C.Color=Color;
-	return iPrint(Str, &vscr, &C, 0, Lang);
+	VirScreen vscr={x,y,Dev->Width-x,Dev->Height-y,{{0,0},{0,0}},Deg0,Dev}; InitVS(&vscr);
+	CharStat CS = { Color, PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12regular};
+	return iPrint(Str, &vscr, &CS, 0, Lang);
 }

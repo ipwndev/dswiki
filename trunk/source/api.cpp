@@ -1,15 +1,15 @@
 #include "api.h"
 
-u8 IsInArea(BLOCK BLK, POINT pt)
+u8 IsInArea(BLOCK Area, POINT Point)
 {
-   if((pt.x>BLK.Start.x)&&(pt.x<BLK.End.x))
-   {
-      if((pt.y>BLK.Start.y)&&(pt.y<BLK.End.y))
-      {
-         return 1;
-      }
-   }
-   return 0;
+	if((Point.x>Area.Start.x)&&(Point.x<Area.End.x))
+	{
+		if((Point.y>Area.Start.y)&&(Point.y<Area.End.y))
+		{
+			return 1;
+		}
+	}
+	return 0;
 }
 
 BLOCK CreateBlock(s32 xoff, s32 yoff, s32 w, s32 h)
@@ -24,12 +24,12 @@ BLOCK CreateBlock(s32 xoff, s32 yoff, s32 w, s32 h)
 
 BLOCK Intersection(BLOCK BLK1,BLOCK BLK2)
 {
-   BLOCK Result;
-   Result.Start.x=((BLK1.Start.x>BLK2.Start.x)?BLK1.Start.x:BLK2.Start.x);
-   Result.Start.y=((BLK1.Start.y>BLK2.Start.y)?BLK1.Start.y:BLK2.Start.y);
-   Result.End  .x=((BLK1.End  .x<BLK2.End  .x)?BLK1.End.  x:BLK2.End.  x);
-   Result.End  .y=((BLK1.End  .y<BLK2.End  .y)?BLK1.End.  y:BLK2.End.  y);
-   return Result;
+	BLOCK Result;
+	Result.Start.x=((BLK1.Start.x>BLK2.Start.x)?BLK1.Start.x:BLK2.Start.x);
+	Result.Start.y=((BLK1.Start.y>BLK2.Start.y)?BLK1.Start.y:BLK2.Start.y);
+	Result.End  .x=((BLK1.End  .x<BLK2.End  .x)?BLK1.End.  x:BLK2.End.  x);
+	Result.End  .y=((BLK1.End  .y<BLK2.End  .y)?BLK1.End.  y:BLK2.End.  y);
+	return Result;
 }
 
 void DrawPoint(VirScreen* Graphic, s32 X, s32 Y, u16 Color)
@@ -178,6 +178,11 @@ void DrawGroove(VirScreen* Graphic, BLOCK Area, u16 Color)
 			DrawPoint(Graphic,Area.End.x-1,H,TempColor);
 		}
 	}
+}
+
+void FillVS(VirScreen* Graphic, u16 Color) {
+	BLOCK fullVS = {{0,0},{Graphic->Width-1,Graphic->Height-1}};
+	DrawBlock(Graphic,fullVS,Color,1);
 }
 
 void InitVS(VirScreen* VS)
