@@ -417,7 +417,7 @@ void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CStat, BLOCK CharArea)
 	}
 }
 
-u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
+u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, s32 Limit, Lid Lang)
 {
 	u8*   DATA;
 	u16   Uni                = 0;
@@ -427,6 +427,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 	u32   Skip               = 0;
 	u32   SaveSkipWord       = 0;
 	u32   SaveSkipLetter     = 0;
+	s32   GlyphsPrinted      = 0;
 	u8    ForceInnerWordWrap = 1;
 	u8    HardWrap           = 0;
 
@@ -457,7 +458,8 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 	}
 
 	Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
-	while(1) {
+
+	while((Limit==-1)||(GlyphsPrinted < Limit)){
 		if (ForceInnerWordWrap||HardWrap) // Writing
 		{
 			if(Uni==0x00)
@@ -466,10 +468,12 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 			}
 			if(Uni==0x0D)
 			{
+				GlyphsPrinted++;
 				SaveSkipLetter = Skip;
 				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 				if(Uni==0x0A)
 				{
+					GlyphsPrinted++;
 					SaveSkipLetter = Skip;
 					Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 				}
@@ -478,6 +482,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 			}
 			if(Uni==0x0A)
 			{
+				GlyphsPrinted++;
 				SwitchNewLine(CStat,&CharArea,Origin,Height);
 				SaveSkipLetter = Skip;
 				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
@@ -485,6 +490,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 			}
 			if(Uni==0x20)
 			{
+				GlyphsPrinted++;
 				DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
 				Width = DATA[0];
 				switch(CStat->Rotate)
@@ -521,6 +527,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 				break;
 
 			iDrawChar(&Uni,Screen,CStat,CharArea);
+			GlyphsPrinted++;
 
 			switch(CStat->Rotate)
 			{
@@ -590,7 +597,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang)
 
 u32 SimPrint(char* Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang)
 {
-	VirScreen vscr={x,y,Dev->Width-x,Dev->Height-y,{{0,0},{0,0}},Deg0,Dev}; InitVS(&vscr);
+	VirScreen vscr={x, y, Dev->Width-x, Dev->Height-y, {{0,0},{0,0}}, Deg0, Dev}; InitVS(&vscr);
 	CharStat CS = { Color, PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12regular};
-	return iPrint(Str, &vscr, &CS, 0, Lang);
+	return iPrint(Str, &vscr, &CS, -1, Lang);
 }

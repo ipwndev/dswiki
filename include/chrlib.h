@@ -54,7 +54,7 @@ u8   CheckLowerBound(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,        
 u8   CheckWrap      (CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height);
 
 void iDrawChar(u16* Uni,  VirScreen* Screen, CharStat* CStat, BLOCK CharArea);
-u32  iPrint   (char* Str, VirScreen* Screen, CharStat* CStat, u32 Num, Lid Lang);
+u32  iPrint   (char* Str, VirScreen* Screen, CharStat* CStat, s32 Limit, Lid Lang);
 u32  SimPrint (char* Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang);
 
 #endif
