@@ -27,10 +27,16 @@ int main(int argc, char ** argv)
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
 
-	VirScreen   UpWin =  { 0,  0, 256, 192, {{0,0},{0,0}}, Deg0, &UpScreen}; InitVS(&UpWin);
-	VirScreen   DnWin =  { 0,  0, 256, 192, {{0,0},{0,0}}, Deg0, &DnScreen}; InitVS(&DnWin);
+	VirScreen  ContentWin1  = { 2, 12, 252, 180, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
+	VirScreen  ContentWin2  = { 2,  0, 252, 180, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
 
-	CharStat NormalCS = { PA_RGB(0,0,0), PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12regular};
+	VirScreen  Titlebar     = { 0, 0, 256, 12, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
+	CharStat   TitlebarCS   = { PA_RGB(31,31,31), PA_RGB(0,0,0), HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12regular};
+
+	VirScreen  Statusbar    = { 0, 180, 256, 12, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
+	CharStat   StatusbarCS  = { PA_RGB(10,10,10), PA_RGB(0,0,0), HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12regular};
+
+	CharStat   NormalCS     = { PA_RGB(0,0,0), PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
 
 	bool keyboardActive = false;
 	PA_InitKeyboard(2);
@@ -41,13 +47,15 @@ int main(int argc, char ** argv)
 	ArticleSearchResult* redirection = NULL;
 	char* markup = NULL;
 
-	PA_OutputText(1,0,0,"Lade \"%c3dewiki.dat%c0\"...");
+	FillVS(&Statusbar,PA_RGB(26,26,26));
+	iPrint("Lade \"dewiki.dat\"...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
 	TitleIndex* titleIndex = new TitleIndex("dewiki.dat","dewiki.idx");
-	PA_OutputText(1,20,0,"%c2OK");
-	PA_OutputText(1,0,1,"%c3%d%c0 Artikel",titleIndex->NumberOfArticles());
-	PA_OutputText(1,0,2,"Initialisiere MarkupGetter...");
+	iPrint("Lade \"dewiki.dat\"...OK!",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
+
+	FillVS(&Statusbar,PA_RGB(26,26,26));
+	iPrint("Initialisiere MarkupGetter...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
 	WikiMarkupGetter* mg = new WikiMarkupGetter("de");
-	PA_OutputText(1,29,2,"%c2OK");
+	iPrint("Initialisiere MarkupGetter...OK!",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
 
 	int count = 0;
 	int zeile = 0;
@@ -60,50 +68,49 @@ int main(int argc, char ** argv)
 
 
 	while(1) {
-		zeile = 0;
-		PA_ClearTextBg(1);
-// 		PA_OutputText(1,23,23,"%c1[Wait...]");
+		FillVS(&Statusbar,PA_RGB(26,26,26));
+		iPrint("Bitte warten...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
 		titleIndex->DeleteSearchResult(suchergebnis);
 		if (nletter==0)
 		{
-// 			PA_OutputText(1,0,3,"Suche zuf. Artikel...");
+			FillVS(&Statusbar,PA_RGB(26,26,26));
+			iPrint("Suche zufälligen Artikel...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
 			suchergebnis = titleIndex->GetRandomArticle();
 		}
 		else
 		{
-// 			PA_OutputText(1,0,3,"     Suche Artikel...");
+			FillVS(&Statusbar,PA_RGB(26,26,26));
+			iPrint("Suche Artikel...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
 			suchergebnis = titleIndex->FindArticle(text);
 		}
 
 		if (suchergebnis!=NULL)
 		{
-			PA_ClearTextBg(1);
-// 			PA_OutputText(1,21,3,"%c2OK");
-
 			count++;
-// 			PA_OutputText(1,0,4,"Hole Markup...");
+			FillVS(&Statusbar,PA_RGB(26,26,26));
+			iPrint("Hole Markup...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
 			free(markup);
 			markup = mg->GetMarkupForArticle(suchergebnis);
-// 			PA_OutputText(1,14,4,"%c2OK");
 
-			PA_OutputText(1,0,zeile++,"%c1%s",suchergebnis->Title());
 			while (redirection = titleIndex->isRedirect(markup))
 			{
 				free(markup);
 				ArticleSearchResult* temp = suchergebnis;
 				suchergebnis = redirection;
-				PA_OutputText(1,0,zeile++,"%c1-> %s",suchergebnis->Title());
+				FillVS(&Statusbar,PA_RGB(26,26,26));
+				iPrint("Folge Umleitung...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
 				titleIndex->DeleteSearchResult(temp);
 				markup = mg->GetMarkupForArticle(suchergebnis);
 			}
 
-
-// 			PA_OutputText(1,0,0,"0x%x %d", suchergebnis, count);
-// 			PA_OutputText(1,0,1,"Artikel %c1%s%c0 gefunden, Daten: Laenge %c3%d%c0 Bytes, Blockposition %c20x%x%c0, rel. Pos %c2%d%c0.", suchergebnis->TitleInArchive(), suchergebnis->ArticleLength(), suchergebnis->BlockPos(), suchergebnis->ArticlePos());
-
-			PA_Clear16bitBg(0);
+			FillVS(&Titlebar,PA_RGB(9,16,28));
+			iPrint(suchergebnis->Title(),&Titlebar,&TitlebarCS,-1,UTF8);
+			FillVS(&Statusbar,PA_RGB(26,26,26));
 			offset = 0;
-			numOut = SimPrint(markup, &DnScreen,0,0,PA_RGB(0,0,0),UTF8);
+			FillVS(&ContentWin1,PA_RGB(31,31,31));
+			numOut = iPrint(markup+offset, &ContentWin1,&NormalCS,PA_RGB(0,0,0),UTF8);
+			FillVS(&ContentWin2,PA_RGB(31,31,31));
+			numOut = iPrint(markup+offset+numOut, &ContentWin2,&NormalCS,PA_RGB(0,0,0),UTF8);
 
 		}
 		else
@@ -158,37 +165,40 @@ int main(int argc, char ** argv)
 			}
 			else if (Pad.Newpress.Right||Pad.Held.Right)
 			{
-				PA_Clear16bitBg(0);
 				offset += 600;
 				if (offset>=suchergebnis->ArticleLength()) offset = 0;
-				PA_OutputText(1,14,22,"%d%  ",offset*100/suchergebnis->ArticleLength());
-				numOut = SimPrint(markup+offset, &DnScreen,0,0,PA_RGB(0,0,0),UTF8);
+				FillVS(&ContentWin1,PA_RGB(31,31,31));
+				numOut = iPrint(markup+offset, &ContentWin1,&NormalCS,PA_RGB(0,0,0),UTF8);
+				FillVS(&ContentWin2,PA_RGB(31,31,31));
+				numOut = iPrint(markup+offset+numOut, &ContentWin2,&NormalCS,PA_RGB(0,0,0),UTF8);
 			}
 			else if (Pad.Newpress.Left||Pad.Held.Left)
 			{
-				PA_Clear16bitBg(0);
 				offset -= 600;
 				if (offset<0) offset = 0;
-				PA_OutputText(1,14,22,"%d%  ",offset*100/suchergebnis->ArticleLength());
-				numOut = SimPrint(markup+offset, &DnScreen,0,0,PA_RGB(0,0,0),UTF8);
+				FillVS(&ContentWin1,PA_RGB(31,31,31));
+				numOut = iPrint(markup+offset, &ContentWin1,&NormalCS,PA_RGB(0,0,0),UTF8);
+				FillVS(&ContentWin2,PA_RGB(31,31,31));
+				numOut = iPrint(markup+offset+numOut, &ContentWin2,&NormalCS,PA_RGB(0,0,0),UTF8);
 			}
 			else if (Pad.Newpress.Up||Pad.Held.Up)
 			{
-				PA_Clear16bitBg(0);
 				offset -= 42;
 				if (offset<0) offset = 0;
-				PA_OutputText(1,14,22,"%d%  ",offset*100/suchergebnis->ArticleLength());
-				numOut = SimPrint(markup+offset, &DnScreen,0,0,PA_RGB(0,0,0),UTF8);
+				FillVS(&ContentWin1,PA_RGB(31,31,31));
+				numOut = iPrint(markup+offset, &ContentWin1,&NormalCS,PA_RGB(0,0,0),UTF8);
+				FillVS(&ContentWin2,PA_RGB(31,31,31));
+				numOut = iPrint(markup+offset+numOut, &ContentWin2,&NormalCS,PA_RGB(0,0,0),UTF8);
 			}
 			else if (Pad.Newpress.Down||Pad.Held.Down)
 			{
-				PA_Clear16bitBg(0);
 				offset += 42;
 				if (offset>=suchergebnis->ArticleLength()) offset = 0;
-				PA_OutputText(1,14,22,"%d%  ",offset*100/suchergebnis->ArticleLength());
-				numOut = SimPrint(markup+offset, &DnScreen,0,0,PA_RGB(0,0,0),UTF8);
+				FillVS(&ContentWin1,PA_RGB(31,31,31));
+				numOut = iPrint(markup+offset, &ContentWin1,&NormalCS,PA_RGB(0,0,0),UTF8);
+				FillVS(&ContentWin2,PA_RGB(31,31,31));
+				numOut = iPrint(markup+offset+numOut, &ContentWin2,&NormalCS,PA_RGB(0,0,0),UTF8);
 			}
-			PA_WaitForVBL();
 		}
 		PA_WaitForVBL();
 	}

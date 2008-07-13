@@ -15,7 +15,8 @@
 #include "unifont.h"
 
 typedef enum {UTF,UTF8,BIG5,GBK,JIS} Lid;
-typedef enum {Deg0,Deg90,Deg180,Deg270} ChrRot;
+typedef enum {NORMALWRAP,HARDWRAP} ChrWrap;
+typedef enum {DEG0,DEG90,DEG180,DEG270} ChrRot;
 typedef enum {NONE,HOLLOW,SHADOW,BACKGR} FX;
 
 typedef struct
@@ -29,15 +30,15 @@ typedef struct
 
 typedef struct
 {
-	u16    Color;
-	u16    BgColor;
-	u8     Align;
-	ChrRot Rotate;
-	FX     Fx;
-	u8     CutChar;
-	u8     W_Space;
-	u8     H_Space;
-	Font*  FONT;
+	u16     Color;
+	u16     BgColor;
+	ChrWrap Wrap;
+	ChrRot  Rotate;
+	FX      Fx;
+	u8      CutChar;
+	u8      W_Space;
+	u8      H_Space;
+	Font*   FONT;
 } CharStat;
 
 extern Font terminus12regular;
