@@ -27,16 +27,19 @@ int main(int argc, char ** argv)
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
 
-	VirScreen  ContentWin1  = { 2, 12, 252, 180, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
-	VirScreen  ContentWin2  = { 2,  0, 252, 180, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
+	VirScreen  Titlebar     = { 2,   2, 252,  12, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
+	VirScreen  TitlebarD    = { 0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&TitlebarD);
+	VirScreen  ContentWin1  = { 2,  20, 252, 168, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
+	VirScreen  ContentWin2  = { 2,   4, 252, 168, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
+	VirScreen  Statusbar    = { 2, 178, 252,  12, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
+	VirScreen  StatusbarD   = { 0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&StatusbarD);
 
-	VirScreen  Titlebar     = { 0, 0, 256, 12, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
-	CharStat   TitlebarCS   = { PA_RGB(31,31,31), PA_RGB(0,0,0), HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12regular};
+	CharStat   TitlebarCS   = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12regular};
+	CharStat   ContentCS    = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
+	CharStat   StatusbarCS  = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12regular};
 
-	VirScreen  Statusbar    = { 0, 180, 256, 12, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
-	CharStat   StatusbarCS  = { PA_RGB(10,10,10), PA_RGB(0,0,0), HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12regular};
-
-	CharStat   NormalCS     = { PA_RGB(0,0,0), PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
+	FillVS(&TitlebarD, PA_RGB( 9,16,28));
+	FillVS(&StatusbarD,PA_RGB(26,26,26));
 
 	bool keyboardActive = false;
 	PA_InitKeyboard(2);
@@ -108,9 +111,9 @@ int main(int argc, char ** argv)
 			FillVS(&Statusbar,PA_RGB(26,26,26));
 			offset = 0;
 			FillVS(&ContentWin1,PA_RGB(31,31,31));
-			numOut = iPrint(markup+offset, &ContentWin1,&NormalCS,PA_RGB(0,0,0),UTF8);
+			numOut = iPrint(markup, &ContentWin1,&ContentCS,PA_RGB(0,0,0),UTF8);
 			FillVS(&ContentWin2,PA_RGB(31,31,31));
-			numOut = iPrint(markup+offset+numOut, &ContentWin2,&NormalCS,PA_RGB(0,0,0),UTF8);
+			numOut += iPrint(markup+numOut, &ContentWin2,&ContentCS,PA_RGB(0,0,0),UTF8);
 
 		}
 		else
@@ -154,6 +157,7 @@ int main(int argc, char ** argv)
 							text[nletter] = '\0';
 							keyboardActive = false;
 							PA_KeyboardOut();
+							PA_ClearTextBg(1);
 							break;
 						}
 
@@ -165,39 +169,15 @@ int main(int argc, char ** argv)
 			}
 			else if (Pad.Newpress.Right||Pad.Held.Right)
 			{
-				offset += 600;
-				if (offset>=suchergebnis->ArticleLength()) offset = 0;
+				offset += numOut;
+				if (offset>=suchergebnis->ArticleLength())
+					offset = 0;
 				FillVS(&ContentWin1,PA_RGB(31,31,31));
-				numOut = iPrint(markup+offset, &ContentWin1,&NormalCS,PA_RGB(0,0,0),UTF8);
+				numOut = iPrint(markup+offset, &ContentWin1,&ContentCS,PA_RGB(0,0,0),UTF8);
 				FillVS(&ContentWin2,PA_RGB(31,31,31));
-				numOut = iPrint(markup+offset+numOut, &ContentWin2,&NormalCS,PA_RGB(0,0,0),UTF8);
-			}
-			else if (Pad.Newpress.Left||Pad.Held.Left)
-			{
-				offset -= 600;
-				if (offset<0) offset = 0;
-				FillVS(&ContentWin1,PA_RGB(31,31,31));
-				numOut = iPrint(markup+offset, &ContentWin1,&NormalCS,PA_RGB(0,0,0),UTF8);
-				FillVS(&ContentWin2,PA_RGB(31,31,31));
-				numOut = iPrint(markup+offset+numOut, &ContentWin2,&NormalCS,PA_RGB(0,0,0),UTF8);
-			}
-			else if (Pad.Newpress.Up||Pad.Held.Up)
-			{
-				offset -= 42;
-				if (offset<0) offset = 0;
-				FillVS(&ContentWin1,PA_RGB(31,31,31));
-				numOut = iPrint(markup+offset, &ContentWin1,&NormalCS,PA_RGB(0,0,0),UTF8);
-				FillVS(&ContentWin2,PA_RGB(31,31,31));
-				numOut = iPrint(markup+offset+numOut, &ContentWin2,&NormalCS,PA_RGB(0,0,0),UTF8);
-			}
-			else if (Pad.Newpress.Down||Pad.Held.Down)
-			{
-				offset += 42;
-				if (offset>=suchergebnis->ArticleLength()) offset = 0;
-				FillVS(&ContentWin1,PA_RGB(31,31,31));
-				numOut = iPrint(markup+offset, &ContentWin1,&NormalCS,PA_RGB(0,0,0),UTF8);
-				FillVS(&ContentWin2,PA_RGB(31,31,31));
-				numOut = iPrint(markup+offset+numOut, &ContentWin2,&NormalCS,PA_RGB(0,0,0),UTF8);
+				numOut += iPrint(markup+offset+numOut, &ContentWin2,&ContentCS,PA_RGB(0,0,0),UTF8);
+				PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();
+				PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();
 			}
 		}
 		PA_WaitForVBL();
