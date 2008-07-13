@@ -198,19 +198,19 @@ void SwitchNewLine(CharStat* CStat, BLOCK* CharArea, s16 Origin, u8 Height)
 {
 	switch(CStat->Rotate)
 	{
-		case Deg0:
+		case DEG0:
 			CharArea->Start.x  = Origin;
 			CharArea->Start.y += (Height+CStat->H_Space);
 			break;
-		case Deg90:
+		case DEG90:
 			CharArea->End.y    = Origin;
 			CharArea->Start.x += (Height+CStat->H_Space);
 			break;
-		case Deg180:
+		case DEG180:
 			CharArea->End.x    = Origin;
 			CharArea->End.y   -= (Height+CStat->H_Space);
 			break;
-		case Deg270:
+		case DEG270:
 			CharArea->Start.y  = Origin;
 			CharArea->End.x   -= (Height+CStat->H_Space);
 			break;
@@ -223,7 +223,7 @@ u8 CheckLowerBound(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, u8 Height
 
 	switch(CStat->Rotate)
 	{
-		case Deg0:
+		case DEG0:
 			if(CStat->CutChar)
 			{
 				if(CharArea->Start.y > PrintArea->End.y)
@@ -235,7 +235,7 @@ u8 CheckLowerBound(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, u8 Height
 					OutScreen=1;
 			}
 			break;
-		case Deg90:
+		case DEG90:
 			if(CStat->CutChar)
 			{
 				if(CharArea->Start.x > PrintArea->End.x)
@@ -247,7 +247,7 @@ u8 CheckLowerBound(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, u8 Height
 					OutScreen=1;
 			}
 			break;
-		case Deg180:
+		case DEG180:
 			if(CStat->CutChar)
 			{
 				if(CharArea->End.y < PrintArea->Start.y)
@@ -259,7 +259,7 @@ u8 CheckLowerBound(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, u8 Height
 					OutScreen=1;
 			}
 			break;
-		case Deg270:
+		case DEG270:
 			if(CStat->CutChar)
 			{
 				if(CharArea->End.x < PrintArea->Start.x)
@@ -280,28 +280,28 @@ u8 CheckWrap(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 
 	u8 wrap = 0;
 	switch(CStat->Rotate)
 	{
-		case Deg0:
+		case DEG0:
 			if((CharArea->Start.x+Width)>PrintArea->End.x+1)
 			{
 				SwitchNewLine(CStat,CharArea,Origin,Height);
 				wrap = 1;
 			}
 			break;
-		case Deg90:
+		case DEG90:
 			if(CharArea->End.y<PrintArea->Start.y+Width-1)
 			{
 				SwitchNewLine(CStat,CharArea,Origin,Height);
 				wrap = 1;
 			}
 			break;
-		case Deg180:
+		case DEG180:
 			if(CharArea->End.x<PrintArea->Start.x+Width-1)
 			{
 				SwitchNewLine(CStat,CharArea,Origin,Height);
 				wrap = 1;
 			}
 			break;
-		case Deg270:
+		case DEG270:
 			if(CharArea->Start.y+Width>PrintArea->End.y+1)
 			{
 				SwitchNewLine(CStat,CharArea,Origin,Height);
@@ -312,7 +312,7 @@ u8 CheckWrap(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 
 	return wrap;
 }
 
-void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CStat, BLOCK CharArea)
+void iDrawChar(u16* Uni, VirScreen* VScreen, CharStat* CStat, BLOCK CharArea)
 {
 	u8*  DATA;
 	u8   idx;
@@ -348,49 +348,49 @@ void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CStat, BLOCK CharArea)
 					{
 						switch(CStat->Rotate)
 						{
-							case Deg0:
+							case DEG0:
 								X=CharArea.Start.x + w + xoff;
 								Y=CharArea.Start.y + h + yoff;
 								break;
-							case Deg90:
+							case DEG90:
 								X=CharArea.Start.x + h + yoff;
 								Y=CharArea.End.y   -(w + xoff);
 								break;
-							case Deg180:
+							case DEG180:
 								X=CharArea.End.x   -(w + xoff);
 								Y=CharArea.End.y   -(h + yoff);
 								break;
-							case Deg270:
+							case DEG270:
 								X=CharArea.End.x   -(h + yoff);
 								Y=CharArea.Start.y +(w + xoff);
 						}
 						switch(CStat->Fx)
 						{
 							case NONE:
-								DrawPoint(Screen ,X , Y, CStat->Color);
+								DrawPoint(VScreen ,X , Y, CStat->Color);
 								break;
 							case HOLLOW:
-								DrawPoint(Screen ,X-1 , Y,   CStat->BgColor);
-								DrawPoint(Screen ,X   , Y-1, CStat->BgColor);
-								DrawPoint(Screen ,X+1 , Y,   CStat->BgColor);
-								DrawPoint(Screen ,X   , Y+1, CStat->BgColor);
+								DrawPoint(VScreen ,X-1 , Y,   CStat->BgColor);
+								DrawPoint(VScreen ,X   , Y-1, CStat->BgColor);
+								DrawPoint(VScreen ,X+1 , Y,   CStat->BgColor);
+								DrawPoint(VScreen ,X   , Y+1, CStat->BgColor);
 								break;
 							case SHADOW:
 								switch(CStat->Rotate)
 								{
-									case Deg0:
-										DrawPoint(Screen ,X+1 , Y+1, CStat->BgColor);
+									case DEG0:
+										DrawPoint(VScreen ,X+1 , Y+1, CStat->BgColor);
 										break;
-									case Deg90:
-										DrawPoint(Screen ,X+1 , Y-1, CStat->BgColor);
+									case DEG90:
+										DrawPoint(VScreen ,X+1 , Y-1, CStat->BgColor);
 										break;
-									case Deg180:
-										DrawPoint(Screen ,X-1 , Y-1, CStat->BgColor);
+									case DEG180:
+										DrawPoint(VScreen ,X-1 , Y-1, CStat->BgColor);
 										break;
-									case Deg270:
-										DrawPoint(Screen ,X-1 , Y+1, CStat->BgColor);
+									case DEG270:
+										DrawPoint(VScreen ,X-1 , Y+1, CStat->BgColor);
 								}
-								DrawPoint(Screen ,X , Y, CStat->Color);
+								DrawPoint(VScreen ,X , Y, CStat->Color);
 								break;
 							case BACKGR:
 								break;
@@ -401,7 +401,7 @@ void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CStat, BLOCK CharArea)
 			}
 			break;
 		case BACKGR:
-			DrawBlock(Screen,CharArea, CStat->BgColor, 1);
+			DrawBlock(VScreen,CharArea, CStat->BgColor, 1);
 			break;
 	}
 	switch(CStat->Fx)
@@ -412,12 +412,12 @@ void iDrawChar(u16* Uni, VirScreen* Screen, CharStat* CStat, BLOCK CharArea)
 		case HOLLOW:
 		case BACKGR:
 			CopyCStat.Fx=NONE;
-			iDrawChar(Uni,Screen,&CopyCStat,CharArea);
+			iDrawChar(Uni,VScreen,&CopyCStat,CharArea);
 			break;
 	}
 }
 
-u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, s32 Limit, Lid Lang)
+u32 iPrint(char* Str, VirScreen* VScreen, CharStat* CStat, s32 Limit, Lid Lang)
 {
 	u8*   DATA;
 	u16   Uni                = 0;
@@ -429,28 +429,28 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, s32 Limit, Lid Lang)
 	u32   SaveSkipLetter     = 0;
 	s32   GlyphsPrinted      = 0;
 	u8    ForceInnerWordWrap = 1;
-	u8    HardWrap           = 0;
+	u8    HardWrap           = CStat->Wrap;
 
-	BLOCK    PrintArea = {{0,0},{Screen->Width-1,Screen->Height-1}};
+	BLOCK    PrintArea = {{0,0},{VScreen->Width-1,VScreen->Height-1}};
 	BLOCK     CharArea = {{0,0},{0,0}};
 	BLOCK SaveCharArea = {{0,0},{0,0}};
 
 	switch(CStat->Rotate)
 	{
-		case Deg0:
+		case DEG0:
 			Origin           = PrintArea.Start.x;
 			CharArea.Start   = PrintArea.Start;
 			break;
-		case Deg90:
+		case DEG90:
 			Origin           = PrintArea.End.y;
 			CharArea.Start.x = PrintArea.Start.x;
 			CharArea.End.y   = PrintArea.End.y;
 			break;
-		case Deg180:
+		case DEG180:
 			Origin           = PrintArea.End.x;
 			CharArea.End     = PrintArea.End;
 			break;
-		case Deg270:
+		case DEG270:
 			Origin           = PrintArea.Start.y;
 			CharArea.Start.y = PrintArea.Start.y;
 			CharArea.End.x   = PrintArea.End.x;
@@ -460,7 +460,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, s32 Limit, Lid Lang)
 	Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
 
 	while((Limit==-1)||(GlyphsPrinted < Limit)){
-		if (ForceInnerWordWrap||HardWrap) // Writing
+		if (ForceInnerWordWrap||(HardWrap==HARDWRAP)) // Writing
 		{
 			if(Uni==0x00)
 			{
@@ -495,16 +495,16 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, s32 Limit, Lid Lang)
 				Width = DATA[0];
 				switch(CStat->Rotate)
 				{
-					case Deg0:
+					case DEG0:
 						CharArea.Start.x += Width + CStat->W_Space;
 						break;
-					case Deg90:
+					case DEG90:
 						CharArea.End.y   -= Width + CStat->W_Space;
 						break;
-					case Deg180:
+					case DEG180:
 						CharArea.End.x   -= Width + CStat->W_Space;
 						break;
-					case Deg270:
+					case DEG270:
 						CharArea.Start.y += Width + CStat->W_Space;
 						break;
 				}
@@ -526,21 +526,21 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, s32 Limit, Lid Lang)
 			if(CheckLowerBound(CStat,&PrintArea,&CharArea,Height))
 				break;
 
-			iDrawChar(&Uni,Screen,CStat,CharArea);
+			iDrawChar(&Uni,VScreen,CStat,CharArea);
 			GlyphsPrinted++;
 
 			switch(CStat->Rotate)
 			{
-				case Deg0:
+				case DEG0:
 					CharArea.Start.x += Width + CStat->W_Space;
 					break;
-				case Deg90:
+				case DEG90:
 					CharArea.End.y   -= Width + CStat->W_Space;
 					break;
-				case Deg180:
+				case DEG180:
 					CharArea.End.x   -= Width + CStat->W_Space;
 					break;
-				case Deg270:
+				case DEG270:
 					CharArea.Start.y += Width + CStat->W_Space;
 					break;
 			}
@@ -574,16 +574,16 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, s32 Limit, Lid Lang)
 			{
 				switch(CStat->Rotate)
 				{
-					case Deg0:
+					case DEG0:
 						CharArea.Start.x += Width + CStat->W_Space;
 						break;
-					case Deg90:
+					case DEG90:
 						CharArea.End.y   -= Width + CStat->W_Space;
 						break;
-					case Deg180:
+					case DEG180:
 						CharArea.End.x   -= Width + CStat->W_Space;
 						break;
-					case Deg270:
+					case DEG270:
 						CharArea.Start.y += Width + CStat->W_Space;
 						break;
 				}
@@ -597,7 +597,7 @@ u32 iPrint(char* Str, VirScreen* Screen, CharStat* CStat, s32 Limit, Lid Lang)
 
 u32 SimPrint(char* Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang)
 {
-	VirScreen vscr={x, y, Dev->Width-x, Dev->Height-y, {{0,0},{0,0}}, Deg0, Dev}; InitVS(&vscr);
-	CharStat CS = { Color, PA_RGB(31,31,31), 0, Deg0, NONE, 0, 0, 0, &terminus12regular};
-	return iPrint(Str, &vscr, &CS, -1, Lang);
+	VirScreen VScreen = {x, y, Dev->Width-x, Dev->Height-y, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
+	CharStat CharStat = { Color, PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
+	return iPrint(Str, &VScreen, &CharStat, -1, Lang);
 }

@@ -22,28 +22,28 @@ BLOCK CreateBlock(s32 xoff, s32 yoff, s32 w, s32 h)
 	return result;
 }
 
-BLOCK Intersection(BLOCK BLK1,BLOCK BLK2)
+BLOCK Intersection(BLOCK Area1,BLOCK Area2)
 {
 	BLOCK Result;
-	Result.Start.x=((BLK1.Start.x>BLK2.Start.x)?BLK1.Start.x:BLK2.Start.x);
-	Result.Start.y=((BLK1.Start.y>BLK2.Start.y)?BLK1.Start.y:BLK2.Start.y);
-	Result.End  .x=((BLK1.End  .x<BLK2.End  .x)?BLK1.End.  x:BLK2.End.  x);
-	Result.End  .y=((BLK1.End  .y<BLK2.End  .y)?BLK1.End.  y:BLK2.End.  y);
+	Result.Start.x=((Area1.Start.x>Area2.Start.x)?Area1.Start.x:Area2.Start.x);
+	Result.Start.y=((Area1.Start.y>Area2.Start.y)?Area1.Start.y:Area2.Start.y);
+	Result.End  .x=((Area1.End  .x<Area2.End  .x)?Area1.End.  x:Area2.End.  x);
+	Result.End  .y=((Area1.End  .y<Area2.End  .y)?Area1.End.  y:Area2.End.  y);
 	return Result;
 }
 
-void DrawPoint(VirScreen* Graphic, s32 X, s32 Y, u16 Color)
+void DrawPoint(VirScreen* VScreen, s32 X, s32 Y, u16 Color)
 {
-	if((X>=0)&&(Y>=0)&&(X<Graphic->Width)&&(Y<Graphic->Height))
+	if((X>=0)&&(Y>=0)&&(X<VScreen->Width)&&(Y<VScreen->Height))
 	{
-		if((Graphic->Left+X>=0)&&(Graphic->Top+Y>=0)&&(Graphic->Left+X<Graphic->Screen->Width)&&(Graphic->Top+Y<Graphic->Screen->Height))
+		if((VScreen->Left+X>=0)&&(VScreen->Top+Y>=0)&&(VScreen->Left+X<VScreen->Screen->Width)&&(VScreen->Top+Y<VScreen->Screen->Height))
 		{
-			PA_Put16bitPixel(Graphic->Screen->DID,Graphic->Left+X,Graphic->Top+Y,Color);
+			PA_Put16bitPixel(VScreen->Screen->DID,VScreen->Left+X,VScreen->Top+Y,Color);
 		}
 	}
 }
 
-void DrawBlock(VirScreen* Graphic, BLOCK Area, u16 Color, u8 Fill)
+void DrawBlock(VirScreen* VScreen, BLOCK Area, u16 Color, u8 Fill)
 {
 	s32 ASx = Area.Start.x;
 	s32 AEx = Area.End.x;
@@ -57,18 +57,18 @@ void DrawBlock(VirScreen* Graphic, BLOCK Area, u16 Color, u8 Fill)
 
 		if(Fill)
 		{
-			s32 Gw    = Graphic->Width;
-			s32 Gh    = Graphic->Height;
+			s32 Gw    = VScreen->Width;
+			s32 Gh    = VScreen->Height;
 			if (Area.Start.x                 < 0)                        Area.Start.x = 0;
 			if (Area.Start.y                 < 0)                        Area.Start.y = 0;
-			if (Area.End.x                   >= Gw)                      Area.End.x   = Graphic->Width-1;
-			if (Area.End.y                   >= Gh)                      Area.End.y   = Graphic->Height-1;
-			if (Area.Start.x + Graphic->Left < 0)                        Area.Start.x = -Graphic->Left;
-			if (Area.Start.y + Graphic->Top  < 0)                        Area.Start.y = -Graphic->Top;
-			if (Area.End.x   + Graphic->Left >= Graphic->Screen->Width)  Area.End.x   = Graphic->Screen->Width-Graphic->Left-1;
-			if (Area.End.y   + Graphic->Top  >= Graphic->Screen->Height) Area.End.y   = Graphic->Screen->Height-Graphic->Top-1;
+			if (Area.End.x                   >= Gw)                      Area.End.x   = VScreen->Width-1;
+			if (Area.End.y                   >= Gh)                      Area.End.y   = VScreen->Height-1;
+			if (Area.Start.x + VScreen->Left < 0)                        Area.Start.x = -VScreen->Left;
+			if (Area.Start.y + VScreen->Top  < 0)                        Area.Start.y = -VScreen->Top;
+			if (Area.End.x   + VScreen->Left >= VScreen->Screen->Width)  Area.End.x   = VScreen->Screen->Width-VScreen->Left-1;
+			if (Area.End.y   + VScreen->Top  >= VScreen->Screen->Height) Area.End.y   = VScreen->Screen->Height-VScreen->Top-1;
 
-			u16* DISPLAY=(u16*)Graphic->Screen->Ptr;
+			u16* DISPLAY=(u16*)VScreen->Screen->Ptr;
 			u8 First=1;
 
 			for(H=Area.Start.y;H<=Area.End.y;H++)
@@ -77,14 +77,14 @@ void DrawBlock(VirScreen* Graphic, BLOCK Area, u16 Color, u8 Fill)
 				{
 					for(W=Area.Start.x;W<=Area.End.x;W++)
 					{
-						DrawPoint(Graphic,W,Area.Start.y,Color);
+						DrawPoint(VScreen,W,Area.Start.y,Color);
 					}
 					First=0;
 				}
 				else
 				{
-					DMA_Copy(&DISPLAY[(Graphic->Top+Area.Start.y) * Graphic->Screen->Width + Area.Start.x+Graphic->Left],
-					         &DISPLAY[(Graphic->Top+H)            * Graphic->Screen->Width + Area.Start.x+Graphic->Left],
+					DMA_Copy(&DISPLAY[(VScreen->Top+Area.Start.y) * VScreen->Screen->Width + Area.Start.x+VScreen->Left],
+					         &DISPLAY[(VScreen->Top+H)            * VScreen->Screen->Width + Area.Start.x+VScreen->Left],
 					         Area.End.x-Area.Start.x+1,
 				             DMA_16NOW);
 				}
@@ -94,19 +94,19 @@ void DrawBlock(VirScreen* Graphic, BLOCK Area, u16 Color, u8 Fill)
 		{
 			for(W=Area.Start.x;W<=Area.End.x;W++)
 			{
-				DrawPoint(Graphic,W,Area.Start.y,Color);
-				DrawPoint(Graphic,W,Area.End.y,Color);
+				DrawPoint(VScreen,W,Area.Start.y,Color);
+				DrawPoint(VScreen,W,Area.End.y,Color);
 			}
 			for(H=Area.Start.y+1;H<Area.End.y;H++)
 			{
-				DrawPoint(Graphic,Area.Start.x,H,Color);
-				DrawPoint(Graphic,Area.End.x,  H,Color);
+				DrawPoint(VScreen,Area.Start.x,H,Color);
+				DrawPoint(VScreen,Area.End.x,  H,Color);
 			}
 		}
 	}
 }
 
-void DrawEmboss(VirScreen* Graphic, BLOCK Area, u16 Color)
+void DrawEmboss(VirScreen* VScreen, BLOCK Area, u16 Color)
 {
 	if ((Area.Start.x<=Area.End.x)&&(Area.Start.y<=Area.End.y)) // Regular Block
 	{
@@ -121,29 +121,29 @@ void DrawEmboss(VirScreen* Graphic, BLOCK Area, u16 Color)
 		B=B*7/10;
 		TempColor=R<<10|G<<5|B;
 
-		DrawBlock(Graphic,Area,Color,1);
+		DrawBlock(VScreen,Area,Color,1);
 		for(W=Area.Start.x+1;W<Area.End.x;W++)
 		{
-			DrawPoint(Graphic,W,Area.Start.y+1,0xFFFF);
-			DrawPoint(Graphic,W,Area.End.y-1,TempColor);
+			DrawPoint(VScreen,W,Area.Start.y+1,0xFFFF);
+			DrawPoint(VScreen,W,Area.End.y-1,TempColor);
 		}
 		for(W=Area.Start.x;W<Area.End.x;W++)
 		{
-			DrawPoint(Graphic,W,Area.End.y,0x8000);
+			DrawPoint(VScreen,W,Area.End.y,0x8000);
 		}
 		for(H=Area.Start.y;H<Area.End.y+1;H++)
 		{
-			DrawPoint(Graphic,Area.End.x,H,0x8000);
+			DrawPoint(VScreen,Area.End.x,H,0x8000);
 		}
 		for(H=Area.Start.y+1;H<Area.End.y-1;H++)
 		{
-			DrawPoint(Graphic,Area.Start.x+1,H,0xFFFF);
-			DrawPoint(Graphic,Area.End.x-1,H,TempColor);
+			DrawPoint(VScreen,Area.Start.x+1,H,0xFFFF);
+			DrawPoint(VScreen,Area.End.x-1,H,TempColor);
 		}
 	}
 }
 
-void DrawGroove(VirScreen* Graphic, BLOCK Area, u16 Color)
+void DrawGroove(VirScreen* VScreen, BLOCK Area, u16 Color)
 {
 	if ((Area.Start.x<=Area.End.x)&&(Area.Start.y<=Area.End.y)) // Regular Block
 	{
@@ -158,45 +158,46 @@ void DrawGroove(VirScreen* Graphic, BLOCK Area, u16 Color)
 		B>>=1;
 		TempColor=R<<10|G<<5|B;
 
-		DrawBlock(Graphic,Area,Color,1);
+		DrawBlock(VScreen,Area,Color,1);
 		for(W=Area.Start.x+1;W<Area.End.x;W++)
 		{
-			DrawPoint(Graphic,W,Area.Start.y+1,0x8000);
-			DrawPoint(Graphic,W,Area.End.y-1,TempColor);
+			DrawPoint(VScreen,W,Area.Start.y+1,0x8000);
+			DrawPoint(VScreen,W,Area.End.y-1,TempColor);
 		}
 		for(W=Area.Start.x;W<Area.End.x;W++)
 		{
-			DrawPoint(Graphic,W,Area.Start.y,TempColor);
+			DrawPoint(VScreen,W,Area.Start.y,TempColor);
 		}
 		for(H=Area.Start.y;H<Area.End.y+1;H++)
 		{
-			DrawPoint(Graphic,Area.Start.x,H,TempColor);
+			DrawPoint(VScreen,Area.Start.x,H,TempColor);
 		}
 		for(H=Area.Start.y+1;H<Area.End.y-1;H++)
 		{
-			DrawPoint(Graphic,Area.Start.x+1,H,0x8000);
-			DrawPoint(Graphic,Area.End.x-1,H,TempColor);
+			DrawPoint(VScreen,Area.Start.x+1,H,0x8000);
+			DrawPoint(VScreen,Area.End.x-1,H,TempColor);
 		}
 	}
 }
 
-void FillVS(VirScreen* Graphic, u16 Color) {
-	BLOCK fullVS = {{0,0},{Graphic->Width-1,Graphic->Height-1}};
-	DrawBlock(Graphic,fullVS,Color,1);
+void FillVS(VirScreen* VScreen, u16 Color)
+{
+	BLOCK fullVS = {{0,0},{VScreen->Width-1,VScreen->Height-1}};
+	DrawBlock(VScreen,fullVS,Color,1);
 }
 
-void InitVS(VirScreen* VS)
+void InitVS(VirScreen* VScreen)
 {
-	VS->Bound.Start.x = VS->Left;
-	VS->Bound.Start.y = VS->Top;
-	VS->Bound.  End.x = VS->Left + VS->Width-1;
-	VS->Bound.  End.y = VS->Top  + VS->Height-1;
+	VScreen->Bound.Start.x = VScreen->Left;
+	VScreen->Bound.Start.y = VScreen->Top;
+	VScreen->Bound.  End.x = VScreen->Left + VScreen->Width - 1;
+	VScreen->Bound.  End.y = VScreen->Top  + VScreen->Height - 1;
 }
 
-void InitVS2(VirScreen* VS)
+void InitVS2(VirScreen* VScreen)
 {
-	VS->Left   = VS->Bound.Start.x;
-	VS->Top    = VS->Bound.Start.y;
-	VS->Width  = VS->Bound.End.x-VS->Left +1;
-	VS->Height = VS->Bound.End.y-VS->Top +1;
+	VScreen->Left   = VScreen->Bound.Start.x;
+	VScreen->Top    = VScreen->Bound.Start.y;
+	VScreen->Width  = VScreen->Bound.End.x - VScreen->Left + 1;
+	VScreen->Height = VScreen->Bound.End.y - VScreen->Top + 1;
 }

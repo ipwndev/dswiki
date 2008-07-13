@@ -31,7 +31,6 @@ typedef struct
 	u32     Width;
 	u32     Height;
 	BLOCK   Bound;
-	u8      Rotate;
 	Device* Screen;
 } VirScreen;
 
