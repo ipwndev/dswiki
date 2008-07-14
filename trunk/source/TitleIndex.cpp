@@ -136,10 +136,10 @@ ArticleSearchResult* TitleIndex::FindArticle(char* title, bool multiple)
 		return NULL;
 
 	FILE* f = fopen(_indexFileName, "rb");
-
 	if ( !f )
 		return NULL;
-	char lowercaseTitle[500] = "";
+
+	char lowercaseTitle[1000] = "";
 	PA_CopyText(lowercaseTitle, title);
 	strlwr(lowercaseTitle);
 
@@ -264,6 +264,176 @@ ArticleSearchResult* TitleIndex::FindArticle(char* title, bool multiple)
 	return NULL;
 }
 
+char* TitleIndex::GetSuggestions(char* phrase, int maxSuggestions)
+{
+	char suggestions[1000] = "";
+
+	if ( _numberOfArticles<=0  )
+		return suggestions;
+
+	FILE* f = fopen(_indexFileName, "rb");
+	if ( !f )
+		return suggestions;
+
+	int indexNo = 1;
+	if ( !_indexPos_1 )
+		indexNo = 0;
+
+	char lowercasePhrase[1000] = "";
+	strcpy(lowercasePhrase,phrase);
+	strlwr(lowercasePhrase); // TODO
+
+	int phraseLength = strlen(phrase);
+	if ( phraseLength==0 )
+		return suggestions;
+
+	int foundAt = -1;
+	int lBound = 0;
+	int uBound = _numberOfArticles - 1;
+	int index = 0;
+	char* titleAtIndex;
+
+	while ( lBound<=uBound )
+	{
+		index = (lBound + uBound) >> 1;
+
+		// get the title at the specific index
+		titleAtIndex = GetTitle(f, index, indexNo);
+		strlwr(titleAtIndex); // TODO
+
+		if ( strcmp(lowercasePhrase,titleAtIndex) < 0)
+			uBound = index - 1;
+		else if ( strcmp(lowercasePhrase,titleAtIndex) > 0 )
+			lBound = index + 1;
+		else
+		{
+			foundAt = index;
+			break;
+		}
+	}
+
+	if ( foundAt<0 ) // not found
+	{
+		if ( strlen(titleAtIndex) > phraseLength )
+			titleAtIndex[phraseLength] = '\0';
+
+		if ( strcmp(lowercasePhrase,titleAtIndex) > 0 )
+		{
+			// last one?
+			if ( index==_numberOfArticles-1)
+			{
+				fclose(f);
+				return suggestions;
+			}
+
+			// no
+			index++;
+			titleAtIndex = GetTitle(f, index, indexNo);
+
+			strlwr(titleAtIndex); // TODO
+
+			if ( strlen(titleAtIndex) > phraseLength )
+				titleAtIndex[phraseLength] = '\0';
+
+			if ( strcmp(lowercasePhrase,titleAtIndex)!=0 )
+			{
+				// still not starting with the phrase?
+				fclose(f);
+				return suggestions;
+			}
+		}
+		else if ( strcmp(lowercasePhrase,titleAtIndex)<0 )
+		{
+			// first one?
+			if ( index==0 )
+			{
+				fclose(f);
+				return suggestions;
+			}
+
+			// no
+			index--;
+			titleAtIndex = GetTitle(f, index, indexNo);
+			strlwr(titleAtIndex); // TODO
+
+			if ( strlen(titleAtIndex) > phraseLength )
+				titleAtIndex[phraseLength] = '\0';
+
+			if ( strcmp(lowercasePhrase,titleAtIndex)!=0 )
+			{
+				// still not starting with the phrase?
+				fclose(f);
+				return suggestions;
+			}
+		}
+
+		foundAt = index;
+	}
+
+	// go to the first article which starts with the phrase
+	int startIndex = foundAt;
+	while ( startIndex>0 )
+	{
+		titleAtIndex = GetTitle(f, startIndex-1, indexNo);
+		strlwr(titleAtIndex); // TODO
+
+		if ( strlen(titleAtIndex)>phraseLength )
+			titleAtIndex[phraseLength] = '\0';
+
+		if ( strcmp(lowercasePhrase,titleAtIndex)!=0 )
+			break;
+
+		startIndex--;
+	}
+
+	int results = 0;
+	while ( startIndex<(_numberOfArticles-1) && results<maxSuggestions )
+	{
+		char* suggestion = GetTitle(f, startIndex, indexNo);
+
+		PA_CopyText(titleAtIndex,suggestion);
+		strlwr(titleAtIndex); // TODO
+
+// 		if ( strlen(titleAtIndex)>phraseLength )
+// 			titleAtIndex[phraseLength] = '\0';
+
+// 		if ( strcmp(lowercasePhrase,titleAtIndex)!=0 )
+// 			break;
+
+		int tempLen = strlen(suggestions);
+ 		if ( tempLen > 0 )
+		{
+			suggestions[tempLen++] = '\n';
+		}
+		strncpy(&suggestions[tempLen],suggestion,strlen(suggestion)+1);
+
+
+		startIndex++;
+		results++;
+	}
+
+	if ( (results==maxSuggestions) && (startIndex<(_numberOfArticles+1)) )
+	{
+		// check if the next would also meet
+		startIndex++;
+
+		char* suggestion = GetTitle(f, startIndex, indexNo);
+		strcpy(titleAtIndex,suggestion);
+		strlwr(titleAtIndex);
+
+		if ( strlen(titleAtIndex)>phraseLength )
+			titleAtIndex[phraseLength] = '\0';
+
+		// yes, add an empty line at the end of the list
+// 		if ( strcmp(lowercasePhrase,titleAtIndex)==0 )
+// 			suggestions += "\n";
+	}
+
+	fclose(f);
+
+	return suggestions;
+}
+
 ArticleSearchResult* TitleIndex::isRedirect(char* markup)
 {
 	int markupLength = strlen(markup);
@@ -273,7 +443,6 @@ ArticleSearchResult* TitleIndex::isRedirect(char* markup)
 		redirectStelle = strstr(markup,"#REDIRECT");
 
 	if (redirectStelle==NULL) {
-// 		PA_OutputText(1,0,12,"Behalte Ergebnis");
 		return NULL;
 	}
 	else
@@ -282,7 +451,6 @@ ArticleSearchResult* TitleIndex::isRedirect(char* markup)
 		redirectStelle+=12;
 		while (redirectStelle[-2]!='[' || redirectStelle[-1]!='[')
 			redirectStelle++;
-// 		PA_OutputText(1,0,12,redirectStelle);
 		int i = 0;
 		while ((redirectStelle[i]!=']') || (redirectStelle[i+1]!=']'))
 		{
@@ -290,8 +458,6 @@ ArticleSearchResult* TitleIndex::isRedirect(char* markup)
 			i++;
 		}
 		redirectTitel[i] = '\0';
-// 		PA_OutputText(1,0,13,redirectTitel);
-// 		PA_Sleep(180);
 		return FindArticle(redirectTitel);
 	}
 }
