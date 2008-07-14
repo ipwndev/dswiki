@@ -34,9 +34,9 @@ int main(int argc, char ** argv)
 	VirScreen  Statusbar    = { 2, 178, 252,  12, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
 	VirScreen  StatusbarD   = { 0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&StatusbarD);
 
-	CharStat   TitlebarCS   = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12regular};
-	CharStat   ContentCS    = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
-	CharStat   StatusbarCS  = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12regular};
+	CharStat   TitlebarCS   = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12regular};
+	CharStat   ContentCS    = { PA_RGB( 0, 0, 0), PA_RGB(21,21,21), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
+	CharStat   StatusbarCS  = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12regular};
 
 	FillVS(&TitlebarD, PA_RGB( 9,16,28));
 	FillVS(&StatusbarD,PA_RGB(26,26,26));
@@ -51,14 +51,14 @@ int main(int argc, char ** argv)
 	char* markup = NULL;
 
 	FillVS(&Statusbar,PA_RGB(26,26,26));
-	iPrint("Lade \"dewiki.dat\"...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
+	iPrint("Lade \"dewiki.dat\"...",&Statusbar,&StatusbarCS,-1,UTF8);
 	TitleIndex* titleIndex = new TitleIndex("dewiki.dat","dewiki.idx");
-	iPrint("Lade \"dewiki.dat\"...OK!",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
+	iPrint("Lade \"dewiki.dat\"...OK!",&Statusbar,&StatusbarCS,-1,UTF8);
 
 	FillVS(&Statusbar,PA_RGB(26,26,26));
-	iPrint("Initialisiere MarkupGetter...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
+	iPrint("Initialisiere MarkupGetter...",&Statusbar,&StatusbarCS,-1,UTF8);
 	WikiMarkupGetter* mg = new WikiMarkupGetter("de");
-	iPrint("Initialisiere MarkupGetter...OK!",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
+	iPrint("Initialisiere MarkupGetter...OK!",&Statusbar,&StatusbarCS,-1,UTF8);
 
 	int count = 0;
 	int zeile = 0;
@@ -72,18 +72,18 @@ int main(int argc, char ** argv)
 
 	while(1) {
 		FillVS(&Statusbar,PA_RGB(26,26,26));
-		iPrint("Bitte warten...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
+		iPrint("Bitte warten...",&Statusbar,&StatusbarCS,-1,UTF8);
 		titleIndex->DeleteSearchResult(suchergebnis);
 		if (nletter==0)
 		{
 			FillVS(&Statusbar,PA_RGB(26,26,26));
-			iPrint("Suche zufälligen Artikel...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
+			iPrint("Suche zufälligen Artikel...",&Statusbar,&StatusbarCS,-1,UTF8);
 			suchergebnis = titleIndex->GetRandomArticle();
 		}
 		else
 		{
 			FillVS(&Statusbar,PA_RGB(26,26,26));
-			iPrint("Suche Artikel...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
+			iPrint("Suche Artikel...",&Statusbar,&StatusbarCS,-1,UTF8);
 			suchergebnis = titleIndex->FindArticle(text);
 		}
 
@@ -91,7 +91,7 @@ int main(int argc, char ** argv)
 		{
 			count++;
 			FillVS(&Statusbar,PA_RGB(26,26,26));
-			iPrint("Hole Markup...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
+			iPrint("Hole Markup...",&Statusbar,&StatusbarCS,-1,UTF8);
 			free(markup);
 			markup = mg->GetMarkupForArticle(suchergebnis);
 
@@ -101,27 +101,28 @@ int main(int argc, char ** argv)
 				ArticleSearchResult* temp = suchergebnis;
 				suchergebnis = redirection;
 				FillVS(&Statusbar,PA_RGB(26,26,26));
-				iPrint("Folge Umleitung...",&Statusbar,&StatusbarCS,PA_RGB(5,5,5),UTF8);
+				iPrint("Folge Umleitung...",&Statusbar,&StatusbarCS,-1,UTF8);
 				titleIndex->DeleteSearchResult(temp);
 				markup = mg->GetMarkupForArticle(suchergebnis);
 			}
 
 			FillVS(&Titlebar,PA_RGB(9,16,28));
-			iPrint(suchergebnis->Title(),&Titlebar,&TitlebarCS,-1,UTF8);
+			iPrint(suchergebnis->TitleInArchive(),&Titlebar,&TitlebarCS,-1,UTF8);
 			FillVS(&Statusbar,PA_RGB(26,26,26));
 			offset = 0;
 			FillVS(&ContentWin1,PA_RGB(31,31,31));
-			numOut = iPrint(markup, &ContentWin1,&ContentCS,PA_RGB(0,0,0),UTF8);
+			numOut = iPrint(markup, &ContentWin1,&ContentCS,-1,UTF8);
 			FillVS(&ContentWin2,PA_RGB(31,31,31));
-			numOut += iPrint(markup+numOut, &ContentWin2,&ContentCS,PA_RGB(0,0,0),UTF8);
+			iPrint(markup+numOut, &ContentWin2,&ContentCS,-1,UTF8);
 
 		}
 		else
 		{
-// 			PA_OutputText(1,21,3,"%c1Fehler");
+			FillVS(&Statusbar,PA_RGB(26,26,26));
+			iPrint("Artikel nicht gefunden...",&Statusbar,&StatusbarCS,-1,UTF8);
 		}
 
-		while (!Pad.Newpress.A)
+		while ((!Pad.Newpress.A)&&(letter!='\n'))
 		{
 			if (Pad.Newpress.X)
 			{
@@ -133,6 +134,9 @@ int main(int argc, char ** argv)
 				else {
 					keyboardActive = true;
 					PA_KeyboardIn(24, 95);
+					nletter=0;
+					text[nletter] = '\0';
+					PA_Clear16bitBg(1);
 
 					while(1) {
 						letter = PA_CheckKeyboard();
@@ -140,18 +144,19 @@ int main(int argc, char ** argv)
 						if (letter > 31) { // there is a new letter
 							text[nletter] = letter;
 							nletter++;
-						}
-						else if(letter == PA_TAB){// TAB Pressed...
-							u8 i;
-							for (i = 0; i < 4; i++){ // put 4 spaces...
-								text[nletter] = ' ';
-								nletter++;
-							}
-
+							text[nletter] = '\0';
+							FillVS(&Titlebar,PA_RGB(31,31,31));
+							iPrint(text,&Titlebar,&ContentCS,-1,UTF8);
+							FillVS(&ContentWin1,PA_RGB(31,31,31));
+							iPrint(titleIndex->GetSuggestions(text,10),&ContentWin1,&ContentCS,-1,UTF8);
 						}
 						else if ((letter == PA_BACKSPACE)&&nletter) { // Backspace pressed
 							nletter--;
-							text[nletter] = ' '; // Erase the last letter
+							text[nletter] = '\0'; // Erase the last letter
+							FillVS(&Titlebar,PA_RGB(31,31,31));
+							iPrint(text,&Titlebar,&ContentCS,-1,UTF8);
+							FillVS(&ContentWin1,PA_RGB(31,31,31));
+							iPrint(titleIndex->GetSuggestions(text,10),&ContentWin1,&ContentCS,-1,UTF8);
 						}
 						else if ((letter == '\n') || Pad.Newpress.X ) { // Enter pressed
 							text[nletter] = '\0';
@@ -161,7 +166,6 @@ int main(int argc, char ** argv)
 							break;
 						}
 
-						PA_OutputSimpleText(1, 8, 11, text); // Write the text
 						PA_WaitForVBL();
 					}
 
@@ -173,13 +177,12 @@ int main(int argc, char ** argv)
 				if (offset>=suchergebnis->ArticleLength())
 					offset = 0;
 				FillVS(&ContentWin1,PA_RGB(31,31,31));
-				numOut = iPrint(markup+offset, &ContentWin1,&ContentCS,PA_RGB(0,0,0),UTF8);
+				numOut = iPrint(markup+offset, &ContentWin1,&ContentCS,-1,UTF8);
 				FillVS(&ContentWin2,PA_RGB(31,31,31));
-				numOut += iPrint(markup+offset+numOut, &ContentWin2,&ContentCS,PA_RGB(0,0,0),UTF8);
-				PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();
-				PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();PA_WaitForVBL();
+				iPrint(markup+offset+numOut, &ContentWin2,&ContentCS,-1,UTF8);
 			}
 		}
+		letter = 0;
 		PA_WaitForVBL();
 	}
 

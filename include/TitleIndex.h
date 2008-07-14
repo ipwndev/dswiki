@@ -34,6 +34,8 @@ public:
 	ArticleSearchResult* FindArticle(char* title, bool multiple=false);
 	ArticleSearchResult* GetRandomArticle();
 	ArticleSearchResult* isRedirect(char* markup);
+	char* GetSuggestions(char* phrase, int maxSuggestions);
+
 	void	DeleteSearchResult(ArticleSearchResult* articleSearchResult);
 
 	char*	DataFileName();
