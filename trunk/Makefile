@@ -22,8 +22,8 @@ ADD_LIBS +=
 PATH 		:= $(DEVKITARM)/bin:$(PATH)
 
 TEXT1 		:=      DSWiki
-TEXT2 		:= Created with PALib
-TEXT3 		:=    OlliP*lli
+TEXT2 		:=Offline Wiki-Reader
+TEXT3 		:=   by OlliPolli
 ICON 		:= -b $(CURDIR)/../logo.bmp
 
 #---------------------------------------------------------------------------------
