@@ -1,0 +1,111 @@
+
+ DSwiki
+========
+
+DSwiki ist:
+- Ein Offline-Betrachter für WikiMarkup, also z.B. für die Wikipedia,
+  Wikibooks, Wiktionaries, ...
+
+DSwiki ist NICHT:
+- DSwiki ist kein Web-Browser, externe Links werden vermutlich nie
+  verfolgt werden.
+
+ Features
+==========
+
+- Sehr gute Unicode-Unterstützung
+
+ Installation
+==============
+
+1. Kopiert DSwiki.nds irgendwo auf Eure Flash-Karte, DLDI-patcht es
+   falls nötig.
+
+2. Bereitet einen Wikimedia-Dump vor, den ihr offline auf Euren DS
+   haben wollt. Diesen Schritt müsst Ihr nur einmal für jeden Dump
+   durchführen, aber natürlich erneut wenn Ihr eine aktuelle Fassung
+   installieren wollt.
+
+   a) Ladet einen komprimierten XML-Dump von http://dumps.wikimedia.org/
+      herunter. Für die deutsche Wikipedia also zum Beispiel
+
+      http://dumps.wikimedia.org/dewiki/latest/dewiki-latest-pages-articles.xml.bz2
+
+      Die "*-pages-articles.xml-bz2"-Version ist immer die Version die
+      Ihr braucht, die anderen enthalten falsche oder unnütze Infos!
+
+      Die komprimierte Datei sollte in etwa 1.2 GB groß sein.
+   
+   b) Jetzt kommt der erste trickreiche Teil:
+
+      Die Datei muss re-indiziert werden, dafür müsst ihr ein Tool
+      von http://code.google.com/p/wiki2touch/ laden. Windows- und MacOSX-
+      Nutzer nehmen die entsprechende "Wiki2TouchUtils_*.zip"-Datei aus
+      den "Featured Downloads", Linux-Nutzer checken den Quellcode per
+
+      svn checkout http://wiki2touch.googlecode.com/svn/trunk/ wiki2touch-read-only
+
+      aus, und kompilieren den Indexer mit "make" im "linux/indexer"
+      Verzeichnis.
+
+      WICHTIG: Ein Bilderindex muss nicht erstellt werden (-I unter Linux),
+      	       ein zweiter Index mit normalisierten Umlauten sollte erstellt
+	       werden (-d unter Linux).
+
+      Jetzt solltet Ihr eine ca. 1 GB große "articles.bin" besitzen.
+
+   c) Und es kommt noch dicker:
+
+      Die "articles.bin" muss in Daten und Index aufgespalten werden. Der
+      Grund dafür ist, dass man in einigermaßen erträglicher Zeit suchen kann,
+      denn die Suche im Index in der großen Datei ist LANGSAM! Dazu muss
+      ermittelt werden, wie groß der vordere Teil der Datei ist, der die
+      komprimierten Daten enthält. Diese Zahl steht an den Byte-Stellen 7-14
+      in der "articles.bin". Die Schritte im Groben:
+
+      Linux:
+      ------
+
+      Die Bytezahl kann ermittelt werden per
+
+      	  cat articles.bin | head -c 14 | tail -c 8 | od -A n -t d8
+
+      Anschließend kann man mittels
+	  
+          split -b $BYTES articles.bin
+
+      die Datei an der richtigen Stelle splitten (setzt für $BYTES die
+      ermittelte Zahl ein). Benennt die Dateien um:
+
+      	  mv xaa dewiki.dat
+	  mv xab dewiki.idx
+
+      Windows:
+      --------
+
+      Betrachtet die "articles.bin" mit einem Hex-Editor (der Total-Commander
+      [http://www.ghisler.com] bringt z.B. einen mit), sucht die Stellen
+      7-14, vermutlich sind nur ca. die ersten drei Stellen nicht "00".
+      Berechnet die erforderliche Bytezahl mit der Formel
+
+      (1. Stelle) * 1 + (2. Stelle * 256) + (3. Stelle) * 256 * 256 + ...
+
+      z.B. sind die entsprechenden Stellen 0E 3A 00 00 00 00 00 00, dann rechnet
+
+      0E = 14
+      3A = 58
+
+      BYTES = 14 + 58 * 256 = 14862
+
+      Spaltet dann die Datei hinter dieser Bytezahl (auch das kann der Total-
+      Commander).
+
+      Die große Datei die dabei entsteht nennt ihr "dewiki.dat", die zweite
+      kleinere soll "dewiki.idx" heißen.
+
+   d) Die beiden Dateien "dewiki.dat" und "dewiki.idx" müssen ins Ausgangs-
+      verzeichnis Eurer Flash-Karte.
+
+      WICHTIG: Die Namen sind momentan FEST vorgegeben, also nehmt "dewiki.*"
+      	       auch wenn ihr vielleicht ein englischen Wikibooks-Dump o.ä.
+	       verwendet!
