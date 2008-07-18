@@ -449,6 +449,10 @@ void TitleIndex::DeleteSearchResult(ArticleSearchResult* articleSearchResult)
 {
 	while ( articleSearchResult )
 	{
+		articleSearchResult = articleSearchResult->Previous;
+	}
+	while ( articleSearchResult )
+	{
 		ArticleSearchResult* help = articleSearchResult;
 		articleSearchResult = articleSearchResult->Next;
 

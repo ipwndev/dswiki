@@ -122,6 +122,8 @@ int main(int argc, char ** argv)
 					markup = mg->GetMarkupForArticle(suchergebnis);
 				}
 				FillVS(&Statusbar,PA_RGB(26,26,26));
+				nletter = 0;
+				suchtitel[0] = '\0';
 				offset = 0;
 				updateTitle = 1;
 				updateContent = 1;
@@ -205,6 +207,8 @@ int main(int argc, char ** argv)
 
 				if (searchSuggestions)
 				{
+					if (suggestions!=NULL)
+						titleIndex->DeleteSearchResult(suggestions);
 					suggestions = titleIndex->GetSuggestions(suchtitel,21);
 					updateSuggestions = 1;
 					searchSuggestions = 0;
@@ -212,16 +216,49 @@ int main(int argc, char ** argv)
 
 				if (updateSuggestions)
 				{
-					FillVS(&ContentWin1,PA_RGB(31,31,31));
-					u8 z = 0;
-					ArticleSearchResult* temp = suggestions;
-					while (temp!=NULL)
+					if (suggestions!=NULL)
 					{
-						iPrint(temp->TitleInArchive(),&ContentWin1,&ContentCS,2,2+10*z,-1,UTF8);
-						temp = temp->Next;
-						z++;
+						FillVS(&ContentWin1,PA_RGB(31,31,31));
+						s32 z = 0;
+						ArticleSearchResult* temp = suggestions;
+						while ((temp!=NULL)&&(z<14))
+						{
+							iPrint(temp->TitleInArchive(),&ContentWin1,&ContentCS,2,2+12*z,-1,UTF8);
+							temp = temp->Next;
+							z++;
+						}
 					}
 					updateSuggestions = 0;
+				}
+
+				if ((Pad.Newpress.Up||Pad.Held.Up))
+				{
+					if(suggestions->Previous!=NULL)
+					{
+						suggestions = suggestions->Previous;
+						PA_Sleep(6);
+						updateSuggestions = 1;
+					}
+				}
+
+				if ((Pad.Newpress.Down||Pad.Held.Down))
+				{
+					if(suggestions->Next!=NULL)
+					{
+						suggestions = suggestions->Next;
+						PA_Sleep(6);
+						updateSuggestions = 1;
+					}
+				}
+
+				if (Pad.Newpress.A)
+				{
+					if (suggestions!=NULL)
+					{
+						PA_CopyText(suchtitel,suggestions->TitleInArchive());
+					}
+					loadArticle = 1;
+					break;
 				}
 
 				if (countdown>0)

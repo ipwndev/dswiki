@@ -446,7 +446,7 @@ u32 iPrint(char* Str, VirScreen* VScreen, CharStat* CStat, s8 paddingX, s8 paddi
 			PrintArea.Start.x = paddingX;
 			PrintArea.Start.y = paddingY;
 			PrintArea.End.x   = VScreen->Width-1-paddingX;
-			PrintArea.End.y   = VScreen->Height-1-paddingY;
+			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.Start.x;
 			CharArea.Start    = PrintArea.Start;
 			break;
