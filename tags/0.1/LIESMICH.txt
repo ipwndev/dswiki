@@ -1,0 +1,170 @@
+ DSwiki
+========
+
+DSwiki ist ein Offline-Betrachter für WikiMarkup, also z.B. für die Wikipedia,
+Wikibooks, Wiktionaries, ...
+
+DSwiki ist KEIN Web-Browser!
+
+ Warum DSwiki
+==============
+
+DSwiki ist für alle, die mit ihrem DS gerne Zugriff auf Informationen haben,
+die aber dabei keinen direkten Zugang zum Internet haben. Bisher hat sich kein
+Programm angeboten um die Wikipedia auf dem DS darzustellen. NewDictS kann
+zwar einen unkomprimierten Dump anzeigen, dieser ist aber veraltet, und die
+Wikipedia ist seither stark gewachsen, so dass Komprimierung notwendig wurde.
+Außerdem können die meisten Homebrew-Programme nicht mit UTF-8 umgehen.
+
+ DSwiki basiert auf
+====================
+
+- NewDictS       (http://tvgame360.com.tw/viewthread.php?tid=21913&extra=&page=1),
+                 Dank an sesa für Grafik-/Unicode- und Schrift-Routinen
+- Wiki2Touch     (http://code.google.com/p/wiki2touch/),
+                 Dank an T. Haukap für Dateiformate und Index-Routinen
+- libbzip2       (http://bzip.org/)
+- Terminus Fonts (http://www.is-vn.bg/hamster/)
+
+ Features
+==========
+
+- Sehr gute Unicode/UTF8-Unterstützung (so viel, oder so wenig, wie der
+  zugrunde liegende Font abdeckt)
+
+ Geplante Features
+===================
+
+- Linkverfolgung
+- Verbesserte Suche (Erweiterte Eingabe, Übernahme der Suchvorschläge)
+- Navigation per Dokumentstruktur (Sprung zu Überschriften oder auch
+  Sprünge von Link zu Link wie in Textbrowsern)
+- Lesezeichen
+
+ Benutzung
+===========
+
+Im Moment kann DSwiki nicht mehr als das WikiMarkup von Artikel unformatiert
+anzeigen (Wort- und Zeilenumbrüche und ein proportionaler Font machen es aber
+leicht lesbar).
+
+DSwiki lässt sich folgendermaßen bedienen:
+
+Beim Programmstart wird ein zufälliger Artikel geladen.
+
+  A                 : Zum nächsten zufälligen Artikel
+
+  Pfeil nach rechts : Eine Seite vorwärts scrollen
+
+  X                 : Index-unterstützte Suche
+
+                      Über die Tastatur (noch kein Unicode) können Artikelnamen
+                      eingegeben werden, Return lädt den entsprechen Eintrag.
+                      Nach drei Sekunden ohne Eingabe werden Vorschläge
+                      angezeigt, allerdings ist dies momentan NUR eine Übersicht,
+                      der Artikelname muss trotzdem VOLLSTÄNDIG und KORREKT
+                      eingegeben werden. Groß/Klein ist egal, es sei denn es
+                      existieren verschiedene Schreibweisen eines Wortes.
+
+ Installation
+==============
+
+1. Kopiert DSwiki.nds irgendwo auf Eure Flash-Karte, DLDI-patcht es
+   falls nötig.
+
+2. Bereitet einen Wikimedia-Dump vor, den ihr offline auf Euren DS
+   haben wollt. Diesen Schritt müsst Ihr nur einmal für jeden Dump
+   durchführen, aber natürlich erneut wenn Ihr eine aktuelle Fassung
+   installieren wollt.
+
+   a) Ladet einen komprimierten XML-Dump von http://dumps.wikimedia.org/
+      herunter. Für die deutsche Wikipedia also zum Beispiel
+
+      http://dumps.wikimedia.org/dewiki/latest/dewiki-latest-pages-articles.xml.bz2
+
+      Die "*-pages-articles.xml-bz2"-Version ist immer die Version die
+      Ihr braucht, die anderen enthalten nicht die richtigen oder zuviele
+      Infos!
+
+      Die komprimierte Datei sollte in etwa 1.2 GB groß sein.
+
+   b) Jetzt kommt der erste trickreiche Teil:
+
+      Die Datei muss re-indiziert werden, dafür müsst ihr ein Tool
+      von http://code.google.com/p/wiki2touch/ laden. Windows- und MacOSX-
+      Nutzer nehmen die entsprechende "Wiki2TouchUtils_*.zip"-Datei aus
+      den "Featured Downloads", Linux-Nutzer checken den Quellcode per
+
+      svn checkout http://wiki2touch.googlecode.com/svn/trunk/ wiki2touch-read-only
+
+      aus, und kompilieren den Indexer mit "make" im "linux/indexer"
+      Verzeichnis.
+
+      WICHTIG: Ein Bilderindex muss nicht erstellt werden (-I unter Linux),
+      	       ein zweiter Index mit normalisierten Umlauten sollte erstellt
+	       werden (-d unter Linux).
+
+      Jetzt solltet Ihr eine ca. 1 GB große "articles.bin" besitzen.
+
+   c) Und es kommt noch dicker:
+
+      Die "articles.bin" muss in Daten und Index aufgespalten werden. Der
+      Grund dafür ist, dass man in einigermaßen erträglicher Zeit suchen kann,
+      denn die Suche im Index in der großen Datei ist LANGSAM! Dazu muss
+      ermittelt werden, wie groß der vordere Teil der Datei ist, der die
+      komprimierten Daten enthält. Diese Zahl steht an den Byte-Stellen 7-14
+      in der "articles.bin". Die Schritte im Groben:
+
+      Linux:
+      ------
+
+      Die Bytezahl kann ermittelt werden per
+
+      	  cat articles.bin | head -c 14 | tail -c 8 | od -A n -t d8
+
+      Anschließend kann man mittels
+
+          split -b $BYTES articles.bin
+
+      die Datei an der richtigen Stelle splitten (setzt für $BYTES die
+      ermittelte Zahl ein). Benennt die Dateien um:
+
+      	  mv xaa dewiki.dat
+	  mv xab dewiki.idx
+
+      Windows:
+      --------
+
+      Betrachtet die "articles.bin" mit einem Hex-Editor (der Total-Commander
+      [http://www.ghisler.com] bringt z.B. einen mit), sucht die Stellen
+      7-14, vermutlich sind nur ca. die ersten drei Stellen nicht "00".
+      Berechnet die erforderliche Bytezahl mit der Formel
+
+      (1. Stelle) * 1 + (2. Stelle * 256) + (3. Stelle) * 256 * 256 + ...
+
+      z.B. beginnt die Datei mit
+
+      Hex:       64 65 1D 00  00 00 0E 3A  00 00 00 00  00 00 AD 0D
+      Stelle:     1  2  3  4   5  6  7  8   9 10 11 12  13 14 15 16
+                                    |_______________________|
+
+      dann rechnet
+
+      0E = 14
+      3A = 58
+
+      BYTES = 14 + 58 * 256 = 14862
+
+      Spaltet dann die Datei hinter dieser Bytezahl (auch das kann der Total-
+      Commander).
+
+      Die große Datei (mit der oben ermittelten Byte-Größe) die dabei entsteht
+      nennt ihr "dewiki.dat", die zweite, kleinere, muss "dewiki.idx" heißen.
+
+   d) Die beiden Dateien "dewiki.dat" und "dewiki.idx" müssen ins Ausgangs-
+      verzeichnis Eurer Flash-Karte.
+
+      WICHTIG: Die Namen sind momentan FEST vorgegeben, also nehmt "dewiki.*"
+      	       auch wenn ihr vielleicht ein englischen Wikibooks-Dump o.ä.
+	       verwendet!
+
