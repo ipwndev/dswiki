@@ -78,7 +78,7 @@ in the "articles.bin".
 
  3A = 58
 
- BYTES = 14 + 58 * 256 = 14862
+ BYTES = 14 + 58 {{{*}}} 256 = 14862
 
  Split the file into files of this size (also possible with the Total Commander).
 
