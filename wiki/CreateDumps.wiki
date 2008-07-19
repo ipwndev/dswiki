@@ -11,61 +11,79 @@ Now, the first tricky part:
 
 The file must be re-indexed, we need a tool from http://code.google.com/p/wiki2touch/.
 
-Windows and MacOSX users take the appropriate "Wiki2TouchUtils_OS.zip" file, found at "Featured downloads", Linux users check out the source code by typing
+Windows and MacOSX users take the appropriate "Wiki2TouchUtils-?????.zip" file, found below "Featured downloads", Linux users check out the source code by typing
 
  {{{svn checkout http://wiki2touch.googlecode.com/svn/trunk/ wiki2touch-read-only}}}
 
-and compile the indexer with {{{make}}} in "linux / indexer" Directory.
+and compile the indexer with {{{make}}} in the "linux/indexer" directory.
 
-*IMPORTANT:* A picture index must not be created (switch: -I), a second index of normalized umlauts should be added (switch: -D).
+*IMPORTANT:* If it's possible, change
+
+{{{#define BZIP_BLOCK_SIZE_100K 9}}}
+
+to
+
+{{{#define BZIP_BLOCK_SIZE_100K 1}}}
+
+in "indexer.cpp" before compiling. This will result in larger files, but the memory used in the DS for uncompressing articles will be reduced.
+
+_*NOTE: I cannot guarantee that DSwiki, now and in the future, works with any other block size than 1 => 100KB. Use larger block sizes at your own risk.*_
+
+*IMPORTANT:* A picture index doesn't need to be created (switch: -I (capital i)), a second index of normalized umlauts should be added (switch: -d).
+
+Run the indexer and you should have a file named "articles.bin".
 
 ==Splitting the reindexed file==
- # And there is thicker:
- The "articles.bin" must be in data and index will be split up. The
- The reason is that in some time to search more bearable,
- because the search index in the large file is SLOWLY! It must
- find out how big the front part of the file is the
- compressed data. This figure is at the byte Places 7-14
- in the "articles.bin". The steps in the Rough:
-   * Linux:
-   The number of bytes may be measured by
-   {{{cat articles.bin | head -c 14 | tail -c 8 | od -A n -t d 8}}}
+And it gets even worse:
 
-       Then you can enter through
+The "articles.bin" must be split into a data file and an index. The reason is that in some time to search more bearable,
+because the search index in the large file is SLOWLY! It must
+find out how big the front part of the file is the
+compressed data. This figure is at the byte Places 7-14
+in the "articles.bin".
+ * Linux:
+ The number of bytes can be found by
 
-           b $ split-BYTES articles.bin
+ {{{cat articles.bin | head -c 14 | tail -c 8 | od -A n -t d8}}}
 
-       the file to the right place split (set for the $ BYTES
-       figure). Renames the files:
+ Then you can split the file by (exchange BYTES with the correct number)
 
-       MV xaa dewiki.dat
-MV xab dewiki.idx
+ {{{split -b BYTES articles.bin}}}
 
-       Windows:
-       --------
+ Renames the files:
 
-       If the "articles.bin" with a hex editor (the Total Commander
-       [http://www.ghisler.com] brings e.g. one with), looking for the bodies
-       7-14, are probably only about the first three places not "00".
-       Calculate the required number of bytes with the formula
+ {{{mv xaa dewiki.dat}}}
 
-       (1 point) * 1 + (2 * 256) + (3rd place) * 256 * 256 + ...
+ {{{mv xab dewiki.idx}}}
 
-       e.g. starts with the file
+ * Windows:
 
+ Open "articles.bin" with a hex editor (the Total Commander (http://www.ghisler.com) includes one), looking for the 7th to the 14th bytes (probably, only about the first three bytes are not equal to "00").
+
+ Calculate the required number of bytes with the formula
+
+ (1 point) {{{*}}} 1 + (2 {{{*}}} 256) + (3rd place) {{{*}}} 256 {{{*}}} 256 + ...
+
+ for example if the file starts with
+
+{{{
        Hex: 64 65 1D 00 00 00 0E 3A 00 00 00 00 00 00 AD 0D
        Station: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
                                      |_______________________|
+}}}
 
-       then calculates
+ then calculate
 
-       0E = 14
-       3A = 58
+ 0E = 14
 
-       BYTES = 14 + 58 * 256 = 14862
+ 3A = 58
 
-       Is the file behind this byte-count (also the total
-       Commander).
+ BYTES = 14 + 58 * 256 = 14862
 
-       The large file (with the above-identified byte size) is to
-       called her "dewiki.dat", the second, smaller, "dewiki.idx".
+ Split the file into files of this size (also possible with the Total Commander).
+
+ The large file (with the calculated byte size) must be renamed into "dewiki.dat", the smaller file should be renamed to "dewiki.idx".
+
+==Install==
+
+Copy "dewiki.dat" and "dewiki.idx" into the root directory of your flash card.
