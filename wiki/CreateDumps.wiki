@@ -1,63 +1,35 @@
-= Introduction =
+=How to create a custom dump file for the use in DSwiki=
 
-Add your content here.
+==Download==
 
+Download a compressed XML dump from http://dumps.wikimedia.org/.
 
-= Details =
+For the German Wikipedia, for example, download http://dumps.wikimedia.org/dewiki/latest/dewiki-latest-pages-articles.xml.bz2. You always need the ...-pages-articles.xml.bz2 version! The others files do not include the neccessary data, or have too much data in them.
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
-2nd Prepare a Wikimedia dump, with its offline on your DS
-    want to have. You need this step only once for each dump
-    , but of course again if you own a current version
-    want to install.
+==Reindexing the file==
+Now, the first tricky part:
 
-    a) Invite a compressed XML dump of http://dumps.wikimedia.org/
-       down. For the German Wikipedia, for example,
+The file must be re-indexed, we need a tool from http://code.google.com/p/wiki2touch/.
 
-       http://dumps.wikimedia.org/dewiki/latest/dewiki-latest-pages-articles.xml.bz2
+Windows and MacOSX users take the appropriate "Wiki2TouchUtils_OS.zip" file, found at "Featured downloads", Linux users check out the source code by typing
 
-       The pages-*- articles.xml-bz2 "version is the version that
-       You need, the others do not include the right or too many
-       Info!
+ {{{svn checkout http://wiki2touch.googlecode.com/svn/trunk/ wiki2touch-read-only}}}
 
-       The compressed file should be around 1.2 GB.
+and compile the indexer with {{{make}}} in "linux / indexer" Directory.
 
-    b) Now comes the first tricky part:
+*IMPORTANT:* A picture index must not be created (switch: -I), a second index of normalized umlauts should be added (switch: -D).
 
-       The file must be re-indexed, but we need a tool
-       by http://code.google.com/p/wiki2touch/ Laden. Windows and MacOSX -
-       Users take the appropriate "Wiki2TouchUtils_ *. zip" file
-       "Featured downloads," Linux users check the source code by
-
-       svn checkout http://wiki2touch.googlecode.com/svn/trunk/ wiki2touch-read-only
-
-       , and compile the indexer with "make" in "linux / indexer"
-       Directory.
-
-       IMPORTANT: A picture index must not be created (on Linux-I),
-       A second index of normalized umlauts should draw
-(D-under Linux).
-
-       Now you should about a 1 GB big "articles.bin".
-
-    c) And there is thicker:
-
-       The "articles.bin" must be in data and index will be split up. The
-       The reason is that in some time to search more bearable,
-       because the search index in the large file is SLOWLY! It must
-       find out how big the front part of the file is the
-       compressed data. This figure is at the byte Places 7-14
-       in the "articles.bin". The steps in the Rough:
-
-       Linux:
-       ------
-
-       The number of bytes may be measured by
-
-       cat articles.bin | head-c 14 | tail-c 8 | od-A n-t d8
+==Splitting the reindexed file==
+ # And there is thicker:
+ The "articles.bin" must be in data and index will be split up. The
+ The reason is that in some time to search more bearable,
+ because the search index in the large file is SLOWLY! It must
+ find out how big the front part of the file is the
+ compressed data. This figure is at the byte Places 7-14
+ in the "articles.bin". The steps in the Rough:
+   * Linux:
+   The number of bytes may be measured by
+   {{{cat articles.bin | head -c 14 | tail -c 8 | od -A n -t d 8}}}
 
        Then you can enter through
 
