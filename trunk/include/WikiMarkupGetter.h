@@ -2,21 +2,23 @@
 #define WIKIMARKUPGETTER_H
 
 #include "TitleIndex.h"
+#include <string>
 
 using namespace std;
 
 class WikiMarkupGetter
 {
 public:
-	WikiMarkupGetter(char* language_code);
+	WikiMarkupGetter(string basename);
 	~WikiMarkupGetter();
 
-	char* GetMarkupForArticle(ArticleSearchResult* articleSearchResult);
-	char* GetLastArticleTitle();
+	string GetMarkupForArticle(ArticleSearchResult* articleSearchResult);
+	string GetLastArticleTitle();
 
 private:
-	char* _languageCode;
-	char _lastArticleTitle[1001];
+	FILE*   _f_data;
+	string	_FileName_Data;
+	string _lastArticleTitle;
 };
 
 #endif

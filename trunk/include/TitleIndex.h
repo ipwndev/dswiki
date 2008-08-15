@@ -1,15 +1,18 @@
 #ifndef TITLEINDEX_H
 #define TITLEINDEX_H
 
+#include <fat.h>
+#include <string>
+
 using namespace std;
 
 class ArticleSearchResult
 {
 	public:
-		ArticleSearchResult(char* title, char* titleInArchive, fpos_t blockPos, int articlePos, int articleLength);
+		ArticleSearchResult(string title, string titleInArchive, fpos_t blockPos, int articlePos, int articleLength);
 
-		char* Title();
-		char* TitleInArchive();
+		string Title();
+		string TitleInArchive();
 
 		fpos_t BlockPos();
 		int ArticlePos();
@@ -19,8 +22,8 @@ class ArticleSearchResult
 		ArticleSearchResult* Next;
 
 	private:
-		char _title[1001];
-		char _titleInArchive[1001];
+		string _title;
+		string _titleInArchive;
 		fpos_t _blockPos;
 		int _articlePos;
 		int _articleLength;
@@ -29,41 +32,52 @@ class ArticleSearchResult
 class TitleIndex
 {
 public:
-	TitleIndex(char* nameOfDataFile, char* nameOfIndexFile);
+	TitleIndex(string basename);
 	~TitleIndex();
 
-	ArticleSearchResult* FindArticle(char* title, bool multiple=false);
+	ArticleSearchResult* FindArticle(string title, bool multiple=false);
 	ArticleSearchResult* GetRandomArticle();
-	ArticleSearchResult* isRedirect(char* markup);
-	ArticleSearchResult* GetSuggestions(char* phrase, int maxSuggestions);
+	ArticleSearchResult* isRedirect(string markup);
+	ArticleSearchResult* GetSuggestions(string phrase, int maxSuggestions);
 
 	void	DeleteSearchResult(ArticleSearchResult* articleSearchResult);
 
-	char*	DataFileName();
-	char*	IndexFileName();
+	string	HeaderFileName();
+	string	DataFileName();
+	string	DataIndexFileName();
+	string	Index0FileName();
+	string	Index1FileName();
 	int		NumberOfArticles();
-	char*	ImageNamespace();
-	char*	TemplateNamespace();
+	string	ImageNamespace();
+	string	TemplateNamespace();
 
 private:
-	char*	GetTitle(FILE* f, int articleNumber, int indexNo);
+	FILE*   _f_header;
+	FILE*   _f_data;
+	FILE*   _f_dataindex;
+	FILE*   _f_index0;
+	FILE*   _f_index1;
 
-	char*	_dataFileName;
-	char*	_indexFileName;
+	string	GetTitle(int articleNumber, int indexNo);
+
+	string	_FileName_Header;
+	string	_FileName_Data;
+	string	_FileName_DataIndex;
+	string	_FileName_Index0;
+	string	_FileName_Index1;
+
 	int		_numberOfArticles;
+	u8      _using_index1;
 	bool	isChinese;
 
 	fpos_t	_titlesPos;
-	fpos_t	_indexPos_0;
-	fpos_t	_indexPos_1;
 
 	fpos_t	_lastBlockPos;
 	int		_lastArticlePos;
 	int		_lastArticleLength;
 
-	char*	_imageNamespace;
-	char*	_templateNamespace;
-	int iterations;
+	string	_imageNamespace;
+	string	_templateNamespace;
 };
 
 #endif
