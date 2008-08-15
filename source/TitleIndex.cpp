@@ -23,61 +23,54 @@ typedef struct
 } FILEHEADER;
 
 
-TitleIndex::TitleIndex(char* nameOfDataFile, char* nameOfIndexFile)
+TitleIndex::TitleIndex(string basename)
 {
-	_imageNamespace = (char*) "";
-	_templateNamespace = (char*) "";
+	_imageNamespace = "";
+	_templateNamespace = "";
 	isChinese = false;
 
-	_dataFileName = nameOfDataFile;
-	_indexFileName = nameOfIndexFile;
-
 	_numberOfArticles = -1;
+	_using_index1 = 0;
 
-	_indexPos_0 = 0;
-	_indexPos_1 = 0;
+	_imageNamespace = "";
+	_templateNamespace = "";
 
-	_imageNamespace = (char*) "";
-	_templateNamespace = (char*) "";
+	_FileName_Header    = basename + ".ifo";
+	_FileName_Data      = basename + ".dbz";
+	_FileName_DataIndex = basename + ".idx";
+	_FileName_Index0    = basename + ".ao1";
+	_FileName_Index1    = basename + ".ao2";
+	_f_header           = fopen(_FileName_Header.c_str(),    "rb");
+	_f_data             = fopen(_FileName_Data.c_str(),      "rb");
+	_f_dataindex        = fopen(_FileName_DataIndex.c_str(), "rb");
+	_f_index0           = fopen(_FileName_Index0.c_str(),    "rb");
+	_f_index1           = fopen(_FileName_Index1.c_str(),    "rb");
 
-	// get the number of articles; this also checks if the files exists
-	FILE* f = fopen(_dataFileName, "rb");
-
-	if ( f )
+	if ( _f_header )
 	{
 		int error = 0;
 
 		FILEHEADER fileheader;
 
-		// if the old, short fileheader is used this will read over the end of the header
-		// no problem, if the file is less than 256 it's unuseable anyway
-		fread(&fileheader.languageCode,      2, 1, f);
-		fread(&fileheader.numberOfArticles,  4, 1, f);
-		fread(&fileheader.titlesPos,         8, 1, f);
-		fread(&fileheader.indexPos_0,        8, 1, f);
-		fread(&fileheader.indexPos_1,        8, 1, f);
-		fread(&fileheader.version,           1, 1, f);
-		fread(&fileheader.reserved1,         1, 1, f);
-		fread(&fileheader.imageNamespace,    32, 1, f);
-		fread(&fileheader.templateNamespace, 32, 1, f);
-		fread(&fileheader.reserved2,         160, 1, f);
+		fread(&fileheader.languageCode,      2, 1, _f_header);
+		fread(&fileheader.numberOfArticles,  4, 1, _f_header);
+		fread(&fileheader.titlesPos,         8, 1, _f_header);
+		fread(&fileheader.indexPos_0,        8, 1, _f_header);
+		fread(&fileheader.indexPos_1,        8, 1, _f_header);
+		fread(&fileheader.version,           1, 1, _f_header);
+		fread(&fileheader.reserved1,         1, 1, _f_header);
+		fread(&fileheader.imageNamespace,    32, 1, _f_header);
+		fread(&fileheader.templateNamespace, 32, 1, _f_header);
+		fread(&fileheader.reserved2,         160, 1, _f_header);
 
-		if ( !error )
+		_numberOfArticles  = fileheader.numberOfArticles;
+		_imageNamespace    = fileheader.imageNamespace;
+		_templateNamespace = fileheader.templateNamespace;
+
+		if (fileheader.indexPos_1)
 		{
-			_numberOfArticles = fileheader.numberOfArticles;
-			_indexPos_0 = fileheader.indexPos_0 - fileheader.titlesPos;
-
-			if ( fileheader.version==1 )
-			{
-				_indexPos_1 = fileheader.indexPos_1 - fileheader.titlesPos;
-				_imageNamespace = fileheader.imageNamespace;
-				_templateNamespace = fileheader.templateNamespace;
-			}
-
-			_titlesPos = 0x0;
+			_using_index1 = 1;
 		}
-
-		fclose(f);
 	}
 }
 
@@ -85,67 +78,62 @@ TitleIndex::~TitleIndex()
 {
 }
 
-char* TitleIndex::GetTitle(FILE* f, int articleNumber, int indexNo)
+string TitleIndex::GetTitle(int articleNumber, int indexNo)
 {
+	if ( _numberOfArticles<=0  )
+		return "";
+
 	_lastBlockPos = 0;
 	_lastArticlePos = 0;
 	_lastArticleLength = 0;
 
-	if ( !f || articleNumber<0 || articleNumber>=_numberOfArticles  )
-		return (char*) "";
+	if ((articleNumber<0) || (articleNumber>=_numberOfArticles))
+		return "";
 
-	int indexPos = _indexPos_0;
-	if ( indexNo==1 && _indexPos_1 )
-		indexPos = _indexPos_1;
+	FILE* f_index = _f_index0;
+	if ( indexNo==1 && _using_index1 )
+		f_index = _f_index1;
 
-	int error = fseek(f, indexPos + articleNumber*sizeof(int), SEEK_SET);
+	int error = fseek(f_index, articleNumber*sizeof(int), SEEK_SET);
 	if ( error )
 		return "";
 
 	int titlePos;
-	size_t read = fread(&titlePos, sizeof(int), 1, f);
+	size_t read = fread(&titlePos, sizeof(int), 1, f_index);
 
 	if ( !read )
 		return "";
 
-	error = fseek(f, _titlesPos + titlePos, SEEK_SET);
+	error = fseek(_f_dataindex, titlePos, SEEK_SET);
 	if ( error )
 		return "";
 
+	fread(&_lastBlockPos, 8, 1, _f_dataindex);
+	fread(&_lastArticlePos, 4, 1, _f_dataindex);
+	fread(&_lastArticleLength, 4, 1, _f_dataindex);
 
-	// store the article location and size for use in the future
-	fread(&_lastBlockPos, 8, 1, f);
-	fread(&_lastArticlePos, 4, 1, f);
-	fread(&_lastArticleLength, 4, 1, f);
-
-	char result[1001] = "";
+	_lastBlockPos -= 256;
+	string result;
 
 	char c = 0;
 	int i = 0;
 
-	while ((c=fgetc(f))&&(i<1000)) {
-		result[i++]=c;
+	while (c=fgetc(_f_dataindex)) {
+		result+=c;
 	}
-	result[i]='\0';
 
-	char* resptr = result;
-	return resptr;
+	return result;
 }
 
 
 //  to_lower_utf8(title)   :=   to_utf8(to_lower(from_utf8w(utf8_src)))
-ArticleSearchResult* TitleIndex::FindArticle(char* title, bool multiple)
+ArticleSearchResult* TitleIndex::FindArticle(string title, bool multiple)
 {
 	if ( _numberOfArticles<=0  )
 		return NULL;
 
-	FILE* f = fopen(_indexFileName, "rb");
-	if ( !f )
-		return NULL;
-
-	char lowercaseTitle[1001] = "";
-	PA_CopyText(lowercaseTitle, title);
-	strlwr(lowercaseTitle); // TODO CPPStringUtils::to_lower_utf8(title);
+	string lowercaseTitle = title;
+	strlwr(&lowercaseTitle.at(0)); // TODO CPPStringUtils::to_lower_utf8(title);
 
 	int indexNo = 0;
 	int foundAt = -1;
@@ -158,14 +146,14 @@ ArticleSearchResult* TitleIndex::FindArticle(char* title, bool multiple)
 		index = (lBound + uBound) >> 1;
 
 		// get the title at the specific index
-		char* titleAtIndex = GetTitle(f, index, indexNo);
+		string titleAtIndex = GetTitle(index, indexNo);
 
 		// make it lowercase and skip the prefix
-		strlwr(titleAtIndex); // TODO CPPStringUtils::to_lower_utf8(title);
+		strlwr(&titleAtIndex.at(0)); // TODO CPPStringUtils::to_lower_utf8(title);
 
-		if ( strcmp(lowercaseTitle,titleAtIndex)<0 )
+		if ( lowercaseTitle<titleAtIndex )
 			uBound = index - 1;
-		else if ( strcmp(lowercaseTitle,titleAtIndex)>0 )
+		else if ( lowercaseTitle>titleAtIndex )
 			lBound = ++index;
 		else
 		{
@@ -176,7 +164,6 @@ ArticleSearchResult* TitleIndex::FindArticle(char* title, bool multiple)
 
 	if ( foundAt<0 )
 	{
-		fclose(f);
 		return NULL;
 	}
 
@@ -184,10 +171,10 @@ ArticleSearchResult* TitleIndex::FindArticle(char* title, bool multiple)
 	int startIndex = foundAt;
 	while ( startIndex>0 )
 	{
-		char* titleAtIndex = GetTitle(f, startIndex-1, indexNo);
-		strlwr(titleAtIndex); // TODO CPPStringUtils::to_lower_utf8(titleAtIndex);
+		string titleAtIndex = GetTitle(startIndex-1, indexNo);
+		strlwr(&titleAtIndex.at(0)); // TODO CPPStringUtils::to_lower_utf8(titleAtIndex);
 
-		if ( strcmp(lowercaseTitle,titleAtIndex)!=0 )
+		if ( lowercaseTitle != titleAtIndex )
 			break;
 
 		startIndex--;
@@ -196,10 +183,10 @@ ArticleSearchResult* TitleIndex::FindArticle(char* title, bool multiple)
 	int endIndex = foundAt;
 	while ( endIndex<(_numberOfArticles-1) )
 	{
-		char* titleAtIndex = GetTitle(f, endIndex+1, indexNo);
-		strlwr(titleAtIndex); // TODO CPPStringUtils::to_lower_utf8(titleAtIndex);
+		string titleAtIndex = GetTitle(endIndex+1, indexNo);
+		strlwr(&titleAtIndex.at(0)); // TODO CPPStringUtils::to_lower_utf8(titleAtIndex);
 
-		if ( strcmp(lowercaseTitle,titleAtIndex)!=0 )
+		if ( lowercaseTitle != titleAtIndex )
 			break;
 
 		endIndex++;
@@ -214,25 +201,20 @@ ArticleSearchResult* TitleIndex::FindArticle(char* title, bool multiple)
 			// check if one matches 100%
 			for(int i=startIndex; i<=endIndex; i++)
 			{
-				char* titleInArchive = GetTitle(f, i, indexNo);
-				if ( strcmp(title,titleInArchive)==0 )
+				string titleInArchive = GetTitle(i, indexNo);
+				if ( title==titleInArchive )
 				{
-					fclose(f);
-
 					return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 				}
 			}
 
 			// nope, multiple matches
-			fclose(f);
-
 			return NULL;
 		}
 		else
 		{
 			// return the one and only result
-			char* titleInArchive = GetTitle(f, foundAt, indexNo);
-			fclose(f);
+			string titleInArchive = GetTitle(foundAt, indexNo);
 
 			return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 		}
@@ -242,14 +224,12 @@ ArticleSearchResult* TitleIndex::FindArticle(char* title, bool multiple)
 		ArticleSearchResult* result = NULL;
 		for(int i=startIndex; i<=endIndex; i++)
 		{
-			char* titleInArchive = GetTitle(f, i, indexNo);
+			string titleInArchive = GetTitle(i, indexNo);
 
-			if ( strcmp(title,titleInArchive)==0 )
+			if ( title == titleInArchive )
 			{
 				// 100% match
 				DeleteSearchResult(result);
-
-				fclose(f);
 
 				return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 			}
@@ -261,34 +241,26 @@ ArticleSearchResult* TitleIndex::FindArticle(char* title, bool multiple)
 				result->Next = new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 		}
 
-		fclose(f);
-
 		return result;
 	}
 	return NULL;
 }
 
 
-ArticleSearchResult* TitleIndex::GetSuggestions(char* phrase, int maxSuggestions)
+ArticleSearchResult* TitleIndex::GetSuggestions(string phrase, int maxSuggestions)
 {
 	ArticleSearchResult* suggestions;
 
 	if ( _numberOfArticles<=0  )
 		return suggestions;
 
-	FILE* f = fopen(_indexFileName, "rb");
-	if ( !f )
-		return suggestions;
+	int indexNo = 0;
+	if ( _using_index1 )
+		indexNo = 1;
 
-	int indexNo = 1;
-	if ( !_indexPos_1 )
-		indexNo = 0;
+	string lowercasePhrase = preparePhrase(phrase);
 
-	char lowercasePhrase[1001] = "";
-
-	PA_CopyText(lowercasePhrase,preparePhrase(phrase));
-
-	int phraseLength = strlen(phrase);
+	int phraseLength = phrase.length();
 	if ( phraseLength==0 )
 		return suggestions;
 
@@ -296,19 +268,19 @@ ArticleSearchResult* TitleIndex::GetSuggestions(char* phrase, int maxSuggestions
 	int uBound = _numberOfArticles - 1;
 	int index = 0;
 	int foundAt = -1;
-	char* titleAtIndex;
+	string titleAtIndex;
 
 	while ( lBound<=uBound )
 	{
 		index = (lBound + uBound) >> 1;
 
 		// get the title at the specific index
-		titleAtIndex = GetTitle(f, index, indexNo);
-		PA_CopyText(titleAtIndex,preparePhrase(titleAtIndex));
+		titleAtIndex = GetTitle(index, indexNo);
+		titleAtIndex = preparePhrase(titleAtIndex);
 
-		if ( strcmp(lowercasePhrase,titleAtIndex) < 0)
+		if ( lowercasePhrase < titleAtIndex)
 			uBound = index - 1;
-		else if ( strcmp(lowercasePhrase,titleAtIndex) > 0 )
+		else if ( lowercasePhrase > titleAtIndex )
 			lBound = index + 1;
 		else
 		{
@@ -319,7 +291,7 @@ ArticleSearchResult* TitleIndex::GetSuggestions(char* phrase, int maxSuggestions
 
 	if ( foundAt<0 ) // not found
 	{
-		if ( strcmp(lowercasePhrase,titleAtIndex) > 0 )
+		if ( lowercasePhrase > titleAtIndex )
 		{
 			index++;
 		}
@@ -331,13 +303,13 @@ ArticleSearchResult* TitleIndex::GetSuggestions(char* phrase, int maxSuggestions
 	// go to the first article which starts with the phrase
 	while ( startIndex>0 )
 	{
-		titleAtIndex = GetTitle(f, startIndex-1, indexNo);
-		PA_CopyText(titleAtIndex,preparePhrase(titleAtIndex));
+		titleAtIndex = GetTitle(startIndex-1, indexNo);
+		titleAtIndex = preparePhrase(titleAtIndex);
 
-		if ( strlen(titleAtIndex)>phraseLength )
-			titleAtIndex[phraseLength] = '\0';
+		if ( titleAtIndex.length() > phraseLength )
+			titleAtIndex.resize(phraseLength);
 
-		if ( strcmp(lowercasePhrase,titleAtIndex)!=0 )
+		if ( lowercasePhrase!=titleAtIndex )
 			break;
 
 		startIndex--;
@@ -349,7 +321,7 @@ ArticleSearchResult* TitleIndex::GetSuggestions(char* phrase, int maxSuggestions
 	ArticleSearchResult* first = NULL;
 	while ( (index<_numberOfArticles) && (results<maxSuggestions) )
 	{
-		char* title = GetTitle(f, index, indexNo);
+		string title = GetTitle(index, indexNo);
 
 		if ( !suggestions )
 		{
@@ -373,7 +345,7 @@ ArticleSearchResult* TitleIndex::GetSuggestions(char* phrase, int maxSuggestions
 
 	while ( (startIndex >= 0) && (results<maxSuggestions) )
 	{
-		char* title = GetTitle(f, index, indexNo);
+		string title = GetTitle(index, indexNo);
 
 		if ( !suggestions )
 		{
@@ -391,37 +363,30 @@ ArticleSearchResult* TitleIndex::GetSuggestions(char* phrase, int maxSuggestions
 		results++;
 	}
 
-	fclose(f);
-
 	return first;
 }
 
 
-ArticleSearchResult* TitleIndex::isRedirect(char* markup)
+ArticleSearchResult* TitleIndex::isRedirect(string markup)
 {
-	int markupLength = strlen(markup);
-	char* redirectStelle;
-	redirectStelle = strstr(markup,"#redirect");
-	if (redirectStelle==NULL)
-		redirectStelle = strstr(markup,"#REDIRECT");
-
-	if (redirectStelle==NULL) {
+	if (markup.empty())
 		return NULL;
+	string lowercaseMarkup = markup.substr(0,9);
+	strlwr(&lowercaseMarkup.at(0));
+
+	if ( lowercaseMarkup == "#redirect" )
+	{
+		int linkstart = markup.find("[[")+2;
+		int linkend   = markup.find("]]",linkstart);
+		string linktarget = markup.substr(linkstart,linkend-linkstart);
+		int stelle;
+		if (((stelle=linktarget.find("["))>=0)||((stelle=linktarget.find("]"))>=0)||((stelle=linktarget.find("\n"))>=0))
+			return NULL;
+		return FindArticle(linktarget);
 	}
 	else
 	{
-		char redirectTitel[1001] = "";
-		redirectStelle+=12;
-		while (redirectStelle[-2]!='[' || redirectStelle[-1]!='[')
-			redirectStelle++;
-		int i = 0;
-		while ((redirectStelle[i]!=']') || (redirectStelle[i+1]!=']'))
-		{
-			redirectTitel[i] = redirectStelle[i];
-			i++;
-		}
-		redirectTitel[i] = '\0';
-		return FindArticle(redirectTitel);
+		return NULL;
 	}
 }
 
@@ -430,17 +395,12 @@ ArticleSearchResult* TitleIndex::GetRandomArticle()
 	if ( _numberOfArticles<=0  )
 		return NULL;
 
-	FILE* f = fopen(_indexFileName, "rb");
-
-	if ( !f )
-		return NULL;
-
 	int indexNo = 0;
 
 	int articleNo = PA_RandMax(_numberOfArticles-1);
 
-	char* titleInArchive = GetTitle(f, articleNo, indexNo);
-	fclose(f);
+	string titleInArchive = GetTitle(articleNo, indexNo);
+
 
 	return new ArticleSearchResult(titleInArchive, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 }
@@ -460,14 +420,29 @@ void TitleIndex::DeleteSearchResult(ArticleSearchResult* articleSearchResult)
 	}
 }
 
-char* TitleIndex::DataFileName()
+string TitleIndex::HeaderFileName()
 {
-	return _dataFileName;
+	return _FileName_Header;
 }
 
-char* TitleIndex::IndexFileName()
+string TitleIndex::DataFileName()
 {
-	return _indexFileName;
+	return _FileName_Data;
+}
+
+string TitleIndex::DataIndexFileName()
+{
+	return _FileName_DataIndex;
+}
+
+string TitleIndex::Index0FileName()
+{
+	return _FileName_Index0;
+}
+
+string TitleIndex::Index1FileName()
+{
+	return _FileName_Index1;
 }
 
 int TitleIndex::NumberOfArticles()
@@ -475,36 +450,36 @@ int TitleIndex::NumberOfArticles()
 	return _numberOfArticles;
 }
 
-char* TitleIndex::ImageNamespace()
+string TitleIndex::ImageNamespace()
 {
 	return _imageNamespace;
 }
 
-char* TitleIndex::TemplateNamespace()
+string TitleIndex::TemplateNamespace()
 {
 	return _templateNamespace;
 }
 
 
-ArticleSearchResult::ArticleSearchResult(char* title, char* titleInArchive, fpos_t blockPos, int articlePos, int articleLength)
+ArticleSearchResult::ArticleSearchResult(string title, string titleInArchive, fpos_t blockPos, int articlePos, int articleLength)
 {
 	Previous = NULL;
 	Next     = NULL;
 
-	PA_CopyText( _title, title );
-	PA_CopyText( _titleInArchive, titleInArchive);
+	_title = title;
+	_titleInArchive = titleInArchive;
 
 	_blockPos = blockPos;
 	_articlePos = articlePos;
 	_articleLength = articleLength;
 }
 
-char* ArticleSearchResult::Title()
+string ArticleSearchResult::Title()
 {
 	return _title;
 }
 
-char* ArticleSearchResult::TitleInArchive()
+string ArticleSearchResult::TitleInArchive()
 {
 	return _titleInArchive;
 }

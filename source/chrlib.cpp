@@ -1,15 +1,5 @@
 #include "chrlib.h"
 
-u8 InitFont(Font* FONT, const u8* ptr)
-{
-	FONT->Name       = (u16*)ptr;
-	FONT->Height     = ptr[32];
-	FONT->Index      = (u32*)(ptr+64);
-	FONT->Data       = (u8*)ptr+0x40040;
-	FONT->Ptr        = (u8*)ptr;
-	return 1;
-}
-
 u8 ToUTF(char* Chr, u16* UTF16, const u16* Table, Lid Lang)
 {
 	u16  Row    = 0;
@@ -151,6 +141,22 @@ u8 ToUTF(char* Chr, u16* UTF16, const u16* Table, Lid Lang)
 	}
 
 	return Length;
+}
+
+u8 InitFont(Font* FONT, const u8* ptr)
+{
+	int olli = 27;
+	FONT->Name       = (u16*)ptr;
+	int polli = 67;
+	FONT->Height     = ptr[32];
+	int polli2 = 167;
+	FONT->Index      = (u32*)(ptr+64);
+	int polli3 = 267;
+	FONT->Data       = (u8*)ptr+0x40040;
+	int polli4 = 367;
+	FONT->Ptr        = (u8*)ptr;
+	int polli5 = 467;
+	return 1;
 }
 
 u32 UTF2UTF8(u16* Uni, char* U8)
@@ -631,6 +637,14 @@ u32 iPrint(char* Str, VirScreen* VScreen, CharStat* CStat, s8 paddingX, s8 paddi
 	return SaveSkipLetter;
 }
 
+u32 iPrint(string Str, VirScreen* VScreen, CharStat* CStat, s8 paddingX, s8 paddingY, s32 Limit, Lid Lang)
+{
+	if (!Str.empty())
+		return iPrint(&Str.at(0), VScreen, CStat, paddingX, paddingY, Limit, Lang);
+	else
+		return 0;
+}
+
 u32 SimPrint(char* Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang)
 {
 	Font terminus12regular;
@@ -638,6 +652,14 @@ u32 SimPrint(char* Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang)
 	VirScreen VScreen = {x, y, Dev->Width-x, Dev->Height-y, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
 	CharStat CharStat = { Color, PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
 	return iPrint(Str, &VScreen, &CharStat, 0, 0, -1, Lang);
+}
+
+u32 SimPrint(string Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang)
+{
+	if (!Str.empty())
+		return SimPrint(&Str.at(0), Dev, x, y, Color, Lang);
+	else
+		return 0;
 }
 
 const unsigned char diacriticExchangeTable[] =
@@ -654,21 +676,24 @@ const unsigned char diacriticExchangeTable[] =
 	0x00, 0x6E, 0x6F, 0x6F, 0x6F, 0x6F, 0x6F, 0x00, 0x6f, 0x75, 0x75, 0x75, 0x75, 0x79, 0x00, 0x00, // 0xf0 - 0xff
 };
 
-char* preparePhrase(char* phrase)
+string preparePhrase(string phrase)
 {
-	return strlwr(exchange_diacritic_chars_utf8(phrase));
+	string exchanged_phrase = exchange_diacritic_chars_utf8(phrase);
+	string lwr_phrase = strlwr(&exchanged_phrase.at(0));
+	return lwr_phrase;
 }
 
-char* exchange_diacritic_chars_utf8(char *src)
+string exchange_diacritic_chars_utf8(string src)
 {
-	if ( strlen(src)==0 )
+	if ( src.empty() )
 		return src;
 
-	char* dst = (char*) malloc(strlen(src)+1);
+	string dst = src;
+	return dst;
 
-	int i = 0;
+/*	int i = 0;
 	int j = 0;
-	int length = strlen(src);
+	int length = src.length();
 
 	while ( i<length )
 	{
@@ -696,5 +721,5 @@ char* exchange_diacritic_chars_utf8(char *src)
 	}
 	dst[j++]='\0';
 
-	return dst;
+	return dst;*/
 }

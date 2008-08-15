@@ -10,6 +10,7 @@
 ARM7_SELECTED = ARM7_BASIC
 #ARM7_SELECTED = ARM7_MOD_DSWIFI
 #ARM7_SELECTED = ARM7_MOD_LIBLOBBY
+#ARM7_SELECTED = ARM7_MP3
 #ARM7_SELECTED = ARM7_MP3_DSWIFI
 #ARM7_SELECTED = ARM7_MP3_LIBLOBBY
 #ARM7_SELECTED = ARM7_MIKMOD_DSWIFI
@@ -21,9 +22,9 @@ ADD_LIBS +=
 
 PATH 		:= $(DEVKITARM)/bin:$(PATH)
 
-TEXT1 		:=      DSWiki
-TEXT2 		:=Offline Wiki-Reader
-TEXT3 		:=   by OlliPolli
+TEXT1           :=      DSWiki
+TEXT2           :=Offline Wiki-Reader
+TEXT3           :=   by OlliPolli
 ICON 		:= -b $(CURDIR)/../logo.bmp
 
 #---------------------------------------------------------------------------------
@@ -66,6 +67,9 @@ endif
 ifeq ($(strip $(ARM7_SELECTED)), ARM7_MOD_LIBLOBBY)
 	ARM7BIN		:= -7 $(PAPATH)/lib/arm7_mod_liblobby/arm7.bin
 endif
+ifeq ($(strip $(ARM7_SELECTED)), ARM7_MP3)
+	ARM7BIN		:= -7 $(PAPATH)/lib/arm7_mp3/arm7.bin
+endif
 ifeq ($(strip $(ARM7_SELECTED)), ARM7_MP3_DSWIFI)
 	ARM7BIN		:= -7 $(PAPATH)/lib/arm7_mp3_dswifi/arm7.bin
 endif
@@ -84,7 +88,7 @@ ARCH	:=	-mthumb-interwork
 # note: arm9tdmi isn't the correct CPU arch, but anything newer and LD
 # *insists* it has a FPU or VFP, and it won't take no for an answer!
 #CFLAGS	:=	-g  -Wformat=2 -Winline -Wall -O2\
-CFLAGS	:=	-g -O2\
+CFLAGS	:=	-g  -O2\
 
  		-mcpu=arm946e-s -mtune=arm946e-s -fomit-frame-pointer\
 		-ffast-math \
@@ -93,7 +97,7 @@ CFLAGS	:=	-g -O2\
 CFLAGS	+=	$(INCLUDE) -DARM9 -I$(DEVKITPRO)/PAlib/include/nds
 
 ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	:=	-g $(ARCH) -mno-fpu -L$(DEVKITPRO)/PAlib/lib -Wl,--gc-sections
+LDFLAGS	:=	-g $(ARCH) -mno-fpu -L$(DEVKITPRO)/PAlib/lib -Wl
 
 #---------------------------------------------------------------------------------
 # path to tools - this can be deleted if you set the path in windows
@@ -122,6 +126,9 @@ endif
 ifeq ($(strip $(ARM7_SELECTED)), ARM7_MOD_LIBLOBBY)
 	LIBS	:= -lfat -lnds9 -llobby9d
 endif
+ifeq ($(strip $(ARM7_SELECTED)), ARM7_MP3)
+	LIBS	:= -lfat -lnds9
+endif
 ifeq ($(strip $(ARM7_SELECTED)), ARM7_MP3_DSWIFI)
 	LIBS	:= -lfat -lnds9 -ldswifi9
 endif
@@ -146,6 +153,9 @@ ifeq ($(strip $(ARM7_SELECTED)), ARM7_MOD_DSWIFI)
 endif
 ifeq ($(strip $(ARM7_SELECTED)), ARM7_MOD_LIBLOBBY)
 	LIBDIRS	:=	$(DEVKITPRO)/libnds $(DEVKITPRO)/liblobby
+endif
+ifeq ($(strip $(ARM7_SELECTED)), ARM7_MP3)
+	LIBDIRS	:=	$(DEVKITPRO)/libnds
 endif
 ifeq ($(strip $(ARM7_SELECTED)), ARM7_MP3_DSWIFI)
 	LIBDIRS	:=	$(DEVKITPRO)/libnds
