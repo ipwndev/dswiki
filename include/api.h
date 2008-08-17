@@ -1,5 +1,5 @@
-#ifndef APIH
-#define APIH
+#ifndef _API_H
+#define _API_H
 
 #include <PA9.h>
 #include "struct.h"

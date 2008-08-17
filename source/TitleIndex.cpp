@@ -116,7 +116,6 @@ string TitleIndex::GetTitle(int articleNumber, int indexNo)
 	string result;
 
 	char c = 0;
-	int i = 0;
 
 	while (c=fgetc(_f_dataindex)) {
 		result+=c;
@@ -369,6 +368,7 @@ ArticleSearchResult* TitleIndex::GetSuggestions(string phrase, int maxSuggestion
 
 ArticleSearchResult* TitleIndex::isRedirect(string markup)
 {
+	return NULL;
 	if (markup.empty())
 		return NULL;
 	string lowercaseMarkup = markup.substr(0,9);

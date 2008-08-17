@@ -1,5 +1,5 @@
-#ifndef BIG52UNI16H
-#define BIG52UNI16H
+#ifndef _BIG52UNI16_H
+#define _BIG52UNI16_H
 
 extern const u16 B2U16[13658];
 
