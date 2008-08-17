@@ -1,5 +1,5 @@
-#ifndef TITLEINDEX_H
-#define TITLEINDEX_H
+#ifndef _TITLEINDEX_H
+#define _TITLEINDEX_H
 
 #include <fat.h>
 #include <string>

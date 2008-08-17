@@ -1,5 +1,5 @@
-#ifndef CHRLIBH
-#define CHRLIBH
+#ifndef _CHRLIB_H
+#define _CHRLIB_H
 
 #include <PA9.h>
 #include <string>
@@ -15,7 +15,7 @@ using namespace std;
 typedef enum {UTF,UTF8,BIG5,GBK,JIS} Lid;
 typedef enum {NORMALWRAP,HARDWRAP,NOWRAP} ChrWrap;
 typedef enum {DEG0,DEG90,DEG180,DEG270} ChrRot;
-typedef enum {NONE,HOLLOW,SHADOW,BACKGR} FX;
+typedef enum {NONE,HOLLOW,SHADOW,BACKGR,SIMULATE} FX;
 
 typedef struct
 {
@@ -52,9 +52,9 @@ u8   CheckLowerBound(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,        
 u8   CheckWrap      (CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height, u8 doWrap);
 
 void iDrawChar(u16* Uni,  VirScreen* Screen, CharStat* CStat, BLOCK CharArea);
-u32  iPrint   (char*  Str, VirScreen* VScreen, CharStat* CStat, s8 paddingX, s8 paddingY, s32 Limit, Lid Lang);
-u32  iPrint   (string Str, VirScreen* VScreen, CharStat* CStat, s8 paddingX, s8 paddingY, s32 Limit, Lid Lang);
-u32  SimPrint (char*  Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang);
-u32  SimPrint (string Str, Device* Dev, s32 x, s32 y, u16 Color, Lid Lang);
+u32  iPrint   (char*  Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
+u32  iPrint   (string Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
+u32  SimPrint (char*  Str, Device* Dev, u16 Color, Lid Lang);
+u32  SimPrint (string Str, Device* Dev, u16 Color, Lid Lang);
 
 #endif

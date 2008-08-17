@@ -1,5 +1,5 @@
-#ifndef STRUCTH
-#define STRUCTH
+#ifndef _STRUCT_H
+#define _STRUCT_H
 
 #include <PA9.h>
 

@@ -1,5 +1,5 @@
-#ifndef WIKIMARKUPGETTER_H
-#define WIKIMARKUPGETTER_H
+#ifndef _WIKIMARKUPGETTER_H
+#define _WIKIMARKUPGETTER_H
 
 #include "TitleIndex.h"
 #include <string>
