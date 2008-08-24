@@ -41,19 +41,20 @@ typedef struct
 
 u8   InitFont(Font* FONT, const u8* ptr);
 
-u8   ToUTF   (char* Chr, u16* UTF16, const u16* Table, Lid Lang);
+u8   ToUTF   (const char* Chr, u16* UTF16, const u16* Table, Lid Lang);
 u32  UTF2UTF8(u16* Uni, char* U8);
 u32  UTF82UTF(char* U8, u16* Uni);
 string exchange_diacritic_chars_utf8(string src);
 string preparePhrase(string phrase);
+string trim(string Str);
 
-void SwitchNewLine  (CharStat* CStat,                   BLOCK* CharArea, s16 Origin,           u8 Height);
-u8   CheckLowerBound(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,                       u8 Height);
-u8   CheckWrap      (CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height, u8 doWrap);
+void SwitchNewLine  (const CharStat* CStat,                   BLOCK* CharArea, s16 Origin,           u8 Height);
+u8   CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,                       u8 Height);
+u8   CheckWrap      (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height, u8 doWrap);
 
-void iDrawChar(u16* Uni,  VirScreen* Screen, CharStat* CStat, BLOCK CharArea);
-u32  iPrint   (char*  Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
-u32  iPrint   (string Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
+void iDrawChar(u16* Uni,         const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea);
+u32  iPrint   (const char*  Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
+u32  iPrint   (const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
 u32  SimPrint (char*  Str, Device* Dev, u16 Color, Lid Lang);
 u32  SimPrint (string Str, Device* Dev, u16 Color, Lid Lang);
 

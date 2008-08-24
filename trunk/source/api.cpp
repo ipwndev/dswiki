@@ -32,7 +32,7 @@ BLOCK Intersection(BLOCK Area1,BLOCK Area2)
 	return Result;
 }
 
-void DrawPoint(VirScreen* VScreen, s32 X, s32 Y, u16 Color)
+void DrawPoint(const VirScreen* VScreen, s32 X, s32 Y, u16 Color)
 {
 	if((X>=0)&&(Y>=0)&&(X<VScreen->Width)&&(Y<VScreen->Height))
 	{
@@ -43,7 +43,7 @@ void DrawPoint(VirScreen* VScreen, s32 X, s32 Y, u16 Color)
 	}
 }
 
-void DrawBlock(VirScreen* VScreen, BLOCK Area, u16 Color, u8 Fill)
+void DrawBlock(const VirScreen* VScreen, BLOCK Area, u16 Color, u8 Fill)
 {
 	s32 ASx = Area.Start.x;
 	s32 AEx = Area.End.x;
@@ -106,7 +106,7 @@ void DrawBlock(VirScreen* VScreen, BLOCK Area, u16 Color, u8 Fill)
 	}
 }
 
-void DrawEmboss(VirScreen* VScreen, BLOCK Area, u16 Color)
+void DrawEmboss(const VirScreen* VScreen, BLOCK Area, u16 Color)
 {
 	if ((Area.Start.x<=Area.End.x)&&(Area.Start.y<=Area.End.y)) // Regular Block
 	{
@@ -143,7 +143,7 @@ void DrawEmboss(VirScreen* VScreen, BLOCK Area, u16 Color)
 	}
 }
 
-void DrawGroove(VirScreen* VScreen, BLOCK Area, u16 Color)
+void DrawGroove(const VirScreen* VScreen, BLOCK Area, u16 Color)
 {
 	if ((Area.Start.x<=Area.End.x)&&(Area.Start.y<=Area.End.y)) // Regular Block
 	{
