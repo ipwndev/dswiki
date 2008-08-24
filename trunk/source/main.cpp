@@ -9,7 +9,7 @@
 #include "Markup.h"
 
 #include "ter12rp.h"
-#include "unifont.h"
+// #include "unifont.h"
 
 #define MAX_NUMBER_OF_REDIRECTIONS	5
 
@@ -37,7 +37,7 @@ int main(int argc, char ** argv)
 	// important variables
 
 	Font terminus12p; InitFont(&terminus12p,ter12rp);
-	Font unifont16;   InitFont(&unifont16,unifont);
+// 	Font unifont16;   InitFont(&unifont16,unifont);
 
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
@@ -137,12 +137,11 @@ int main(int argc, char ** argv)
 				}
 				markupstr = redirectMessage + markupstr;
 
-				PA_OutputText(0,31,23,"1");
+// 				PA_OutputText(0,31,23,"1");
 // 				PA_Sleep(120);
-
 				markup = new Markup(markupstr, &ContentWin1, &ContentWin2, &ContentCS);
 
-				PA_OutputText(0,31,23,"2");
+// 				PA_OutputText(0,31,23,"2");
 // 				PA_Sleep(120);
 
 				FillVS(&Statusbar,PA_RGB(26,26,26));
@@ -173,7 +172,7 @@ int main(int argc, char ** argv)
 			if (markup->ScrollPageDown())
 			{
 				updateContent = 1;
-// 				PA_Sleep(10);
+				PA_Sleep(10);
 			}
 		}
 
@@ -182,7 +181,7 @@ int main(int argc, char ** argv)
 			if (markup->ScrollPageUp())
 			{
 				updateContent = 1;
-// 				PA_Sleep(10);
+				PA_Sleep(10);
 			}
 		}
 		if (Pad.Newpress.Up||Pad.Held.Up)
@@ -190,7 +189,7 @@ int main(int argc, char ** argv)
 			if (markup->ScrollLineUp())
 			{
 				updateContent = 1;
-// 				PA_Sleep(10);
+				PA_Sleep(10);
 			}
 		}
 
@@ -199,7 +198,7 @@ int main(int argc, char ** argv)
 			if (markup->ScrollLineDown())
 			{
 				updateContent = 1;
-// 				PA_Sleep(10);
+				PA_Sleep(10);
 			}
 		}
 
@@ -323,6 +322,11 @@ int main(int argc, char ** argv)
 			updateTitle = 1;
 			updateContent = 1;
 			updateStatusbar = 1;
+		}
+
+		if (Pad.Newpress.B)
+		{
+			suchtitel.clear();
 		}
 
 		if (Pad.Newpress.A)
