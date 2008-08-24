@@ -369,6 +369,7 @@ ArticleSearchResult* TitleIndex::GetSuggestions(string phrase, int maxSuggestion
 
 ArticleSearchResult* TitleIndex::isRedirect(string markup)
 {
+	Element* l;
 	if (markup.empty())
 		return NULL;
 	string lowercaseMarkup = markup.substr(0,9);
@@ -376,7 +377,7 @@ ArticleSearchResult* TitleIndex::isRedirect(string markup)
 
 	if ( lowercaseMarkup == "#redirect" )
 	{
-		Link* l = createLink(markup,9,0);
+		l = createLink(markup,9,0);
 		if (l)
 		{
 			return FindArticle(l->target);
