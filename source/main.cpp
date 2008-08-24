@@ -43,30 +43,25 @@ int main(int argc, char ** argv)
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
 
 	VirScreen  Titlebar    = {  0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
-// 	VirScreen  ContentWin1 = {  0,  16, 256, 176, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
 	VirScreen  ContentWin1 = {  2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
-// 	VirScreen  ContentWin2 = {  0,   0, 256, 176, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
 	VirScreen  ContentWin2 = {  2,   2, 252, 172, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
 	VirScreen  Statusbar   = {  0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
 	VirScreen  Searchbar   = { 47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
 	CharStat      TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
-	CharStat       ContentCS = { PA_RGB( 0, 0, 0), PA_RGB(15,15,15), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
+	CharStat       ContentCS = { PA_RGB( 0, 0, 0), PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
 	CharStat     StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
 	CharStat SearchResultsCS = { PA_RGB( 0, 0, 0), PA_RGB(21,21,21),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
-
-	u8 linesPerContentScreen = 1 + ( ( ContentWin1.Height - ContentCS.FONT->Height ) / ( ContentCS.FONT->Height + ContentCS.H_Space ) );
 
 	FillVS(&Titlebar, PA_RGB( 9,16,28));
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 
-	u32 numOut  = 0;
-	u32 offset  = 0;
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
 
 	string markupstr;
 	string suchtitel;
+	Markup* markup = NULL;
 
 	// start of main program
 
@@ -76,19 +71,20 @@ int main(int argc, char ** argv)
 	CharArea = (BLOCK) {{2,2},{0,0}};
 	iPrint("Lade dewiki.dat...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
 	TitleIndex* titleIndex = new TitleIndex("dewiki");
-	PA_Sleep(30);
+// 	PA_Sleep(30);
 
 
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
 	iPrint("Initialisiere MarkupGetter...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
 	WikiMarkupGetter* mg = new WikiMarkupGetter("dewiki");
-	PA_Sleep(60);
+// 	PA_Sleep(60);
 
 	u8 updateTitle           = 0;
 	u8 updateContent         = 0;
 	u8 updateStatusbar       = 0;
 	u8 loadArticle           = 1;
+	PA_Rand();
 
 	while(1)
 	{
@@ -112,7 +108,7 @@ int main(int argc, char ** argv)
 				iPrint("Suche Artikel...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
 				suchergebnis = titleIndex->FindArticle(suchtitel);
 			}
-			PA_Sleep(30);
+// 			PA_Sleep(30);
 
 			if (suchergebnis!=NULL)
 			{
@@ -124,8 +120,6 @@ int main(int argc, char ** argv)
 				CharArea = (BLOCK) {{2,2},{0,0}};
 				iPrint("Hole Markup...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
 				markupstr = mg->GetMarkupForArticle(suchergebnis);
-
-				Markup* markup = new Markup(markupstr,ContentWin1,ContentCS);
 
 				string redirectMessage = "";
 				u8 numberOfRedirections = 0;
@@ -141,12 +135,17 @@ int main(int argc, char ** argv)
 					markupstr = mg->GetMarkupForArticle(suchergebnis);
 					titleIndex->DeleteSearchResult(temp);
 				}
-				for (u8 i=0;i<linesPerContentScreen-numberOfRedirections;i++)
-					redirectMessage += "\n";
 				markupstr = redirectMessage + markupstr;
 
+				PA_OutputText(0,31,23,"1");
+// 				PA_Sleep(120);
+
+				markup = new Markup(markupstr, &ContentWin1, &ContentWin2, &ContentCS);
+
+				PA_OutputText(0,31,23,"2");
+// 				PA_Sleep(120);
+
 				FillVS(&Statusbar,PA_RGB(26,26,26));
-				offset = 0;
 				updateTitle = 1;
 				updateContent = 1;
 			}
@@ -155,29 +154,53 @@ int main(int argc, char ** argv)
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
 				iPrint("Artikel nicht gefunden...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-				PA_Sleep(60);
+// 				PA_Sleep(60);
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 			}
 
 			loadArticle = 0;
 		}
 
-		if (Pad.Newpress.Right||Pad.Held.Right)
+		if (Stylus.Newpress)
 		{
-			offset += numOut;
-			if (offset>=suchergebnis->ArticleLength())
-				offset = 0;
-			updateContent = 1;
-			PA_Sleep(10);
+			suchtitel = markup->evaluateClick(Stylus.X,Stylus.Y);
+			if (!suchtitel.empty())
+				loadArticle = 1;
 		}
 
-		if ((Pad.Newpress.Left||Pad.Held.Left) && (offset>0))
+		if (Pad.Newpress.Right||Pad.Held.Right)
 		{
-			offset -= numOut; // TODO
-			if (offset<0)
-				offset = 0;
-			updateContent = 1;
-			PA_Sleep(10);
+			if (markup->ScrollPageDown())
+			{
+				updateContent = 1;
+// 				PA_Sleep(10);
+			}
+		}
+
+		if ((Pad.Newpress.Left||Pad.Held.Left))
+		{
+			if (markup->ScrollPageUp())
+			{
+				updateContent = 1;
+// 				PA_Sleep(10);
+			}
+		}
+		if (Pad.Newpress.Up||Pad.Held.Up)
+		{
+			if (markup->ScrollLineUp())
+			{
+				updateContent = 1;
+// 				PA_Sleep(10);
+			}
+		}
+
+		if ((Pad.Newpress.Down||Pad.Held.Down))
+		{
+			if (markup->ScrollLineDown())
+			{
+				updateContent = 1;
+// 				PA_Sleep(10);
+			}
 		}
 
 		if (Pad.Newpress.X)
@@ -260,7 +283,7 @@ int main(int argc, char ** argv)
 					if(suggestions->Previous!=NULL)
 					{
 						suggestions = suggestions->Previous;
-						PA_Sleep(6);
+// 						PA_Sleep(6);
 						updateSuggestions = 1;
 					}
 				}
@@ -317,12 +340,7 @@ int main(int argc, char ** argv)
 
 		if (updateContent)
 		{
-			CharArea = (BLOCK) {{0,0},{0,0}};
-			FillVS(&ContentWin1,PA_RGB(31,31,31));
-			numOut = iPrint(markupstr.substr(offset),&ContentWin1,&ContentCS,&CharArea,-1,UTF8);
-			CharArea = (BLOCK) {{0,0},{0,0}};
-			FillVS(&ContentWin2,PA_RGB(31,31,31));
-			iPrint(markupstr.substr(offset+numOut),&ContentWin2,&ContentCS,&CharArea,-1,UTF8);
+			markup->draw();
 			updateContent = 0;
 		}
 

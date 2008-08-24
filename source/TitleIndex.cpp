@@ -6,6 +6,7 @@
 #include "main.h"
 #include "TitleIndex.h"
 #include "chrlib.h"
+#include "Markup.h"
 
 
 typedef struct
@@ -368,7 +369,6 @@ ArticleSearchResult* TitleIndex::GetSuggestions(string phrase, int maxSuggestion
 
 ArticleSearchResult* TitleIndex::isRedirect(string markup)
 {
-	return NULL;
 	if (markup.empty())
 		return NULL;
 	string lowercaseMarkup = markup.substr(0,9);
@@ -376,13 +376,15 @@ ArticleSearchResult* TitleIndex::isRedirect(string markup)
 
 	if ( lowercaseMarkup == "#redirect" )
 	{
-		int linkstart = markup.find("[[")+2;
-		int linkend   = markup.find("]]",linkstart);
-		string linktarget = markup.substr(linkstart,linkend-linkstart);
-		int stelle;
-		if (((stelle=linktarget.find("["))>=0)||((stelle=linktarget.find("]"))>=0)||((stelle=linktarget.find("\n"))>=0))
+		Link* l = createLink(markup,9,0);
+		if (l)
+		{
+			return FindArticle(l->target);
+		}
+		else
+		{
 			return NULL;
-		return FindArticle(linktarget);
+		}
 	}
 	else
 	{

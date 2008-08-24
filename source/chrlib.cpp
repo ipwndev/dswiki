@@ -1,6 +1,23 @@
 #include "chrlib.h"
 
-u8 ToUTF(char* Chr, u16* UTF16, const u16* Table, Lid Lang)
+string trim(string Str)
+{
+	int first = Str.find_first_not_of(" ");
+	int last = Str.find_last_not_of(" ");
+	if ((first==string::npos) || (last==string::npos))
+		return "";
+	Str = Str.substr(first,last-first+1);
+
+	first = Str.find("  ");
+	while(first!=string::npos)
+	{
+		Str.erase(first,1);
+		first = Str.find("  ",first);
+	}
+	return Str;
+}
+
+u8 ToUTF(const char* Chr, u16* UTF16, const u16* Table, Lid Lang)
 {
 	u16  Row    = 0;
 	u16  Col    = 0;
@@ -192,7 +209,7 @@ u32 UTF82UTF(char* U8, u16* Uni)
 	return Length;
 }
 
-void SwitchNewLine(CharStat* CStat, BLOCK* CharArea, s16 Origin, u8 Height)
+void SwitchNewLine(const CharStat* CStat, BLOCK* CharArea, s16 Origin, u8 Height)
 {
 	switch(CStat->Rotate)
 	{
@@ -215,7 +232,7 @@ void SwitchNewLine(CharStat* CStat, BLOCK* CharArea, s16 Origin, u8 Height)
 	}
 }
 
-u8 CheckLowerBound(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, u8 Height)
+u8 CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, u8 Height)
 {
 	u8 OutScreen=0;
 
@@ -273,7 +290,7 @@ u8 CheckLowerBound(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, u8 Height
 	return OutScreen;
 }
 
-u8 CheckWrap(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height, u8 doWrap)
+u8 CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height, u8 doWrap)
 {
 	u8 wrap = 0;
 	switch(CStat->Rotate)
@@ -314,7 +331,7 @@ u8 CheckWrap(CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 
 	return wrap;
 }
 
-void iDrawChar(u16* Uni, VirScreen* VScreen, CharStat* CStat, BLOCK CharArea)
+void iDrawChar(u16* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK CharArea)
 {
 	u8*  DATA;
 	u8   idx;
@@ -422,7 +439,7 @@ void iDrawChar(u16* Uni, VirScreen* VScreen, CharStat* CStat, BLOCK CharArea)
 	}
 }
 
-u32 iPrint(char* Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang)
+u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang)
 {
 	u8*   DATA;
 	u16   Uni                = 0;
@@ -433,15 +450,14 @@ u32 iPrint(char* Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 
 	u32   SaveSkipWord       = 0;
 	u32   SaveSkipLetter     = 0;
 	s32   GlyphsPrinted      = 0;
-	u8    ForceInnerWordWrap = 1;
+	u8    ForceInnerWordWrap = 0;
 	u8    HardWrap           = 0;
 
 	if ((CStat->Wrap==HARDWRAP)||(CStat->Wrap==NOWRAP))
 		HardWrap = 1;
 
 	BLOCK    PrintArea = {{0,0},{0,0}};
-// 	BLOCK     CharArea = {{0,0},{0,0}};
-	BLOCK SaveCharArea = {{0,0},{0,0}};
+	BLOCK SaveCharArea = {{CharArea->Start.x,CharArea->Start.y},{CharArea->End.x,CharArea->End.y}};
 
 	switch(CStat->Rotate)
 	{
@@ -451,7 +467,8 @@ u32 iPrint(char* Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 
 			PrintArea.End.x   = VScreen->Width-1;
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.Start.x;
-// 			CharArea->Start    = PrintArea.Start;
+			if (CharArea->Start.x == Origin)
+				ForceInnerWordWrap = 1;
 			break;
 		case DEG90:
 			PrintArea.Start.x = 0;
@@ -459,8 +476,8 @@ u32 iPrint(char* Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 
 			PrintArea.End.x   = VScreen->Width-1;
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.End.y;
-// 			CharArea->Start.x  = PrintArea.Start.x;
-// 			CharArea->End.y    = PrintArea.End.y;
+			if (CharArea->End.y == Origin)
+				ForceInnerWordWrap = 1;
 			break;
 		case DEG180:
 			PrintArea.Start.x = 0;
@@ -468,7 +485,8 @@ u32 iPrint(char* Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 
 			PrintArea.End.x   = VScreen->Width-1;
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.End.x;
-// 			CharArea->End      = PrintArea.End;
+			if (CharArea->End.x == Origin)
+				ForceInnerWordWrap = 1;
 			break;
 		case DEG270:
 			PrintArea.Start.x = 0;
@@ -476,8 +494,8 @@ u32 iPrint(char* Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 
 			PrintArea.End.x   = VScreen->Width-1;
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.Start.y;
-// 			CharArea->Start.y  = PrintArea.Start.y;
-// 			CharArea->End.x    = PrintArea.End.x;
+			if (CharArea->Start.y == Origin)
+				ForceInnerWordWrap = 1;
 			break;
 	}
 
@@ -634,7 +652,7 @@ u32 iPrint(char* Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 
 	return SaveSkipLetter;
 }
 
-u32 iPrint(string Str, VirScreen* VScreen, CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang)
+u32 iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang)
 {
 	if (!Str.empty())
 		return iPrint(&Str.at(0), VScreen, CStat, CharArea, Limit, Lang);
@@ -721,3 +739,10 @@ string exchange_diacritic_chars_utf8(string src)
 
 	return dst;*/
 }
+
+
+
+	// DEG0:   {{0,0},{?,?}}
+	// DEG90:  {{0,?},{?,171}}
+	// DEG180: {{?,?},{251,171}}
+	// DEG270: {{?,0},{251,?}}
