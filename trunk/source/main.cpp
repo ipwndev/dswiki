@@ -9,7 +9,7 @@
 #include "Markup.h"
 
 #include "ter12rp.h"
-// #include "unifont.h"
+#include "unifont.h"
 
 #define MAX_NUMBER_OF_REDIRECTIONS	5
 
@@ -37,7 +37,7 @@ int main(int argc, char ** argv)
 	// important variables
 
 	Font terminus12p; InitFont(&terminus12p,ter12rp);
-// 	Font unifont16;   InitFont(&unifont16,unifont);
+	Font unifont16;   InitFont(&unifont16,unifont);
 
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
@@ -48,10 +48,11 @@ int main(int argc, char ** argv)
 	VirScreen  Statusbar   = {  0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
 	VirScreen  Searchbar   = { 47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-	CharStat      TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
-	CharStat       ContentCS = { PA_RGB( 0, 0, 0), PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
-	CharStat     StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
-	CharStat SearchResultsCS = { PA_RGB( 0, 0, 0), PA_RGB(21,21,21),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
+	CharStat       TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
+	CharStat        ContentCS = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), NORMALWRAP, DEG0, NONE, 0, 0, 0, &unifont16};
+	CharStat      StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
+	CharStat StatusbarErrorCS = { PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
+	CharStat  SearchResultsCS = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
 
 	FillVS(&Titlebar, PA_RGB( 9,16,28));
 	FillVS(&Statusbar,PA_RGB(26,26,26));
@@ -70,21 +71,22 @@ int main(int argc, char ** argv)
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
 	iPrint("Lade dewiki.dat...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
+	PA_Sleep(30);
 	TitleIndex* titleIndex = new TitleIndex("dewiki");
-// 	PA_Sleep(30);
+	FillVS(&Statusbar,PA_RGB(26,26,26));
 
 
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
 	iPrint("Initialisiere MarkupGetter...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
+	PA_Sleep(30);
 	WikiMarkupGetter* mg = new WikiMarkupGetter("dewiki");
-// 	PA_Sleep(60);
+	FillVS(&Statusbar,PA_RGB(26,26,26));
 
 	u8 updateTitle           = 0;
 	u8 updateContent         = 0;
 	u8 updateStatusbar       = 0;
 	u8 loadArticle           = 1;
-	PA_Rand();
 
 	while(1)
 	{
@@ -108,7 +110,7 @@ int main(int argc, char ** argv)
 				iPrint("Suche Artikel...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
 				suchergebnis = titleIndex->FindArticle(suchtitel);
 			}
-// 			PA_Sleep(30);
+			PA_Sleep(30);
 
 			if (suchergebnis!=NULL)
 			{
@@ -137,12 +139,8 @@ int main(int argc, char ** argv)
 				}
 				markupstr = redirectMessage + markupstr;
 
-// 				PA_OutputText(0,31,23,"1");
-// 				PA_Sleep(120);
+				delete markup;
 				markup = new Markup(markupstr, &ContentWin1, &ContentWin2, &ContentCS);
-
-// 				PA_OutputText(0,31,23,"2");
-// 				PA_Sleep(120);
 
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				updateTitle = 1;
@@ -152,8 +150,8 @@ int main(int argc, char ** argv)
 			{
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
-				iPrint("Artikel nicht gefunden...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-// 				PA_Sleep(60);
+				iPrint("\""+suchtitel+"\" nicht gefunden...",&Statusbar,&StatusbarErrorCS,&CharArea,-1,UTF8);
+				PA_Sleep(60);
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 			}
 
@@ -282,7 +280,7 @@ int main(int argc, char ** argv)
 					if(suggestions->Previous!=NULL)
 					{
 						suggestions = suggestions->Previous;
-// 						PA_Sleep(6);
+						PA_Sleep(6);
 						updateSuggestions = 1;
 					}
 				}
@@ -337,7 +335,7 @@ int main(int argc, char ** argv)
 		if (updateTitle)
 		{
 			FillVS(&Titlebar, PA_RGB( 9,16,28));
-			CharArea = (BLOCK) {{2,2},{0,0}};
+			CharArea = (BLOCK) {{5,2},{0,0}};
 			iPrint(suchergebnis->TitleInArchive(),&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
 			updateTitle = 0;
 		}
