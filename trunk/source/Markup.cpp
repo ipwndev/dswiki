@@ -198,6 +198,7 @@ string Markup::evaluateClick(s16 x,s16 y)
 	return "";
 }
 
+
 Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* CStat)
 {
 // 	PA_OutputText(1,5,3,"Creating Markup");
@@ -215,6 +216,13 @@ Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* C
 	u32 link_id = 0;
 	Element* t2;
 	Element* l;
+
+	while((pos=Str.find("&nbsp;"))!=string::npos)
+	{
+		Str.replace(pos,6,"\u00a0");
+	}
+
+	pos = 0;
 
 	l = createLink(Str,pos,link_id++);
 
@@ -235,6 +243,7 @@ Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* C
 	visibleChildren.push_back(t);
 
 	createLines(VScreen1, CStat);
+// 	setCurrentLine(PA_RandMax(numberOfLines()-1));
 
 // 	PA_OutputText(1,5,3,"               ");
 	PA_Sleep(SLEEPTIME);
@@ -329,6 +338,11 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 u32 Markup::numberOfLines()
 {
 	return lines.size();
+}
+
+s32 Markup::currentLine()
+{
+	return _currentLine;
 }
 
 u8 Markup::setCurrentLine(s32 line)

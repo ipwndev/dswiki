@@ -50,6 +50,7 @@ class Markup
 
 		void createLines(VirScreen* VScreen, CharStat* CStat);
 		u32 numberOfLines();
+		s32 currentLine();
 		u8 setCurrentLine(s32 line);
 		void draw();
 		u8 ScrollLineDown();

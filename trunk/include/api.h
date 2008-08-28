@@ -10,6 +10,7 @@ BLOCK Intersection(BLOCK Area1,BLOCK Area2);
 
 void DrawPoint (const VirScreen* VScreen, s32 X, s32 Y, u16 Color);
 void DrawBlock (const VirScreen* VScreen, BLOCK Area, u16 Color, u8 Fill);
+void DrawBlock (const Device*    Dev,     BLOCK Area, u16 Color, u8 Fill);
 void DrawEmboss(const VirScreen* VScreen, BLOCK Area, u16 Color);
 void DrawGroove(const VirScreen* VScreen, BLOCK Area, u16 Color);
 void FillVS (VirScreen* VScreen, u16 Color);
