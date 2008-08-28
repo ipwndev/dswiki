@@ -31,7 +31,7 @@ typedef struct
 	u32     Width;
 	u32     Height;
 	BLOCK   Bound;
-	Device* Screen;
+	const Device* Screen;
 } VirScreen;
 
 #endif

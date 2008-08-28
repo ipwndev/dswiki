@@ -118,7 +118,7 @@ string TitleIndex::GetTitle(int articleNumber, int indexNo)
 
 	char c = 0;
 
-	while (c=fgetc(_f_dataindex)) {
+	while (c=fgetc(_f_dataindex)) { //TODO: Faster
 		result+=c;
 	}
 

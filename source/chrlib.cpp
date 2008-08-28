@@ -1,5 +1,53 @@
 #include "chrlib.h"
 
+struct to_lower {
+	int operator() ( int ch )
+	{
+		return std::tolower ( ch );
+	}
+};
+
+string preparePhrase(string phrase)
+{
+	string exchanged_phrase = trim(exchange_diacritic_chars_utf8(phrase));
+	std::transform(exchanged_phrase.begin(), exchanged_phrase.end(), exchanged_phrase.begin(), to_lower());
+	return exchanged_phrase;
+}
+
+string exchange_diacritic_chars_utf8(string src)
+{
+	if ( src.empty() )
+		return src;
+
+	string dst = src;
+
+	int i = 0;
+	int length = dst.length();
+
+	while ( i < dst.length() )
+	{
+		unsigned char c = dst[i++];
+		if ( (c&0xc0)==0xc0 ) // Start-Byte
+		{
+			int d = ((c&0x1f)<<6) + (((unsigned char) dst[i]) & 0x3f);
+			if ( (d>=0x80) && (d<=0xff) )
+			{
+				string ex = diacriticExchangeTable[d-0x80];
+				if ( ex!="" )
+				{
+					dst.replace(i-1,2,ex);
+				}
+			}
+			else
+			{
+				i++;
+			}
+		}
+	}
+
+	return dst;
+}
+
 string trim(string Str)
 {
 	int first = Str.find_first_not_of(" ");
@@ -8,11 +56,9 @@ string trim(string Str)
 		return "";
 	Str = Str.substr(first,last-first+1);
 
-	first = Str.find("  ");
-	while(first!=string::npos)
+	while((first = Str.find("  "))!=string::npos)
 	{
 		Str.erase(first,1);
-		first = Str.find("  ",first);
 	}
 	return Str;
 }
@@ -158,16 +204,6 @@ u8 ToUTF(const char* Chr, u16* UTF16, const u16* Table, Lid Lang)
 	}
 
 	return Length;
-}
-
-u8 InitFont(Font* FONT, const u8* ptr)
-{
-	FONT->Name       = (u16*)ptr;
-	FONT->Height     = ptr[32];
-	FONT->Index      = (u32*)(ptr+64);
-	FONT->Data       = (u8*)ptr+0x40040;
-	FONT->Ptr        = (u8*)ptr;
-	return 1;
 }
 
 u32 UTF2UTF8(u16* Uni, char* U8)
@@ -652,6 +688,16 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 	return SaveSkipLetter;
 }
 
+u32 SimPrint(const char* Str, Device* Dev, u16 Color, Lid Lang)
+{
+	Font terminus12regular;
+	InitFont(&terminus12regular,ter12rp);
+	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
+	CharStat CharStat = { Color, PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
+	BLOCK CharArea = {{0,0},{0,0}};
+	return iPrint(Str, &VScreen, &CharStat, &CharArea, -1, Lang);
+}
+
 u32 iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang)
 {
 	if (!Str.empty())
@@ -660,17 +706,7 @@ u32 iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BL
 		return 0;
 }
 
-u32 SimPrint(char* Str, Device* Dev, u16 Color, Lid Lang)
-{
-	Font terminus12regular;
-	InitFont(&terminus12regular,ter12r);
-	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
-	CharStat CharStat = { Color, PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
-	BLOCK CharArea = {{0,0},{0,0}};
-	return iPrint(Str, &VScreen, &CharStat, &CharArea, -1, Lang);
-}
-
-u32 SimPrint(string Str, Device* Dev, u16 Color, Lid Lang)
+u32 SimPrint(const string Str, Device* Dev, u16 Color, Lid Lang)
 {
 	if (!Str.empty())
 		return SimPrint(&Str.at(0), Dev, Color, Lang);
@@ -678,71 +714,18 @@ u32 SimPrint(string Str, Device* Dev, u16 Color, Lid Lang)
 		return 0;
 }
 
-const unsigned char diacriticExchangeTable[] =
-{
-	// this table contains the char code for any diacritic char
-    // 0     1     2     3     4     5     6     7     8     9     a     b     c     d     e     f
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x53, 0x00, 0x00, 0x00, 0x5a, 0x00, // 0x80 - 0x8f
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x73, 0x00, 0x00, 0x00, 0x7a, 0x59, // 0x90 - 0x9f
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0xa0 - 0xaf
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0xb0 - 0xbf
-	0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x00, 0x43, 0x45, 0x45, 0x45, 0x45, 0x49, 0x49, 0x49, 0x49, // 0xc0 - 0xcf
-	0x44, 0x4E, 0x4F, 0x4F, 0x4F, 0x4F, 0x4F, 0x00, 0x4F, 0x55, 0x55, 0x55, 0x55, 0x59, 0x00, 0x00, // 0xd0 - 0xdf
-	0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x00, 0x63, 0x65, 0x65, 0x65, 0x65, 0x69, 0x69, 0x69, 0x69, // 0xe0 - 0xef
-	0x00, 0x6E, 0x6F, 0x6F, 0x6F, 0x6F, 0x6F, 0x00, 0x6f, 0x75, 0x75, 0x75, 0x75, 0x79, 0x00, 0x00, // 0xf0 - 0xff
-};
-
-string preparePhrase(string phrase)
-{
-	string exchanged_phrase = exchange_diacritic_chars_utf8(phrase);
-	string lwr_phrase = strlwr(&exchanged_phrase.at(0));
-	return lwr_phrase;
-}
-
-string exchange_diacritic_chars_utf8(string src)
-{
-	if ( src.empty() )
-		return src;
-
-	string dst = src;
-	return dst;
-
-/*	int i = 0;
-	int j = 0;
-	int length = src.length();
-
-	while ( i<length )
-	{
-		unsigned char c = src[i++];
-
-		if ( (c&0xc0)==0xc0 ) // Start-Byte
-		{
-			unsigned char d = ((c&0x1f)<<6) + (((unsigned char) src[i]) & 0x3f);
-			if ( d>=0x80 && d<=0xff )
-			{
-				unsigned char ex = diacriticExchangeTable[d-0x80];
-				if ( ex )
-				{
-					dst[j++] = ex;
-					i++;
-					continue;
-				}
-			}
-
-			dst[j++] = c;
-			dst[j++] = src[i++];
-		}
-		else
-			dst[j++] = c;
-	}
-	dst[j++]='\0';
-
-	return dst;*/
-}
-
-
 
 	// DEG0:   {{0,0},{?,?}}
 	// DEG90:  {{0,?},{?,171}}
 	// DEG180: {{?,?},{251,171}}
 	// DEG270: {{?,0},{251,?}}
+
+u8 InitFont(Font* FONT, const u8* ptr)
+{
+	FONT->Name       = (u16*)ptr;
+	FONT->Height     = ptr[32];
+	FONT->Index      = (u32*)(ptr+64);
+	FONT->Data       = (u8*)ptr+0x40040;
+	FONT->Ptr        = (u8*)ptr;
+	return 1;
+}

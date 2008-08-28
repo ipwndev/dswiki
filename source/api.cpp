@@ -106,6 +106,12 @@ void DrawBlock(const VirScreen* VScreen, BLOCK Area, u16 Color, u8 Fill)
 	}
 }
 
+void DrawBlock(const Device* Dev, BLOCK Area, u16 Color, u8 Fill)
+{
+	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
+	DrawBlock(&VScreen, Area, Color, Fill);
+}
+
 void DrawEmboss(const VirScreen* VScreen, BLOCK Area, u16 Color)
 {
 	if ((Area.Start.x<=Area.End.x)&&(Area.Start.y<=Area.End.y)) // Regular Block
