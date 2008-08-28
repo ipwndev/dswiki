@@ -1,0 +1,5 @@
+#summary Ready-to-use dumps for DSwiki.
+
+= Dumps =
+
+  *[http://dswiki.googlecode.com/files/DSwiki-dewiki-20080712.torrent Complete German Wikipedia]
