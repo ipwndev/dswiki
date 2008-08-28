@@ -2,4 +2,5 @@
 
 = Dumps =
 
-  *[http://dswiki.googlecode.com/files/DSwiki-dewiki-20080712.torrent Complete German Wikipedia]
+||The complete German Wikipedia (2008/07/12)||http://dswiki.googlecode.com/files/DSwiki-dewiki-20080712.torrent||
+||The complete English Wikipedia (2008/07/24)||http://dswiki.googlecode.com/files/DSwiki-enwiki-20080724.torrent||
