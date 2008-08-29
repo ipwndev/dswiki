@@ -8,6 +8,7 @@
 #include "WikiMarkupGetter.h"
 #include "Markup.h"
 #include "History.h"
+#include "Cache.h"
 
 #include "ter12rp.h"
 // #include "unifont.h"
@@ -73,8 +74,8 @@ int main(int argc, char ** argv)
 	string suchtitel;
 
 	History h;
+	Cache   c;
 	Markup* markup = NULL;
-
 
 	// start of main program
 
@@ -83,7 +84,7 @@ int main(int argc, char ** argv)
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
 	iPrint("Lade dewiki.dat...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-	PA_Sleep(30);
+// 	PA_Sleep(30);
 	TitleIndex* titleIndex = new TitleIndex("dewiki");
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 
@@ -91,7 +92,7 @@ int main(int argc, char ** argv)
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
 	iPrint("Initialisiere MarkupGetter...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-	PA_Sleep(30);
+// 	PA_Sleep(30);
 	WikiMarkupGetter* mg = new WikiMarkupGetter("dewiki");
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 
@@ -201,6 +202,7 @@ int main(int argc, char ** argv)
 				if ( (letter == '\n') )
 				{
 					forcedLine = 0;
+					setNewHistoryItem = 1;
 					loadArticle = 1;
 					break;
 				}
@@ -274,6 +276,7 @@ int main(int argc, char ** argv)
 					{
 						suchtitel = suggestions->TitleInArchive();
 						forcedLine = 0;
+						setNewHistoryItem = 1;
 						loadArticle = 1;
 						break;
 					}
@@ -293,6 +296,7 @@ int main(int argc, char ** argv)
 						{
 							suchtitel = suggestions->TitleInArchive();
 							forcedLine = 0;
+							setNewHistoryItem = 1;
 							loadArticle = 1;
 							break;
 						}
@@ -368,18 +372,28 @@ int main(int argc, char ** argv)
 				iPrint("Suche Artikel...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
 				suchergebnis = titleIndex->FindArticle(suchtitel);
 			}
-			PA_Sleep(30);
+// 			PA_Sleep(30);
 
 			if (suchergebnis!=NULL)
 			{
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
 				iPrint("Lade \""+suchergebnis->TitleInArchive()+"\"",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-				PA_Sleep(30);
+// 				PA_Sleep(30);
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
-				iPrint("Hole Markup...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-				markupstr = mg->GetMarkupForArticle(suchergebnis);
+
+				if (c.isInCache(suchergebnis->TitleInArchive()))
+				{
+					iPrint("Hole Markup aus dem Cache...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
+					markupstr = c.getMarkup(suchergebnis->TitleInArchive());
+				}
+				else
+				{
+					iPrint("Hole Markup von Disk...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
+					markupstr = mg->GetMarkupForArticle(suchergebnis);
+					c.insert(suchergebnis->TitleInArchive(),markupstr);
+				}
 
 				string redirectMessage = "";
 				u8 numberOfRedirections = 0;
@@ -391,8 +405,17 @@ int main(int argc, char ** argv)
 					suchergebnis = redirection;
 					FillVS(&Statusbar,PA_RGB(26,26,26));
 					CharArea = (BLOCK) {{2,2},{0,0}};
-					iPrint("Folge Umleitung...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-					markupstr = mg->GetMarkupForArticle(suchergebnis);
+					if (c.isInCache(suchergebnis->TitleInArchive()))
+					{
+						iPrint("Folge Umleitung aus dem Cache...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
+						markupstr = c.getMarkup(suchergebnis->TitleInArchive());
+					}
+					else
+					{
+						iPrint("Folge Umleitung von Disk...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
+						markupstr = mg->GetMarkupForArticle(suchergebnis);
+						c.insert(suchergebnis->TitleInArchive(),markupstr);
+					}
 					titleIndex->DeleteSearchResult(temp);
 				}
 				markupstr = redirectMessage + markupstr;
