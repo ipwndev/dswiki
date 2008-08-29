@@ -4,7 +4,6 @@
 #include <PA9.h>
 #include <string>
 #include <vector>
-#include <queue>
 #include <deque>
 
 #include "main.h"
