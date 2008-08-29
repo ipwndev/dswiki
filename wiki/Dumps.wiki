@@ -1,4 +1,5 @@
 #summary Ready-to-use dumps for DSwiki.
+#labels Featured
 
 On this page, pre-made and ready to use database dumps for DSwiki are available for download. If you have compiled your own dump and want to share it with other users, drop me a note and I will list it on this page.
 
