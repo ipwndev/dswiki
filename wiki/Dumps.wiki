@@ -4,6 +4,6 @@ On this page, pre-made and ready to use database dumps for DSwiki are available 
 
 = Dumps =
 
-||The complete German Wikipedia (2008/07/12)||http://dswiki.googlecode.com/files/DSwiki-dewiki-20080712.torrent||
-||The complete English Wikipedia (2008/07/24)||http://dswiki.googlecode.com/files/DSwiki-enwiki-20080724.torrent||
-||Sample data (German Wikiquotes)||http://dswiki.googlecode.com/files/DSwiki-sample-data.zip||
+||The complete German Wikipedia (2008/07/12)||[1.1GB] http://dswiki.googlecode.com/files/DSwiki-dewiki-20080712.torrent||
+||The complete English Wikipedia (2008/07/24)||[3.5GB] http://dswiki.googlecode.com/files/DSwiki-enwiki-20080724.torrent||
+||Sample data (German Wikiquotes)||[5MB] http://dswiki.googlecode.com/files/DSwiki-sample-data.zip||
