@@ -1,4 +1,3 @@
-#labels Featured
 =How to create a custom dump file for the use in DSwiki=
 
 ==Download==
