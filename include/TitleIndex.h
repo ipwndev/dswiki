@@ -35,7 +35,7 @@ public:
 	TitleIndex(string basename);
 	~TitleIndex();
 
-	ArticleSearchResult* FindArticle(string title, bool multiple=false);
+	ArticleSearchResult* FindArticle(string title, u8 setPosition = 0, u8 multiple = 0);
 	ArticleSearchResult* GetRandomArticle();
 	ArticleSearchResult* isRedirect(string markup);
 	ArticleSearchResult* GetSuggestions(string phrase, int maxSuggestions);
@@ -58,7 +58,7 @@ private:
 	FILE*   _f_index0;
 	FILE*   _f_index1;
 
-	string	GetTitle(int articleNumber, int indexNo);
+	string	GetTitle(int articleNumber, int indexNo, u8 setPosition = 1);
 
 	string	_FileName_Header;
 	string	_FileName_Data;

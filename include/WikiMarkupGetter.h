@@ -12,7 +12,7 @@ public:
 	WikiMarkupGetter(string basename);
 	~WikiMarkupGetter();
 
-	string GetMarkupForArticle(ArticleSearchResult* articleSearchResult);
+	string getMarkup(TitleIndex* t, string title);
 	string GetLastArticleTitle();
 
 private:

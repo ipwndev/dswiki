@@ -10,7 +10,7 @@ struct to_lower {
 string preparePhrase(string phrase)
 {
 	string exchanged_phrase = trim(exchange_diacritic_chars_utf8(phrase));
-	std::transform(exchanged_phrase.begin(), exchanged_phrase.end(), exchanged_phrase.begin(), to_lower());
+	std::transform(exchanged_phrase.begin(), exchanged_phrase.end(), exchanged_phrase.begin(), to_lower()); // TODO: UTF-8 kompatibel?
 	return exchanged_phrase;
 }
 

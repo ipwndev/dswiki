@@ -20,11 +20,15 @@ WikiMarkupGetter::WikiMarkupGetter(string basename)
 
 WikiMarkupGetter::~WikiMarkupGetter()
 {
-	fclose(_f_data);
+	if (_f_data)
+	{
+		fclose(_f_data);
+	}
 }
 
-string WikiMarkupGetter::GetMarkupForArticle(ArticleSearchResult* articleSearchResult)
+string WikiMarkupGetter::getMarkup(TitleIndex* t, string title)
 {
+	ArticleSearchResult* articleSearchResult = t->FindArticle(title, 1);
 	if ( !articleSearchResult )
 		return NULL;
 

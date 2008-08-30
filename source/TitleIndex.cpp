@@ -77,16 +77,32 @@ TitleIndex::TitleIndex(string basename)
 
 TitleIndex::~TitleIndex()
 {
+	if (_f_header)
+	{
+		fclose(_f_header);
+	}
+	if (_f_data)
+	{
+		fclose(_f_data);
+	}
+	if (_f_dataindex)
+	{
+		fclose(_f_dataindex);
+	}
+	if (_f_index0)
+	{
+		fclose(_f_index0);
+	}
+	if (_f_index1)
+	{
+		fclose(_f_index1);
+	}
 }
 
-string TitleIndex::GetTitle(int articleNumber, int indexNo)
+string TitleIndex::GetTitle(int articleNumber, int indexNo, u8 setPosition)
 {
 	if ( _numberOfArticles<=0  )
 		return "";
-
-	_lastBlockPos = 0;
-	_lastArticlePos = 0;
-	_lastArticleLength = 0;
 
 	if ((articleNumber<0) || (articleNumber>=_numberOfArticles))
 		return "";
@@ -105,29 +121,37 @@ string TitleIndex::GetTitle(int articleNumber, int indexNo)
 	if ( !read )
 		return "";
 
-	error = fseek(_f_dataindex, titlePos, SEEK_SET);
-	if ( error )
-		return "";
+	if (setPosition)
+	{
+		_lastBlockPos = 0;
+		_lastArticlePos = 0;
+		_lastArticleLength = 0;
 
-	fread(&_lastBlockPos, 8, 1, _f_dataindex);
-	fread(&_lastArticlePos, 4, 1, _f_dataindex);
-	fread(&_lastArticleLength, 4, 1, _f_dataindex);
+		error = fseek(_f_dataindex, titlePos, SEEK_SET);
+		if ( error )
+			return "";
 
-	_lastBlockPos -= 256;
-	string result;
+		fread(&_lastBlockPos, 8, 1, _f_dataindex);
+		fread(&_lastArticlePos, 4, 1, _f_dataindex);
+		fread(&_lastArticleLength, 4, 1, _f_dataindex);
 
-	char c = 0;
-
-	while (c=fgetc(_f_dataindex)) { //TODO: Faster
-		result+=c;
+		_lastBlockPos -= 256;
+	}
+	else
+	{
+		error = fseek(_f_dataindex, titlePos+16, SEEK_SET);
+		if ( error )
+			return "";
 	}
 
-	return result;
+	char readstr[MAX_TITLE_LENGTH+1];
+
+	return string(fgets(readstr,MAX_TITLE_LENGTH+1,_f_dataindex));
 }
 
 
 //  to_lower_utf8(title)   :=   to_utf8(to_lower(from_utf8w(utf8_src)))
-ArticleSearchResult* TitleIndex::FindArticle(string title, bool multiple)
+ArticleSearchResult* TitleIndex::FindArticle(string title, u8 setPosition, u8 multiple)
 {
 	if ( _numberOfArticles<=0  )
 		return NULL;
@@ -146,7 +170,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, bool multiple)
 		index = (lBound + uBound) >> 1;
 
 		// get the title at the specific index
-		string titleAtIndex = GetTitle(index, indexNo);
+		string titleAtIndex = GetTitle(index, indexNo, setPosition);
 
 		// make it lowercase and skip the prefix
 		strlwr(&titleAtIndex.at(0)); // TODO CPPStringUtils::to_lower_utf8(title);
@@ -171,7 +195,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, bool multiple)
 	int startIndex = foundAt;
 	while ( startIndex>0 )
 	{
-		string titleAtIndex = GetTitle(startIndex-1, indexNo);
+		string titleAtIndex = GetTitle(startIndex-1, indexNo, setPosition);
 		strlwr(&titleAtIndex.at(0)); // TODO CPPStringUtils::to_lower_utf8(titleAtIndex);
 
 		if ( lowercaseTitle != titleAtIndex )
@@ -183,7 +207,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, bool multiple)
 	int endIndex = foundAt;
 	while ( endIndex<(_numberOfArticles-1) )
 	{
-		string titleAtIndex = GetTitle(endIndex+1, indexNo);
+		string titleAtIndex = GetTitle(endIndex+1, indexNo, setPosition);
 		strlwr(&titleAtIndex.at(0)); // TODO CPPStringUtils::to_lower_utf8(titleAtIndex);
 
 		if ( lowercaseTitle != titleAtIndex )
@@ -201,7 +225,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, bool multiple)
 			// check if one matches 100%
 			for(int i=startIndex; i<=endIndex; i++)
 			{
-				string titleInArchive = GetTitle(i, indexNo);
+				string titleInArchive = GetTitle(i, indexNo, setPosition);
 				if ( title==titleInArchive )
 				{
 					return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
@@ -214,7 +238,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, bool multiple)
 		else
 		{
 			// return the one and only result
-			string titleInArchive = GetTitle(foundAt, indexNo);
+			string titleInArchive = GetTitle(foundAt, indexNo, setPosition);
 
 			return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 		}
@@ -224,7 +248,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, bool multiple)
 		ArticleSearchResult* result = NULL;
 		for(int i=startIndex; i<=endIndex; i++)
 		{
-			string titleInArchive = GetTitle(i, indexNo);
+			string titleInArchive = GetTitle(i, indexNo, setPosition);
 
 			if ( title == titleInArchive )
 			{
