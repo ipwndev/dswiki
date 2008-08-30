@@ -24,7 +24,6 @@ int main(int argc, char ** argv)
 	PA_InitVBL();
 	PA_InitFat();
 
-
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
 
@@ -40,11 +39,10 @@ int main(int argc, char ** argv)
 	PA_SetTextCol (0, 0, 0, 0);
 	PA_SetTextCol (1, 0, 0, 0);
 
-
 	// important variables
 
-	Font terminus12p; InitFont(&terminus12p,ter12rp);
-// 	Font unifont16;   InitFont(&unifont16,unifont);
+	Font terminus12p;
+	InitFont(&terminus12p,ter12rp);
 
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
@@ -73,8 +71,9 @@ int main(int argc, char ** argv)
 	string markupstr;
 	string suchtitel;
 
-	History h;
-	Cache   c;
+	History          h;
+	Cache            c;
+
 	Markup* markup = NULL;
 
 	// start of main program
@@ -84,24 +83,22 @@ int main(int argc, char ** argv)
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
 	iPrint("Lade dewiki.dat...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-// 	PA_Sleep(30);
-	TitleIndex* titleIndex = new TitleIndex("dewiki");
+	TitleIndex       t("dewiki");
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 
 
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
 	iPrint("Initialisiere MarkupGetter...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-// 	PA_Sleep(30);
-	WikiMarkupGetter* mg = new WikiMarkupGetter("dewiki");
+	WikiMarkupGetter m("dewiki");
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 
-	u8 updateTitle           = 0;
-	u8 updateContent         = 0;
-	u8 updateStatusbar       = 0;
-	u8 loadArticle           = 1;
-	u8 setNewHistoryItem     = 1;
-	s32 forcedLine           = 0;
+	u8  updateTitle       = 0;
+	u8  updateContent     = 0;
+	u8  updateStatusbar   = 0;
+	u8  loadArticle       = 1;
+	u8  setNewHistoryItem = 1;
+	s32 forcedLine        = 0;
 
 	while(1)
 	{
@@ -225,56 +222,59 @@ int main(int argc, char ** argv)
 
 				if (searchSuggestions)
 				{
-					if (suggestions!=NULL)
-						titleIndex->DeleteSearchResult(suggestions);
-					suggestions = titleIndex->GetSuggestions(suchtitel,MAX_SUGGESTIONS);
+					PA_OutputText(1,0,23,"Loading suggestions");
+					PA_Sleep(30);
+					PA_OutputText(1,0,23,"                   ");
+/*					if (suggestions!=NULL)
+						t.DeleteSearchResult(suggestions);
+					suggestions = t.GetSuggestions(suchtitel,MAX_SUGGESTIONS);*/
 					updateSuggestions = 1;
 					searchSuggestions = 0;
 				}
-
-				if (updateSuggestions)
-				{
-					if (suggestions!=NULL)
-					{
-						FillVS(&ContentWin1,PA_RGB(31,31,31));
-						s32 z = 0;
-						ArticleSearchResult* temp = suggestions;
-						CharArea = (BLOCK) {{0,0},{0,0}};
-						while ((temp!=NULL)&&(z<14))
-						{
-							iPrint(temp->TitleInArchive()+"\n",&ContentWin1,&SearchResultsCS,&CharArea,-1,UTF8);
-							temp = temp->Next;
-							z++;
-						}
-					}
-					updateSuggestions = 0;
-				}
-
-				if ((Pad.Newpress.Up||Pad.Held.Up))
-				{
-					if(suggestions->Previous!=NULL)
-					{
-						suggestions = suggestions->Previous;
-						PA_Sleep(6);
-						updateSuggestions = 1;
-					}
-				}
-
-				if ((Pad.Newpress.Down||Pad.Held.Down))
-				{
-					if(suggestions->Next!=NULL)
-					{
-						suggestions = suggestions->Next;
-						PA_Sleep(6);
-						updateSuggestions = 1;
-					}
-				}
-
+//
+// 				if (updateSuggestions)
+// 				{
+// 					if (suggestions!=NULL)
+// 					{
+// 						FillVS(&ContentWin1,PA_RGB(31,31,31));
+// 						s32 z = 0;
+// 						ArticleSearchResult* temp = suggestions;
+// 						CharArea = (BLOCK) {{0,0},{0,0}};
+// 						while ((temp!=NULL)&&(z<14))
+// 						{
+// 							iPrint(temp->TitleInArchive()+"\n",&ContentWin1,&SearchResultsCS,&CharArea,-1,UTF8);
+// 							temp = temp->Next;
+// 							z++;
+// 						}
+// 					}
+// 					updateSuggestions = 0;
+// 				}
+//
+// 				if ((Pad.Newpress.Up||Pad.Held.Up))
+// 				{
+// 					if(suggestions->Previous!=NULL)
+// 					{
+// 						suggestions = suggestions->Previous;
+// 						PA_Sleep(6);
+// 						updateSuggestions = 1;
+// 					}
+// 				}
+//
+// 				if ((Pad.Newpress.Down||Pad.Held.Down))
+// 				{
+// 					if(suggestions->Next!=NULL)
+// 					{
+// 						suggestions = suggestions->Next;
+// 						PA_Sleep(6);
+// 						updateSuggestions = 1;
+// 					}
+// 				}
+//
 				if (Pad.Newpress.A)
 				{
 					if (suggestions!=NULL)
 					{
-						suchtitel = suggestions->TitleInArchive();
+// 						suchtitel = suggestions->TitleInArchive();
 						forcedLine = 0;
 						setNewHistoryItem = 1;
 						loadArticle = 1;
@@ -292,14 +292,14 @@ int main(int argc, char ** argv)
 					}
 					if (IsInArea(OKBtn,S))
 					{
-						if (suggestions!=NULL)
-						{
-							suchtitel = suggestions->TitleInArchive();
+// 						if (suggestions!=NULL)
+// 						{
+// 							suchtitel = suggestions->TitleInArchive();
 							forcedLine = 0;
 							setNewHistoryItem = 1;
 							loadArticle = 1;
 							break;
-						}
+// 						}
 					}
 				}
 
@@ -356,21 +356,21 @@ int main(int argc, char ** argv)
 
 		if (loadArticle)
 		{
-			titleIndex->DeleteSearchResult(suchergebnis);
+			t.DeleteSearchResult(suchergebnis);
 
 			if (suchtitel.empty())
 			{
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
 				iPrint("Suche zufälligen Artikel...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-				suchergebnis = titleIndex->GetRandomArticle();
+				suchergebnis = t.GetRandomArticle();
 			}
 			else
 			{
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
 				iPrint("Suche Artikel...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-				suchergebnis = titleIndex->FindArticle(suchtitel);
+				suchergebnis = t.FindArticle(suchtitel);
 			}
 // 			PA_Sleep(30);
 
@@ -391,13 +391,13 @@ int main(int argc, char ** argv)
 				else
 				{
 					iPrint("Hole Markup von Disk...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-					markupstr = mg->GetMarkupForArticle(suchergebnis);
+					markupstr = m.getMarkup(&t, suchergebnis->TitleInArchive());
 					c.insert(suchergebnis->TitleInArchive(),markupstr);
 				}
 
 				string redirectMessage = "";
 				u8 numberOfRedirections = 0;
-				while ((numberOfRedirections<MAX_NUMBER_OF_REDIRECTIONS) && (redirection = titleIndex->isRedirect(markupstr)))
+				while ((numberOfRedirections<MAX_NUMBER_OF_REDIRECTIONS) && (redirection = t.isRedirect(markupstr)))
 				{
 					numberOfRedirections++;
 					ArticleSearchResult* temp = suchergebnis;
@@ -413,10 +413,10 @@ int main(int argc, char ** argv)
 					else
 					{
 						iPrint("Folge Umleitung von Disk...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-						markupstr = mg->GetMarkupForArticle(suchergebnis);
+						markupstr = m.getMarkup(&t, suchergebnis->TitleInArchive());
 						c.insert(suchergebnis->TitleInArchive(),markupstr);
 					}
-					titleIndex->DeleteSearchResult(temp);
+					t.DeleteSearchResult(temp);
 				}
 				markupstr = redirectMessage + markupstr;
 

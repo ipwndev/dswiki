@@ -41,6 +41,8 @@ typedef struct
 	Font*   FONT;
 } CharStat;
 
+#define MAX_TITLE_LENGTH 1000
+
 const string diacriticExchangeTable[] =
 {
 //   this table contains the char code for any diacritic char
