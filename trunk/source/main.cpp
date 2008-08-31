@@ -2,19 +2,20 @@
 #include <string>
 
 #include "main.h"
-#include "chrlib.h"
+
 #include "api.h"
+#include "Big52Uni16.h"
+#include "Cache.h"
+#include "chrlib.h"
+#include "History.h"
+#include "Markup.h"
+#include "SearchResults.h"
+#include "struct.h"
+#include "ter12rp.h"
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
-#include "Markup.h"
-#include "History.h"
-#include "Cache.h"
 
-#include "ter12rp.h"
-// #include "unifont.h"
 
-#define MAX_NUMBER_OF_REDIRECTIONS	5
-#define MAX_SUGGESTIONS             5
 
 int main(int argc, char ** argv)
 {
@@ -51,13 +52,15 @@ int main(int argc, char ** argv)
 	VirScreen  ContentWin1 = {  2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
 	VirScreen  ContentWin2 = {  2,   2, 252, 172, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
 	VirScreen  Statusbar   = {  0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
+	VirScreen  PercentArea = {226, 176,  30,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
 	VirScreen  Searchbar   = { 47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
 	CharStat       TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
 	CharStat        ContentCS = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
 	CharStat      StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
 	CharStat StatusbarErrorCS = { PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
-	CharStat  SearchResultsCS = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
+	CharStat SearchResultsCS1 = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
+	CharStat SearchResultsCS2 = { PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
 
 	BLOCK ClearBtn = {{216,37},{237,58}};
 	BLOCK OKBtn    = {{18,37},{39,58}};
@@ -70,6 +73,7 @@ int main(int argc, char ** argv)
 
 	string markupstr;
 	string suchtitel;
+	string currentTitle;
 
 	History          h;
 	Cache            c;
@@ -92,6 +96,8 @@ int main(int argc, char ** argv)
 	iPrint("Initialisiere MarkupGetter...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
 	WikiMarkupGetter m("dewiki");
 	FillVS(&Statusbar,PA_RGB(26,26,26));
+
+	SearchResults s(&t);
 
 	u8  updateTitle       = 0;
 	u8  updateContent     = 0;
@@ -117,7 +123,7 @@ int main(int argc, char ** argv)
 
 		if ((Pad.Newpress.Left||Pad.Held.Left))
 		{
-			if (markup->ScrollPageUp())
+			if (markup->scrollPageUp())
 			{
 				h.updateCurrentLine(markup->currentLine());
 				updateContent = 1;
@@ -127,7 +133,7 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Right||Pad.Held.Right)
 		{
-			if (markup->ScrollPageDown())
+			if (markup->scrollPageDown())
 			{
 				h.updateCurrentLine(markup->currentLine());
 				updateContent = 1;
@@ -137,7 +143,7 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Up||Pad.Held.Up)
 		{
-			if (markup->ScrollLineUp())
+			if (markup->scrollLineUp())
 			{
 				h.updateCurrentLine(markup->currentLine());
 				updateContent = 1;
@@ -147,7 +153,7 @@ int main(int argc, char ** argv)
 
 		if ((Pad.Newpress.Down||Pad.Held.Down))
 		{
-			if (markup->ScrollLineDown())
+			if (markup->scrollLineDown())
 			{
 				h.updateCurrentLine(markup->currentLine());
 				updateContent = 1;
@@ -172,12 +178,10 @@ int main(int argc, char ** argv)
 			PA_Clear16bitBg(1);
 			PA_Clear16bitBg(0);
 
-			ArticleSearchResult* suggestions = NULL;
 			char letter = 0;
 			u8 updateSearchbar   = 1;
 			u8 updateSuggestions = 0;
 			u8 searchSuggestions = 0;
-			u8 countdown         = 0;
 
 			while(1)
 			{
@@ -198,88 +202,11 @@ int main(int argc, char ** argv)
 
 				if ( (letter == '\n') )
 				{
+					suchtitel = s.currentHighlightedItem();
 					forcedLine = 0;
 					setNewHistoryItem = 1;
 					loadArticle = 1;
 					break;
-				}
-
-				if (updateSearchbar)
-				{
-					DrawBlock(&DnScreen,ClearBtn,PA_RGB(31,0,0),1);
-					DrawBlock(&DnScreen,OKBtn,PA_RGB(0,31,0),1);
-					FillVS(&Searchbar,PA_RGB(28,28,28));
-					CharArea = (BLOCK) {{2,5},{0,0}};
-					iPrint(suchtitel,&Searchbar,&SearchResultsCS,&CharArea,-1,UTF8);
-					countdown = 6;
-					updateSearchbar = 0;
-				}
-
-				if (Pad.Newpress.X)
-				{
-					break;
-				}
-
-				if (searchSuggestions)
-				{
-					PA_OutputText(1,0,23,"Loading suggestions");
-					PA_Sleep(30);
-					PA_OutputText(1,0,23,"                   ");
-/*					if (suggestions!=NULL)
-						t.DeleteSearchResult(suggestions);
-					suggestions = t.GetSuggestions(suchtitel,MAX_SUGGESTIONS);*/
-					updateSuggestions = 1;
-					searchSuggestions = 0;
-				}
-//
-// 				if (updateSuggestions)
-// 				{
-// 					if (suggestions!=NULL)
-// 					{
-// 						FillVS(&ContentWin1,PA_RGB(31,31,31));
-// 						s32 z = 0;
-// 						ArticleSearchResult* temp = suggestions;
-// 						CharArea = (BLOCK) {{0,0},{0,0}};
-// 						while ((temp!=NULL)&&(z<14))
-// 						{
-// 							iPrint(temp->TitleInArchive()+"\n",&ContentWin1,&SearchResultsCS,&CharArea,-1,UTF8);
-// 							temp = temp->Next;
-// 							z++;
-// 						}
-// 					}
-// 					updateSuggestions = 0;
-// 				}
-//
-// 				if ((Pad.Newpress.Up||Pad.Held.Up))
-// 				{
-// 					if(suggestions->Previous!=NULL)
-// 					{
-// 						suggestions = suggestions->Previous;
-// 						PA_Sleep(6);
-// 						updateSuggestions = 1;
-// 					}
-// 				}
-//
-// 				if ((Pad.Newpress.Down||Pad.Held.Down))
-// 				{
-// 					if(suggestions->Next!=NULL)
-// 					{
-// 						suggestions = suggestions->Next;
-// 						PA_Sleep(6);
-// 						updateSuggestions = 1;
-// 					}
-// 				}
-//
-				if (Pad.Newpress.A)
-				{
-					if (suggestions!=NULL)
-					{
-// 						suchtitel = suggestions->TitleInArchive();
-						forcedLine = 0;
-						setNewHistoryItem = 1;
-						loadArticle = 1;
-						break;
-					}
 				}
 
 				if (Stylus.Newpress)
@@ -292,28 +219,94 @@ int main(int argc, char ** argv)
 					}
 					if (IsInArea(OKBtn,S))
 					{
-// 						if (suggestions!=NULL)
-// 						{
-// 							suchtitel = suggestions->TitleInArchive();
-							forcedLine = 0;
-							setNewHistoryItem = 1;
-							loadArticle = 1;
-							break;
-// 						}
+						suchtitel = s.currentHighlightedItem();
+						forcedLine = 0;
+						setNewHistoryItem = 1;
+						loadArticle = 1;
+						break;
 					}
 				}
 
-				if (countdown>0)
+				if ((Pad.Newpress.Up||Pad.Held.Up))
 				{
-					countdown--;
-					if ((countdown==0) && (!suchtitel.empty()))
+					if (s.scrollLineUp())
 					{
-						searchSuggestions = 1;
+						PA_Sleep(6);
+						updateSuggestions = 1;
 					}
+				}
+
+				if ((Pad.Newpress.Down||Pad.Held.Down))
+				{
+					if (s.scrollLineDown())
+					{
+						PA_Sleep(6);
+						updateSuggestions = 1;
+					}
+				}
+
+				if ((Pad.Newpress.Left||Pad.Held.Left))
+				{
+					if (s.scrollPageUp())
+					{
+						PA_Sleep(6);
+						updateSuggestions = 1;
+					}
+				}
+
+				if ((Pad.Newpress.Right||Pad.Held.Right))
+				{
+					if (s.scrollPageDown())
+					{
+						PA_Sleep(6);
+						updateSuggestions = 1;
+					}
+				}
+
+
+				if (Pad.Newpress.A)
+				{
+					suchtitel = s.currentHighlightedItem();
+					forcedLine = 0;
+					setNewHistoryItem = 1;
+					loadArticle = 1;
+					break;
+				}
+
+				if (Pad.Newpress.X)
+				{
+					break;
+				}
+
+				if (updateSearchbar)
+				{
+					DrawBlock(&DnScreen,ClearBtn,PA_RGB(31,0,0),1);
+					DrawBlock(&DnScreen,OKBtn,PA_RGB(0,31,0),1);
+					FillVS(&Searchbar,PA_RGB(28,28,28));
+					CharArea = (BLOCK) {{2,5},{0,0}};
+					iPrint(suchtitel,&Searchbar,&SearchResultsCS1,&CharArea,-1,UTF8);
+					searchSuggestions = 1;
+					updateSearchbar = 0;
+				}
+
+				if (searchSuggestions)
+				{
+					if(s.load(suchtitel))
+					{
+						updateSuggestions = 1;
+					}
+					searchSuggestions = 0;
+				}
+
+				if (updateSuggestions)
+				{
+					s.display(&ContentWin1,&SearchResultsCS1,&SearchResultsCS2);
+					updateSuggestions = 0;
 				}
 
 				PA_WaitForVBL();
 			}
+
 			PA_KeyboardOut();
 			updateTitle = 1;
 			updateContent = 1;
@@ -356,30 +349,28 @@ int main(int argc, char ** argv)
 
 		if (loadArticle)
 		{
-			t.DeleteSearchResult(suchergebnis);
-
 			if (suchtitel.empty())
 			{
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
 				iPrint("Suche zufälligen Artikel...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-				suchergebnis = t.GetRandomArticle();
+				suchergebnis = t.getRandomArticle();
 			}
 			else
 			{
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
 				iPrint("Suche Artikel...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-				suchergebnis = t.FindArticle(suchtitel);
+				suchergebnis = t.findArticle(suchtitel);
 			}
-// 			PA_Sleep(30);
 
 			if (suchergebnis!=NULL)
 			{
+				suchtitel.clear();
+
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
 				iPrint("Lade \""+suchergebnis->TitleInArchive()+"\"",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-// 				PA_Sleep(30);
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
 
@@ -416,10 +407,10 @@ int main(int argc, char ** argv)
 						markupstr = m.getMarkup(&t, suchergebnis->TitleInArchive());
 						c.insert(suchergebnis->TitleInArchive(),markupstr);
 					}
-					t.DeleteSearchResult(temp);
 				}
-				markupstr = redirectMessage + markupstr;
+				currentTitle = suchergebnis->TitleInArchive();
 
+				markupstr = redirectMessage + markupstr;
 				delete markup;
 				markup = new Markup(markupstr, &ContentWin1, &ContentWin2, &ContentCS);
 				markupstr.clear();
@@ -451,13 +442,24 @@ int main(int argc, char ** argv)
 		{
 			FillVS(&Titlebar, PA_RGB( 9,16,28));
 			CharArea = (BLOCK) {{5,2},{0,0}};
-			iPrint(suchergebnis->TitleInArchive(),&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
+			iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
 			updateTitle = 0;
 		}
 
 		if (updateContent)
 		{
 			markup->draw();
+			char out[5];
+			sprintf(out,"%d",markup->currentPercent());
+			string percentstr(out);
+			while (percentstr.length()<3)
+			{
+				percentstr = " "+percentstr;
+			}
+			percentstr += "%";
+			CharArea = (BLOCK) {{2,2},{0,0}};
+			FillVS(&PercentArea,PA_RGB(26,26,26));
+			iPrint(percentstr,&PercentArea,&StatusbarCS,&CharArea,-1,UTF8);
 			updateContent = 0;
 		}
 

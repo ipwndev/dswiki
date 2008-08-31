@@ -1,10 +1,25 @@
 #ifndef _WIKIMARKUPGETTER_H
 #define _WIKIMARKUPGETTER_H
 
-#include "TitleIndex.h"
+#include <PA9.h>
 #include <string>
 
+#include "TitleIndex.h"
+#include "api.h"
+#include "Big52Uni16.h"
+#include "Cache.h"
+#include "chrlib.h"
+#include "History.h"
+#include "main.h"
+#include "Markup.h"
+#include "SearchResults.h"
+#include "struct.h"
+#include "ter12rp.h"
+#include "WikiMarkupGetter.h"
+
 using namespace std;
+
+class TitleIndex;
 
 class WikiMarkupGetter
 {

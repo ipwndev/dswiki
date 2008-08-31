@@ -3,6 +3,8 @@
 
 #include <PA9.h>
 
+using namespace std;
+
 typedef struct
 {
    s32 x;

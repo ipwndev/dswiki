@@ -345,6 +345,13 @@ s32 Markup::currentLine()
 	return _currentLine;
 }
 
+u8 Markup::currentPercent()
+{
+	if (lines.size()<2)
+		return 0;
+	return (_currentLine*100)/(lines.size()-1);
+}
+
 u8 Markup::setCurrentLine(s32 line)
 {
 	s32 before = _currentLine;
@@ -356,22 +363,22 @@ u8 Markup::setCurrentLine(s32 line)
 	return (before!=_currentLine)?1:0;
 }
 
-u8 Markup::ScrollLineDown()
+u8 Markup::scrollLineDown()
 {
 	return setCurrentLine(_currentLine+1);
 }
 
-u8 Markup::ScrollLineUp()
+u8 Markup::scrollLineUp()
 {
 	return setCurrentLine(_currentLine-1);
 }
 
-u8 Markup::ScrollPageDown()
+u8 Markup::scrollPageDown()
 {
 	return setCurrentLine(_currentLine+_linesOnVScreen2);
 }
 
-u8 Markup::ScrollPageUp()
+u8 Markup::scrollPageUp()
 {
 	return setCurrentLine(_currentLine-_linesOnVScreen2);
 }
