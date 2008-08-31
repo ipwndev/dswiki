@@ -6,10 +6,20 @@
 #include <vector>
 #include <deque>
 
-#include "main.h"
 #include "api.h"
-#include "struct.h"
+#include "Big52Uni16.h"
+#include "Cache.h"
 #include "chrlib.h"
+#include "History.h"
+#include "main.h"
+#include "Markup.h"
+#include "SearchResults.h"
+#include "struct.h"
+#include "ter12rp.h"
+#include "TitleIndex.h"
+#include "WikiMarkupGetter.h"
+
+using namespace std;
 
 #define MAX_CACHE_SIZE 2097152
 

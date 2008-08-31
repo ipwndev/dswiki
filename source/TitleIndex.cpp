@@ -1,13 +1,4 @@
-#include <PA9.h>
-#include <fat.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "main.h"
 #include "TitleIndex.h"
-#include "chrlib.h"
-#include "Markup.h"
-
 
 typedef struct
 {
@@ -99,7 +90,7 @@ TitleIndex::~TitleIndex()
 	}
 }
 
-string TitleIndex::GetTitle(int articleNumber, int indexNo, u8 setPosition)
+string TitleIndex::getTitle(int articleNumber, int indexNo, u8 setPosition)
 {
 	if ( _numberOfArticles<=0  )
 		return "";
@@ -151,7 +142,7 @@ string TitleIndex::GetTitle(int articleNumber, int indexNo, u8 setPosition)
 
 
 //  to_lower_utf8(title)   :=   to_utf8(to_lower(from_utf8w(utf8_src)))
-ArticleSearchResult* TitleIndex::FindArticle(string title, u8 setPosition, u8 multiple)
+ArticleSearchResult* TitleIndex::findArticle(string title, u8 setPosition, u8 multiple)
 {
 	if ( _numberOfArticles<=0  )
 		return NULL;
@@ -170,7 +161,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, u8 setPosition, u8 mu
 		index = (lBound + uBound) >> 1;
 
 		// get the title at the specific index
-		string titleAtIndex = GetTitle(index, indexNo, setPosition);
+		string titleAtIndex = getTitle(index, indexNo, setPosition);
 
 		// make it lowercase and skip the prefix
 		strlwr(&titleAtIndex.at(0)); // TODO CPPStringUtils::to_lower_utf8(title);
@@ -195,7 +186,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, u8 setPosition, u8 mu
 	int startIndex = foundAt;
 	while ( startIndex>0 )
 	{
-		string titleAtIndex = GetTitle(startIndex-1, indexNo, setPosition);
+		string titleAtIndex = getTitle(startIndex-1, indexNo, setPosition);
 		strlwr(&titleAtIndex.at(0)); // TODO CPPStringUtils::to_lower_utf8(titleAtIndex);
 
 		if ( lowercaseTitle != titleAtIndex )
@@ -207,7 +198,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, u8 setPosition, u8 mu
 	int endIndex = foundAt;
 	while ( endIndex<(_numberOfArticles-1) )
 	{
-		string titleAtIndex = GetTitle(endIndex+1, indexNo, setPosition);
+		string titleAtIndex = getTitle(endIndex+1, indexNo, setPosition);
 		strlwr(&titleAtIndex.at(0)); // TODO CPPStringUtils::to_lower_utf8(titleAtIndex);
 
 		if ( lowercaseTitle != titleAtIndex )
@@ -225,7 +216,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, u8 setPosition, u8 mu
 			// check if one matches 100%
 			for(int i=startIndex; i<=endIndex; i++)
 			{
-				string titleInArchive = GetTitle(i, indexNo, setPosition);
+				string titleInArchive = getTitle(i, indexNo, setPosition);
 				if ( title==titleInArchive )
 				{
 					return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
@@ -238,7 +229,7 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, u8 setPosition, u8 mu
 		else
 		{
 			// return the one and only result
-			string titleInArchive = GetTitle(foundAt, indexNo, setPosition);
+			string titleInArchive = getTitle(foundAt, indexNo, setPosition);
 
 			return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 		}
@@ -248,13 +239,11 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, u8 setPosition, u8 mu
 		ArticleSearchResult* result = NULL;
 		for(int i=startIndex; i<=endIndex; i++)
 		{
-			string titleInArchive = GetTitle(i, indexNo, setPosition);
+			string titleInArchive = getTitle(i, indexNo, setPosition);
 
 			if ( title == titleInArchive )
 			{
 				// 100% match
-				DeleteSearchResult(result);
-
 				return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 			}
 
@@ -271,12 +260,12 @@ ArticleSearchResult* TitleIndex::FindArticle(string title, u8 setPosition, u8 mu
 }
 
 
-ArticleSearchResult* TitleIndex::GetSuggestions(string phrase, int maxSuggestions)
+deque<string> TitleIndex::getSuggestions(string phrase, int before, int after)
 {
-	ArticleSearchResult* suggestions;
+	deque<string> s;
 
 	if ( _numberOfArticles<=0  )
-		return suggestions;
+		return s;
 
 	int indexNo = 0;
 	if ( _using_index1 )
@@ -286,7 +275,7 @@ ArticleSearchResult* TitleIndex::GetSuggestions(string phrase, int maxSuggestion
 
 	int phraseLength = phrase.length();
 	if ( phraseLength==0 )
-		return suggestions;
+		return s;
 
 	int lBound = 0;
 	int uBound = _numberOfArticles - 1;
@@ -299,7 +288,7 @@ ArticleSearchResult* TitleIndex::GetSuggestions(string phrase, int maxSuggestion
 		index = (lBound + uBound) >> 1;
 
 		// get the title at the specific index
-		titleAtIndex = GetTitle(index, indexNo);
+		titleAtIndex = getTitle(index, indexNo);
 		titleAtIndex = preparePhrase(titleAtIndex);
 
 		if ( lowercasePhrase < titleAtIndex)
@@ -327,7 +316,7 @@ ArticleSearchResult* TitleIndex::GetSuggestions(string phrase, int maxSuggestion
 	// go to the first article which starts with the phrase
 	while ( startIndex>0 )
 	{
-		titleAtIndex = GetTitle(startIndex-1, indexNo);
+		titleAtIndex = getTitle(startIndex-1, indexNo);
 		titleAtIndex = preparePhrase(titleAtIndex);
 
 		if ( titleAtIndex.length() > phraseLength )
@@ -342,52 +331,26 @@ ArticleSearchResult* TitleIndex::GetSuggestions(string phrase, int maxSuggestion
 	index = startIndex;
 	int results = 0;
 
-	ArticleSearchResult* first = NULL;
-	while ( (index<_numberOfArticles) && (results<maxSuggestions) )
+	while ( (index<_numberOfArticles) && (results<after+1) )
 	{
-		string title = GetTitle(index, indexNo);
-
-		if ( !suggestions )
-		{
-			suggestions       = new ArticleSearchResult(title, title, _lastBlockPos, _lastArticlePos, _lastArticleLength);
-			first             = suggestions;
-		}
-		else
-		{
-			suggestions->Next = new ArticleSearchResult(title, title, _lastBlockPos, _lastArticlePos, _lastArticleLength);
-			suggestions->Next->Previous = suggestions;
-			suggestions = suggestions->Next;
-		}
-
+		string title = getTitle(index, indexNo);
+		s.push_back(title);
 		index++;
 		results++;
 	}
 
 	index = startIndex-1;
 	results = 0;
-	suggestions = first;
 
-	while ( (startIndex >= 0) && (results<maxSuggestions) )
+	while ( (index >= 0) && (results<before) )
 	{
-		string title = GetTitle(index, indexNo);
-
-		if ( !suggestions )
-		{
-			suggestions       = new ArticleSearchResult(title, title, _lastBlockPos, _lastArticlePos, _lastArticleLength);
-			first             = suggestions;
-		}
-		else
-		{
-			suggestions->Previous = new ArticleSearchResult(title, title, _lastBlockPos, _lastArticlePos, _lastArticleLength);
-			suggestions->Previous->Next = suggestions;
-			suggestions = suggestions->Previous;
-		}
-
+		string title = getTitle(index, indexNo);
+		s.push_front(title);
 		index--;
 		results++;
 	}
 
-	return first;
+	return s;
 }
 
 
@@ -404,7 +367,7 @@ ArticleSearchResult* TitleIndex::isRedirect(string markup)
 		l = createLink(markup,9,0);
 		if (l)
 		{
-			return FindArticle(l->target);
+			return findArticle(l->target);
 		}
 		else
 		{
@@ -417,7 +380,7 @@ ArticleSearchResult* TitleIndex::isRedirect(string markup)
 	}
 }
 
-ArticleSearchResult* TitleIndex::GetRandomArticle()
+ArticleSearchResult* TitleIndex::getRandomArticle()
 {
 	if ( _numberOfArticles<=0  )
 		return NULL;
@@ -426,25 +389,9 @@ ArticleSearchResult* TitleIndex::GetRandomArticle()
 
 	int articleNo = PA_RandMax(_numberOfArticles-1);
 
-	string titleInArchive = GetTitle(articleNo, indexNo);
-
+	string titleInArchive = getTitle(articleNo, indexNo);
 
 	return new ArticleSearchResult(titleInArchive, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
-}
-
-void TitleIndex::DeleteSearchResult(ArticleSearchResult* articleSearchResult)
-{
-	while ( articleSearchResult )
-	{
-		articleSearchResult = articleSearchResult->Previous;
-	}
-	while ( articleSearchResult )
-	{
-		ArticleSearchResult* help = articleSearchResult;
-		articleSearchResult = articleSearchResult->Next;
-
-		delete(help);
-	}
 }
 
 string TitleIndex::HeaderFileName()

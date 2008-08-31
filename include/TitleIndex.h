@@ -1,8 +1,24 @@
 #ifndef _TITLEINDEX_H
 #define _TITLEINDEX_H
 
+#include <PA9.h>
 #include <fat.h>
+#include <stdio.h>
 #include <string>
+#include <deque>
+
+#include "api.h"
+#include "Big52Uni16.h"
+#include "Cache.h"
+#include "chrlib.h"
+#include "History.h"
+#include "main.h"
+#include "Markup.h"
+#include "SearchResults.h"
+#include "struct.h"
+#include "ter12rp.h"
+#include "WikiMarkupGetter.h"
+
 
 using namespace std;
 
@@ -35,12 +51,10 @@ public:
 	TitleIndex(string basename);
 	~TitleIndex();
 
-	ArticleSearchResult* FindArticle(string title, u8 setPosition = 0, u8 multiple = 0);
-	ArticleSearchResult* GetRandomArticle();
+	ArticleSearchResult* findArticle(string title, u8 setPosition = 0, u8 multiple = 0);
+	ArticleSearchResult* getRandomArticle();
 	ArticleSearchResult* isRedirect(string markup);
-	ArticleSearchResult* GetSuggestions(string phrase, int maxSuggestions);
-
-	void	DeleteSearchResult(ArticleSearchResult* articleSearchResult);
+	deque<string>	getSuggestions(string phrase, int before, int after);
 
 	string	HeaderFileName();
 	string	DataFileName();
@@ -58,7 +72,7 @@ private:
 	FILE*   _f_index0;
 	FILE*   _f_index1;
 
-	string	GetTitle(int articleNumber, int indexNo, u8 setPosition = 1);
+	string	getTitle(int articleNumber, int indexNo, u8 setPosition = 1);
 
 	string	_FileName_Header;
 	string	_FileName_Data;

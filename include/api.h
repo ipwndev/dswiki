@@ -4,6 +4,8 @@
 #include <PA9.h>
 #include "struct.h"
 
+using namespace std;
+
 u8 IsInArea(BLOCK Area, POINT Point);
 BLOCK CreateBlock(s32 xoff, s32 yoff, s32 w, s32 h);
 BLOCK Intersection(BLOCK Area1,BLOCK Area2);

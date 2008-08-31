@@ -5,9 +5,9 @@
 #include <bzlib.h>
 #include <string>
 
-#include "main.h"
 #include "WikiMarkupGetter.h"
 #include "TitleIndex.h"
+#include "main.h"
 
 #define BUFFER_SIZE 8192
 #define BZ_DECOMPRESS_SMALL 1
@@ -28,7 +28,7 @@ WikiMarkupGetter::~WikiMarkupGetter()
 
 string WikiMarkupGetter::getMarkup(TitleIndex* t, string title)
 {
-	ArticleSearchResult* articleSearchResult = t->FindArticle(title, 1);
+	ArticleSearchResult* articleSearchResult = t->findArticle(title, 1);
 	if ( !articleSearchResult )
 		return NULL;
 
