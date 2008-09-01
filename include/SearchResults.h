@@ -20,7 +20,9 @@
 
 using namespace std;
 
-#define MAX_SEARCH_RESULTS 50
+#define MAX_SEARCH_RESULTS 128
+#define INCREASE_STEP 13
+#define BIG_STEPSIZE 13
 
 //
 // C++ Interface: SearchResults
@@ -39,21 +41,36 @@ class TitleIndex;
 class SearchResults
 {
 	public:
-		SearchResults(TitleIndex* t);
-		u8 load(string title);
+		SearchResults(TitleIndex* t, VirScreen* VScreen, CharStat* CStat1, CharStat* CStat2);
+		void load(string phrase);
 		string currentHighlightedItem();
 		u8	scrollLineDown();
 		u8	scrollLineUp();
 		u8	scrollPageDown();
 		u8	scrollPageUp();
-		void display(VirScreen* VScreen, CharStat* CStat1, CharStat* CStat2);
+		void display();
 	private:
 		TitleIndex*	_titleindex;
+		VirScreen*	_vscreen;
+		CharStat*	_cstat1;
+		CharStat*	_cstat2;
+
 		void enlarge_front();
 		void enlarge_back();
 		deque<string>	_list;
-		s32	_currentPosition;
-		s32	_firstLine;
+
+		s32 _list_FirstArticleNumber;
+		s32 _list_FirstDisplayNumber;
+		s32 _list_CurrentArticleNumber;
+		s32 _list_LastDisplayNumber;
+		s32 _list_LastArticleNumber;
+		s32 _absolute_FirstArticleNumber;
+		s32 _absolute_FirstDisplayNumber;
+		s32 _absolute_CurrentArticleNumber;
+		s32 _absolute_LastDisplayNumber;
+		s32 _absolute_LastArticleNumber;
+
+		u8	_wasScrolled;
 };
 
 #endif

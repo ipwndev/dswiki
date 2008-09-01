@@ -347,8 +347,10 @@ s32 Markup::currentLine()
 
 u8 Markup::currentPercent()
 {
-	if (lines.size()<2)
+	if (lines.size()==0)
 		return 0;
+	if (lines.size()==1)
+		return 100;
 	return (_currentLine*100)/(lines.size()-1);
 }
 
