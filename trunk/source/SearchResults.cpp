@@ -12,67 +12,199 @@
 //
 //
 
-SearchResults::SearchResults(TitleIndex* t)
+SearchResults::SearchResults(TitleIndex* t, VirScreen* VScreen, CharStat* CStat1, CharStat* CStat2)
 {
 	_titleindex = t;
+	_vscreen = VScreen;
+	_cstat1 = CStat1;
+	_cstat2 = CStat2;
 }
 
-u8 SearchResults::load(string title)
+void SearchResults::load(string phrase)
 {
-	_list.clear();
-	deque<string> temp = _titleindex->getSuggestions(title,0,10);
 	int i;
-	for (i=0;i<temp.size();i++)
+
+	_absolute_CurrentArticleNumber = _titleindex->getSuggestedArticleNumber(phrase);
+	_absolute_FirstArticleNumber = _absolute_CurrentArticleNumber;
+	_absolute_LastArticleNumber = _absolute_FirstArticleNumber + 13;
+
+	if ( _absolute_LastArticleNumber >= _titleindex->NumberOfArticles())
 	{
-		_list.push_back(temp[i]);
+		_absolute_FirstArticleNumber -= _absolute_LastArticleNumber - _titleindex->NumberOfArticles() + 1;
+		_absolute_LastArticleNumber = _titleindex->NumberOfArticles() - 1;
 	}
-	_currentPosition = 0;
-	return 1;
+
+	_absolute_FirstDisplayNumber   = _absolute_FirstArticleNumber;
+	_absolute_LastDisplayNumber    = _absolute_LastArticleNumber;
+
+	_list_FirstArticleNumber   = 0;
+	_list_FirstDisplayNumber   = 0;
+	_list_CurrentArticleNumber = _absolute_CurrentArticleNumber - _absolute_FirstArticleNumber;
+	_list_LastDisplayNumber    = _absolute_LastArticleNumber - _absolute_FirstArticleNumber;
+	_list_LastArticleNumber    = _list_LastDisplayNumber;
+
+	_list.clear();
+	for (i=_absolute_FirstArticleNumber;i<=_absolute_LastArticleNumber;i++)
+	{
+		_list.push_back(_titleindex->getTitle(i));
+	}
+
+	_wasScrolled = 1;
 }
 
 string SearchResults::currentHighlightedItem()
 {
-	if ((_currentPosition<0) || (_currentPosition>=_list.size()))
+	if ((_list_CurrentArticleNumber<0) || (_list_CurrentArticleNumber>=_list.size()))
 		return "";
-	return _list[_currentPosition];
+	return _list[_list_CurrentArticleNumber];
 }
 
-void SearchResults::display(VirScreen* VScreen, CharStat* CStat1, CharStat* CStat2)
+void SearchResults::display()
 {
-	FillVS(VScreen,PA_RGB(31,31,31));
-	BLOCK CharArea = {{0,0},{0,0}};
-	s32 i;
-	for (i=0;i<_list.size();i++)
+	if (_wasScrolled)
 	{
-		if (i==_currentPosition)
-			iPrint(_list[i]+"\n",VScreen,CStat2,&CharArea,-1,UTF8);
+		FillVS(_vscreen,PA_RGB(31,31,31));
+		_wasScrolled = 0;
+	}
+	BLOCK CharArea = {{0,0},{0,0}};
+	int i;
+	for (i=_list_FirstDisplayNumber;i<=_list_LastDisplayNumber;i++)
+	{
+		if (i!=_list_CurrentArticleNumber)
+			iPrint(_list[i]+"\n",_vscreen,_cstat1,&CharArea,-1,UTF8);
 		else
-			iPrint(_list[i]+"\n",VScreen,CStat1,&CharArea,-1,UTF8);
+			iPrint(_list[i]+"\n",_vscreen,_cstat2,&CharArea,-1,UTF8);
 	}
 }
 
 u8 SearchResults::scrollLineUp()
 {
-	if (_currentPosition<=0)
+	if (_absolute_CurrentArticleNumber <= 0)
 		return 0;
-	_currentPosition--;
+	// we can do one step backward
+
+	_absolute_CurrentArticleNumber--;
+	_list_CurrentArticleNumber--;
+
+	if (_absolute_CurrentArticleNumber < _absolute_FirstDisplayNumber)
+	{
+		// Scrolling over the bottom line
+		_absolute_FirstDisplayNumber--;
+		_absolute_LastDisplayNumber--;
+		_list_FirstDisplayNumber--;
+		_list_LastDisplayNumber--;
+		_wasScrolled = 1;
+	}
+
+	if (_list_FirstDisplayNumber < 0)
+	{
+		// enlarge at the front neccessary
+		_absolute_FirstArticleNumber -= INCREASE_STEP;
+		_list_FirstArticleNumber -= INCREASE_STEP;
+
+		if (_absolute_FirstArticleNumber < 0)
+		{
+			_list_FirstArticleNumber -= _absolute_FirstArticleNumber;
+			_absolute_FirstArticleNumber = 0;
+		}
+
+		int i;
+		for (i=_absolute_CurrentArticleNumber;i>=_absolute_FirstArticleNumber;i--)
+		{
+			_list.push_front(_titleindex->getTitle(i));
+			_list_FirstArticleNumber++;
+			_list_FirstDisplayNumber++;
+			_list_CurrentArticleNumber++;
+			_list_LastDisplayNumber++;
+			_list_LastArticleNumber++;
+		}
+
+		while (_list.size() > MAX_SEARCH_RESULTS)
+		{
+			_absolute_LastArticleNumber--;
+			_list_LastArticleNumber--;
+			_list.pop_back();
+		}
+
+	}
 	return 1;
 }
 
 u8 SearchResults::scrollLineDown()
 {
-	if (_currentPosition>=_list.size()-1)
+	if (_absolute_CurrentArticleNumber >= _titleindex->NumberOfArticles() - 1)
 		return 0;
-	_currentPosition++;
+	// we do one step more
+
+	_absolute_CurrentArticleNumber++;
+	_list_CurrentArticleNumber++;
+
+	if (_absolute_CurrentArticleNumber > _absolute_LastDisplayNumber)
+	{
+		// Scrolling over the bottom line
+		_absolute_FirstDisplayNumber++;
+		_absolute_LastDisplayNumber++;
+		_list_FirstDisplayNumber++;
+		_list_LastDisplayNumber++;
+		_wasScrolled = 1;
+	}
+
+	if (_list_LastDisplayNumber > _list_LastArticleNumber)
+	{
+		// enlarge at the tail
+		_list_LastArticleNumber += INCREASE_STEP;
+		_absolute_LastArticleNumber += INCREASE_STEP;
+
+		if (_absolute_LastArticleNumber > _titleindex->NumberOfArticles() - 1)
+		{
+			_absolute_LastArticleNumber = _titleindex->NumberOfArticles() - 1;
+			_list_LastArticleNumber = _absolute_LastArticleNumber - _absolute_FirstArticleNumber;
+		}
+
+		int i;
+		for (i=_absolute_CurrentArticleNumber;i<=_absolute_LastArticleNumber;i++)
+		{
+			_list.push_back(_titleindex->getTitle(i));
+		}
+
+		while (_list.size() > MAX_SEARCH_RESULTS)
+		{
+			_list_FirstDisplayNumber--;
+			_list_CurrentArticleNumber--;
+			_list_LastDisplayNumber--;
+			_list_LastArticleNumber--;
+			_absolute_FirstArticleNumber++;
+			_list.pop_front();
+		}
+
+	}
 	return 1;
 }
 
 u8 SearchResults::scrollPageUp()
 {
-	return scrollLineUp();
+	u8 any = 0;
+	u8 i;
+	for (i=0;i<BIG_STEPSIZE;i++)
+	{
+		if (scrollLineUp())
+		{
+			any = 1;
+		}
+	}
+	return any;
 }
 
 u8 SearchResults::scrollPageDown()
 {
-	return scrollLineDown();
+	u8 any = 0;
+	u8 i;
+	for (i=0;i<BIG_STEPSIZE;i++)
+	{
+		if (scrollLineDown())
+		{
+			any = 1;
+		}
+	}
+	return any;
 }

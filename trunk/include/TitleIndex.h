@@ -34,9 +34,6 @@ class ArticleSearchResult
 		int ArticlePos();
 		int ArticleLength();
 
-		ArticleSearchResult* Previous;
-		ArticleSearchResult* Next;
-
 	private:
 		string _title;
 		string _titleInArchive;
@@ -51,17 +48,19 @@ public:
 	TitleIndex(string basename);
 	~TitleIndex();
 
-	ArticleSearchResult* findArticle(string title, u8 setPosition = 0, u8 multiple = 0);
-	ArticleSearchResult* getRandomArticle();
-	ArticleSearchResult* isRedirect(string markup);
+	ArticleSearchResult*	findArticle(string title, u8 setPosition = 0);
+	ArticleSearchResult*	getRandomArticle();
+	ArticleSearchResult*	isRedirect(string markup);
 	deque<string>	getSuggestions(string phrase, int before, int after);
+	string	getTitle(int articleNumber);
+	int		getSuggestedArticleNumber(string phrase);
 
+	int		NumberOfArticles();
 	string	HeaderFileName();
 	string	DataFileName();
 	string	DataIndexFileName();
 	string	Index0FileName();
 	string	Index1FileName();
-	int		NumberOfArticles();
 	string	ImageNamespace();
 	string	TemplateNamespace();
 

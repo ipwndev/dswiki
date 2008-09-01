@@ -140,9 +140,13 @@ string TitleIndex::getTitle(int articleNumber, int indexNo, u8 setPosition)
 	return string(fgets(readstr,MAX_TITLE_LENGTH+1,_f_dataindex));
 }
 
+string TitleIndex::getTitle(int articleNumber)
+{
+	return getTitle(articleNumber, 1, 0);
+}
 
 //  to_lower_utf8(title)   :=   to_utf8(to_lower(from_utf8w(utf8_src)))
-ArticleSearchResult* TitleIndex::findArticle(string title, u8 setPosition, u8 multiple)
+ArticleSearchResult* TitleIndex::findArticle(string title, u8 setPosition)
 {
 	if ( _numberOfArticles<=0  )
 		return NULL;
@@ -207,66 +211,35 @@ ArticleSearchResult* TitleIndex::findArticle(string title, u8 setPosition, u8 mu
 		endIndex++;
 	}
 
-	if ( !multiple )
+	// return a result only if we have a direct hit (case is taken into account)
+
+	if ( startIndex!=endIndex )
 	{
-		// return a result only if we have a direct hit (case is taken into account)
-
-		if ( startIndex!=endIndex )
-		{
-			// check if one matches 100%
-			for(int i=startIndex; i<=endIndex; i++)
-			{
-				string titleInArchive = getTitle(i, indexNo, setPosition);
-				if ( title==titleInArchive )
-				{
-					return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
-				}
-			}
-
-			// nope, multiple matches
-			return NULL;
-		}
-		else
-		{
-			// return the one and only result
-			string titleInArchive = getTitle(foundAt, indexNo, setPosition);
-
-			return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
-		}
-	}
-	else
-	{
-		ArticleSearchResult* result = NULL;
+		// check if one matches 100%
 		for(int i=startIndex; i<=endIndex; i++)
 		{
 			string titleInArchive = getTitle(i, indexNo, setPosition);
-
-			if ( title == titleInArchive )
+			if ( title==titleInArchive )
 			{
-				// 100% match
 				return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 			}
-
-			// collect the results
-			if ( !result )
-				result = new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
-			else
-				result->Next = new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 		}
 
-		return result;
+		// nope, multiple matches
+		return NULL;
+	}
+	else
+	{
+		// return the one and only result
+		string titleInArchive = getTitle(foundAt, indexNo, setPosition);
+
+		return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 	}
 	return NULL;
 }
 
-
-deque<string> TitleIndex::getSuggestions(string phrase, int before, int after)
+int TitleIndex::getSuggestedArticleNumber(string phrase)
 {
-	deque<string> s;
-
-	if ( _numberOfArticles<=0  )
-		return s;
-
 	int indexNo = 0;
 	if ( _using_index1 )
 		indexNo = 1;
@@ -275,7 +248,7 @@ deque<string> TitleIndex::getSuggestions(string phrase, int before, int after)
 
 	int phraseLength = phrase.length();
 	if ( phraseLength==0 )
-		return s;
+		return 0;
 
 	int lBound = 0;
 	int uBound = _numberOfArticles - 1;
@@ -328,7 +301,25 @@ deque<string> TitleIndex::getSuggestions(string phrase, int before, int after)
 		startIndex--;
 	}
 
-	index = startIndex;
+	if (startIndex >= _numberOfArticles)
+		startIndex = _numberOfArticles - 1;
+	return startIndex;
+}
+
+deque<string> TitleIndex::getSuggestions(string phrase, int before, int after)
+{
+	deque<string> s;
+
+	if ( _numberOfArticles<=0  )
+		return s;
+
+	int indexNo = 0;
+	if ( _using_index1 )
+		indexNo = 1;
+
+	int startIndex = getSuggestedArticleNumber(phrase);
+
+	int index = startIndex;
 	int results = 0;
 
 	while ( (index<_numberOfArticles) && (results<after+1) )
@@ -437,9 +428,6 @@ string TitleIndex::TemplateNamespace()
 
 ArticleSearchResult::ArticleSearchResult(string title, string titleInArchive, fpos_t blockPos, int articlePos, int articleLength)
 {
-	Previous = NULL;
-	Next     = NULL;
-
 	_title = title;
 	_titleInArchive = titleInArchive;
 

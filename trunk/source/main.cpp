@@ -48,22 +48,22 @@ int main(int argc, char ** argv)
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
 
-	VirScreen  Titlebar    = {  0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
-	VirScreen  ContentWin1 = {  2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
-	VirScreen  ContentWin2 = {  2,   2, 252, 172, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
-	VirScreen  Statusbar   = {  0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
-	VirScreen  PercentArea = {226, 176,  30,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
-	VirScreen  Searchbar   = { 47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
+	VirScreen  Titlebar    = {   0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
+	VirScreen  ContentWin1 = {   2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
+	VirScreen  ContentWin2 = {   2,   2, 252, 172, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
+	VirScreen  Statusbar   = {   0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
+	VirScreen  PercentArea = { 226, 176,  30,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
+	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-	CharStat       TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
+	CharStat       TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12p};
 	CharStat        ContentCS = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
-	CharStat      StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
-	CharStat StatusbarErrorCS = { PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
+	CharStat      StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12p};
+	CharStat StatusbarErrorCS = { PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12p};
 	CharStat SearchResultsCS1 = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
 	CharStat SearchResultsCS2 = { PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
 
 	BLOCK ClearBtn = {{216,37},{237,58}};
-	BLOCK OKBtn    = {{18,37},{39,58}};
+	BLOCK OKBtn    = {{ 18,37},{ 39,58}};
 
 	FillVS(&Titlebar, PA_RGB( 9,16,28));
 	FillVS(&Statusbar,PA_RGB(26,26,26));
@@ -79,6 +79,7 @@ int main(int argc, char ** argv)
 	Cache            c;
 
 	Markup* markup = NULL;
+
 
 	// start of main program
 
@@ -97,11 +98,12 @@ int main(int argc, char ** argv)
 	WikiMarkupGetter m("dewiki");
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 
-	SearchResults s(&t);
+	SearchResults s(&t,&ContentWin1,&SearchResultsCS1,&SearchResultsCS2);
 
 	u8  updateTitle       = 0;
 	u8  updateContent     = 0;
 	u8  updateStatusbar   = 0;
+	u8  updatePercent     = 0;
 	u8  loadArticle       = 1;
 	u8  setNewHistoryItem = 1;
 	s32 forcedLine        = 0;
@@ -231,7 +233,7 @@ int main(int argc, char ** argv)
 				{
 					if (s.scrollLineUp())
 					{
-						PA_Sleep(6);
+						PA_Sleep(10);
 						updateSuggestions = 1;
 					}
 				}
@@ -240,7 +242,7 @@ int main(int argc, char ** argv)
 				{
 					if (s.scrollLineDown())
 					{
-						PA_Sleep(6);
+						PA_Sleep(10);
 						updateSuggestions = 1;
 					}
 				}
@@ -249,7 +251,7 @@ int main(int argc, char ** argv)
 				{
 					if (s.scrollPageUp())
 					{
-						PA_Sleep(6);
+						PA_Sleep(10);
 						updateSuggestions = 1;
 					}
 				}
@@ -258,7 +260,7 @@ int main(int argc, char ** argv)
 				{
 					if (s.scrollPageDown())
 					{
-						PA_Sleep(6);
+						PA_Sleep(10);
 						updateSuggestions = 1;
 					}
 				}
@@ -291,16 +293,14 @@ int main(int argc, char ** argv)
 
 				if (searchSuggestions)
 				{
-					if(s.load(suchtitel))
-					{
-						updateSuggestions = 1;
-					}
+					s.load(suchtitel);
+					updateSuggestions = 1;
 					searchSuggestions = 0;
 				}
 
 				if (updateSuggestions)
 				{
-					s.display(&ContentWin1,&SearchResultsCS1,&SearchResultsCS2);
+					s.display();
 					updateSuggestions = 0;
 				}
 
@@ -433,6 +433,7 @@ int main(int argc, char ** argv)
 				iPrint("\""+suchtitel+"\" nicht gefunden...",&Statusbar,&StatusbarErrorCS,&CharArea,-1,UTF8);
 				PA_Sleep(60);
 				FillVS(&Statusbar,PA_RGB(26,26,26));
+				updatePercent = 1;
 			}
 
 			loadArticle = 0;
@@ -446,9 +447,22 @@ int main(int argc, char ** argv)
 			updateTitle = 0;
 		}
 
+		if (updateStatusbar)
+		{
+			FillVS(&Statusbar,PA_RGB(26,26,26));
+			updatePercent = 1;
+			updateStatusbar = 0;
+		}
+
 		if (updateContent)
 		{
 			markup->draw();
+			updatePercent = 1;
+			updateContent = 0;
+		}
+
+		if (updatePercent)
+		{
 			char out[5];
 			sprintf(out,"%d",markup->currentPercent());
 			string percentstr(out);
@@ -460,14 +474,8 @@ int main(int argc, char ** argv)
 			CharArea = (BLOCK) {{2,2},{0,0}};
 			FillVS(&PercentArea,PA_RGB(26,26,26));
 			iPrint(percentstr,&PercentArea,&StatusbarCS,&CharArea,-1,UTF8);
-			updateContent = 0;
 		}
 
-		if (updateStatusbar)
-		{
-			FillVS(&Statusbar,PA_RGB(26,26,26));
-			updateStatusbar = 0;
-		}
 
 		PA_WaitForVBL();
 	}
