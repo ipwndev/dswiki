@@ -24,9 +24,11 @@ void SearchResults::load(string phrase)
 {
 	int i;
 
+	// getSuggestedArticleNumber is using the highest possible index
 	_absolute_CurrentArticleNumber = _titleindex->getSuggestedArticleNumber(phrase);
+
 	_absolute_FirstArticleNumber = _absolute_CurrentArticleNumber;
-	_absolute_LastArticleNumber = _absolute_FirstArticleNumber + 13;
+	_absolute_LastArticleNumber = _absolute_FirstArticleNumber + 9;//13
 
 	if ( _absolute_LastArticleNumber >= _titleindex->NumberOfArticles())
 	{
@@ -46,6 +48,7 @@ void SearchResults::load(string phrase)
 	_list.clear();
 	for (i=_absolute_FirstArticleNumber;i<=_absolute_LastArticleNumber;i++)
 	{
+		// getTitle is using the highest possible index
 		_list.push_back(_titleindex->getTitle(i));
 	}
 
@@ -59,6 +62,9 @@ string SearchResults::currentHighlightedItem()
 	return _list[_list_CurrentArticleNumber];
 }
 
+
+#define PREPARE_TO_DISPLAY 0
+
 void SearchResults::display()
 {
 	if (_wasScrolled)
@@ -71,10 +77,38 @@ void SearchResults::display()
 	for (i=_list_FirstDisplayNumber;i<=_list_LastDisplayNumber;i++)
 	{
 		if (i!=_list_CurrentArticleNumber)
+		{
+#if PREPARE_TO_DISPLAY
+			iPrint(preparePhrase(_list[i],1)+"\n",_vscreen,_cstat1,&CharArea,-1,UTF8);
+#else
 			iPrint(_list[i]+"\n",_vscreen,_cstat1,&CharArea,-1,UTF8);
+#endif
+		}
 		else
+		{
+#if PREPARE_TO_DISPLAY
+			iPrint(preparePhrase(_list[i],1)+"\n",_vscreen,_cstat2,&CharArea,-1,UTF8);
+#else
 			iPrint(_list[i]+"\n",_vscreen,_cstat2,&CharArea,-1,UTF8);
+#endif
+		}
 	}
+	PA_OutputText(1,0,0,"                                ");
+	PA_OutputText(1,0,1,"                                ");
+#if PREPARE_TO_DISPLAY
+	for (i=0;(i<preparePhrase(_list[_list_CurrentArticleNumber],1).length()) && (i<11);i++)
+#else
+	for (i=0;(i<_list[_list_CurrentArticleNumber].length()) && (i<11);i++)
+#endif
+	{
+#if PREPARE_TO_DISPLAY
+		PA_OutputText(1,3*i,0,"%x",preparePhrase(_list[_list_CurrentArticleNumber],1).at(i));
+#else
+		PA_OutputText(1,3*i,0,"%x",_list[_list_CurrentArticleNumber].at(i));
+#endif
+	}
+	PA_OutputText(1,0,1,"%d/%d           ",_absolute_CurrentArticleNumber,_titleindex->NumberOfArticles());
+
 }
 
 u8 SearchResults::scrollLineUp()
@@ -207,4 +241,16 @@ u8 SearchResults::scrollPageDown()
 		}
 	}
 	return any;
+}
+
+u8 SearchResults::scrollLongUp()
+{
+	load(_titleindex->getTitle(_absolute_CurrentArticleNumber-20*BIG_STEPSIZE));
+	return 1;
+}
+
+u8 SearchResults::scrollLongDown()
+{
+	load(_titleindex->getTitle(_absolute_CurrentArticleNumber+20*BIG_STEPSIZE));
+	return 1;
 }

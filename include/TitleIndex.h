@@ -51,9 +51,11 @@ public:
 	ArticleSearchResult*	findArticle(string title, u8 setPosition = 0);
 	ArticleSearchResult*	getRandomArticle();
 	ArticleSearchResult*	isRedirect(string markup);
-	deque<string>	getSuggestions(string phrase, int before, int after);
 	string	getTitle(int articleNumber);
+	string	getTitle(int articleNumber, int indexNo, u8 setPosition = 1);
 	int		getSuggestedArticleNumber(string phrase);
+
+	void test();
 
 	int		NumberOfArticles();
 	string	HeaderFileName();
@@ -71,7 +73,6 @@ private:
 	FILE*   _f_index0;
 	FILE*   _f_index1;
 
-	string	getTitle(int articleNumber, int indexNo, u8 setPosition = 1);
 
 	string	_FileName_Header;
 	string	_FileName_Data;

@@ -21,8 +21,8 @@
 using namespace std;
 
 #define MAX_SEARCH_RESULTS 128
-#define INCREASE_STEP 13
-#define BIG_STEPSIZE 13
+#define INCREASE_STEP 9
+#define BIG_STEPSIZE 9
 
 //
 // C++ Interface: SearchResults
@@ -48,6 +48,8 @@ class SearchResults
 		u8	scrollLineUp();
 		u8	scrollPageDown();
 		u8	scrollPageUp();
+		u8	scrollLongDown();
+		u8	scrollLongUp();
 		void display();
 	private:
 		TitleIndex*	_titleindex;

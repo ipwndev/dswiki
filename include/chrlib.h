@@ -11,6 +11,7 @@
 #include "api.h"
 
 #include "ter12rp.h"
+#include "unifont.h"
 
 using namespace std;
 
@@ -47,14 +48,16 @@ const string diacriticExchangeTable[] =
 {
 //   this table contains the char code for any diacritic char
 //   0    1    2    3    4    5    6    7    8    9    a    b    c    d    e    f
-	"",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "", // 0x80 - 0x8f
- "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "", // 0x90 - 0x9f
- "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "", // 0xa0 - 0xaf
- "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "", // 0xb0 - 0xbf
- "A", "A", "A", "A", "A", "A",  "", "C", "E", "E", "E", "E", "I", "I", "I", "I", // 0xc0 - 0xcf
- "D", "N", "O", "O", "O", "O", "O",  "", "O", "U", "U", "U", "U", "Y",  "",  "", // 0xd0 - 0xdf
- "a", "a", "a", "a", "a", "a",  "", "c", "e", "e", "e", "e", "i", "i", "i", "i", // 0xe0 - 0xef
- "", "n", "o", "o", "o", "o", "o",  "", "o", "u", "u", "u", "u", "y",  "", "y" // 0xf0 - 0xff
+// 	"",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "S", "",  "",  "",  "Z", "",  // 0x80 - 0x8f
+// 	"",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "s", "",  "",  "",  "z", "Y", // 0x90 - 0x9f
+	"",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0x80 - 0x8f
+	"",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0x90 - 0x9f
+	"",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0xa0 - 0xaf
+	"",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0xb0 - 0xbf
+	"A", "A", "A", "A", "A", "A", "",  "C", "E", "E", "E", "E", "I", "I", "I", "I", // 0xc0 - 0xcf
+	"D", "N", "O", "O", "O", "O", "O", "",  "O", "U", "U", "U", "U", "Y", "",  "",  // 0xd0 - 0xdf
+	"a", "a", "a", "a", "a", "a", "",  "c", "e", "e", "e", "e", "i", "i", "i", "i", // 0xe0 - 0xef
+	"",  "n", "o", "o", "o", "o", "o", "",  "o", "u", "u", "u", "u", "y", "",  "y"  // 0xf0 - 0xff
 };
 
 u8   InitFont(Font* FONT, const u8* ptr);
@@ -62,9 +65,13 @@ u8   InitFont(Font* FONT, const u8* ptr);
 u8   ToUTF   (const char* Chr, u16* UTF16, const u16* Table, Lid Lang);
 u32  UTF2UTF8(u16* Uni, char* U8);
 u32  UTF82UTF(char* U8, u16* Uni);
-string exchange_diacritic_chars_utf8(string src);
-string preparePhrase(string phrase);
-string trim(string Str);
+
+string trimPhrase(string Str);
+string lowerPhrase(string phrase);
+string exchangeDiacriticCharsUTF8Phrase(string phrase);
+void tolower_utf8(char* data);
+
+string preparePhrase(string phrase, u8 indexNo);
 
 void SwitchNewLine  (const CharStat* CStat,                   BLOCK* CharArea, s16 Origin,           u8 Height);
 u8   CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,                       u8 Height);

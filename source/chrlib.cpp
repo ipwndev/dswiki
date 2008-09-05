@@ -1,25 +1,59 @@
 #include "chrlib.h"
 
-struct to_lower {
-	int operator() ( int ch )
-	{
-		return std::tolower ( ch );
-	}
-};
-
-string preparePhrase(string phrase)
+string trimPhrase(string Str)
 {
-	string exchanged_phrase = trim(exchange_diacritic_chars_utf8(phrase));
-	std::transform(exchanged_phrase.begin(), exchanged_phrase.end(), exchanged_phrase.begin(), to_lower()); // TODO: UTF-8 kompatibel?
-	return exchanged_phrase;
+	int first = Str.find_first_not_of(" ");
+	int last = Str.find_last_not_of(" ");
+	if ((first==string::npos) || (last==string::npos))
+		return "";
+	Str = Str.substr(first,last-first+1);
+
+// 	while((first = Str.find("  "))!=string::npos) // TODO: faster possible, Test difference later
+	first = 0;
+	while((first = Str.find("  ",first))!=string::npos)
+	{
+		Str.erase(first,1);
+	}
+	return Str;
 }
 
-string exchange_diacritic_chars_utf8(string src)
+string lowerPhrase(string phrase)
 {
-	if ( src.empty() )
-		return src;
+	if (phrase.empty())
+		return "";
+	string dest = phrase;
+	tolower_utf8(&dest.at(0));
+	return dest;
+}
 
-	string dst = src;
+void tolower_utf8(char* data)
+{
+	if ( !data )
+		return;
+
+	while ( *data )
+	{
+		unsigned char c = *data;
+		if ( c<0x80 )
+			*data = tolower(c);
+		else if ( c==0xc3 && *(data+1) )
+		{
+			data++;
+
+			c = *data;
+			if ( c>=0x80 && c<=0x9e )
+				*data = c | 0x20;
+		}
+		data++;
+	}
+}
+
+string exchangeDiacriticCharsUTF8Phrase(string phrase)
+{
+	if ( phrase.empty() )
+		return phrase;
+
+	string dst = phrase;
 
 	int i = 0;
 	int length = dst.length();
@@ -27,7 +61,7 @@ string exchange_diacritic_chars_utf8(string src)
 	while ( i < dst.length() )
 	{
 		unsigned char c = dst[i++];
-		if ( (c&0xc0)==0xc0 ) // Start-Byte
+		if ( (c&0xe0)==0xc0 ) // Start-Byte of a two byte sequence
 		{
 			int d = ((c&0x1f)<<6) + (((unsigned char) dst[i]) & 0x3f);
 			if ( (d>=0x80) && (d<=0xff) )
@@ -48,20 +82,15 @@ string exchange_diacritic_chars_utf8(string src)
 	return dst;
 }
 
-string trim(string Str)
-{
-	int first = Str.find_first_not_of(" ");
-	int last = Str.find_last_not_of(" ");
-	if ((first==string::npos) || (last==string::npos))
-		return "";
-	Str = Str.substr(first,last-first+1);
 
-	while((first = Str.find("  "))!=string::npos)
-	{
-		Str.erase(first,1);
-	}
-	return Str;
+string preparePhrase(string phrase, u8 indexNo)
+{
+	if (indexNo==1)
+		return exchangeDiacriticCharsUTF8Phrase(lowerPhrase(trimPhrase(phrase)));
+	else
+		return lowerPhrase(trimPhrase(phrase));
 }
+
 
 u8 ToUTF(const char* Chr, u16* UTF16, const u16* Table, Lid Lang)
 {
@@ -692,8 +721,10 @@ u32 SimPrint(const char* Str, Device* Dev, u16 Color, Lid Lang)
 {
 	Font terminus12regular;
 	InitFont(&terminus12regular,ter12rp);
+	Font uf;
+	InitFont(&uf,unifont);
 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
-	CharStat CharStat = { Color, PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
+	CharStat CharStat = { Color, PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &uf/*terminus12regular*/};
 	BLOCK CharArea = {{0,0},{0,0}};
 	return iPrint(Str, &VScreen, &CharStat, &CharArea, -1, Lang);
 }

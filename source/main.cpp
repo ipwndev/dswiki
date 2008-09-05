@@ -12,6 +12,7 @@
 #include "SearchResults.h"
 #include "struct.h"
 #include "ter12rp.h"
+#include "unifont.h"
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
 
@@ -42,8 +43,11 @@ int main(int argc, char ** argv)
 
 	// important variables
 
+// 	string olli = "ABC@ł€¶ŧ←↓→øþ¨æßðđŋħjĸł˝^«»¢“”nµ\n ΩŁ€®Ŧ¥↑ı§ÐªŊĦJ&Ł<>©‘’Nº\u00d7\u00f7\n ÄÖÜßÁÀÂÑØÞÆ";
 	Font terminus12p;
 	InitFont(&terminus12p,ter12rp);
+	Font unifont16p;
+	InitFont(&unifont16p,unifont);
 
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
@@ -55,15 +59,16 @@ int main(int argc, char ** argv)
 	VirScreen  PercentArea = { 226, 176,  30,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
 	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-	CharStat       TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12p};
-	CharStat        ContentCS = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
-	CharStat      StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12p};
-	CharStat StatusbarErrorCS = { PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 0, 1, 0, &terminus12p};
-	CharStat SearchResultsCS1 = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
-	CharStat SearchResultsCS2 = { PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
+	CharStat       TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &unifont16p};
+	CharStat        ContentCS = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), NORMALWRAP, DEG0, NONE, 0, 0, 0, &unifont16p};
+	CharStat      StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &unifont16p};
+	CharStat StatusbarErrorCS = { PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &unifont16p};
+	CharStat SearchResultsCS1 = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &unifont16p};
+	CharStat SearchResultsCS2 = { PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &unifont16p};
 
 	BLOCK ClearBtn = {{216,37},{237,58}};
 	BLOCK OKBtn    = {{ 18,37},{ 39,58}};
+	BLOCK CharArea = {{0,0},{0,0}};
 
 	FillVS(&Titlebar, PA_RGB( 9,16,28));
 	FillVS(&Statusbar,PA_RGB(26,26,26));
@@ -80,10 +85,7 @@ int main(int argc, char ** argv)
 
 	Markup* markup = NULL;
 
-
 	// start of main program
-
-	BLOCK CharArea = {{0,0},{0,0}};
 
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
@@ -91,6 +93,7 @@ int main(int argc, char ** argv)
 	TitleIndex       t("dewiki");
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 
+// 	t.test();
 
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
@@ -265,6 +268,21 @@ int main(int argc, char ** argv)
 					}
 				}
 
+				if ((Pad.Newpress.L||Pad.Held.L))
+				{
+					if (s.scrollLongUp())
+					{
+						updateSuggestions = 1;
+					}
+				}
+
+				if ((Pad.Newpress.R||Pad.Held.R))
+				{
+					if (s.scrollLongDown())
+					{
+						updateSuggestions = 1;
+					}
+				}
 
 				if (Pad.Newpress.A)
 				{
@@ -442,7 +460,7 @@ int main(int argc, char ** argv)
 		if (updateTitle)
 		{
 			FillVS(&Titlebar, PA_RGB( 9,16,28));
-			CharArea = (BLOCK) {{5,2},{0,0}};
+			CharArea = (BLOCK) {{5,0},{0,0}};
 			iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
 			updateTitle = 0;
 		}

@@ -95,7 +95,7 @@ Element* createLink(string Str, u32 startPos, u32 link_id)
 		if (targStr.find_first_of("[]<>{}\n")!=string::npos)
 			continue;
 
-		dispStr = trim(dispStr);
+		dispStr = trimPhrase(dispStr);
 
 		stelle = targStr.find("#");
 
@@ -105,8 +105,8 @@ Element* createLink(string Str, u32 startPos, u32 link_id)
 			targStr.resize(stelle);
 		}
 
-		targStr = trim(targStr);
-		anchStr = trim(anchStr);
+		targStr = trimPhrase(targStr);
+		anchStr = trimPhrase(anchStr);
 
 		while ((stelle=targStr.find("_"))!=string::npos)
 		{
@@ -190,7 +190,7 @@ string Markup::evaluateClick(s16 x,s16 y)
 				{
 					l = &ClickedLine.children[i];
 // 					PA_OutputText(0,0,23,"%s",l->target.c_str());
-					return trim(l->target);
+					return trimPhrase(l->target);
 				}
 			}
 		}
