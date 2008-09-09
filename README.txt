@@ -1,5 +1,5 @@
- DSwiki (v0.1alpha3)
-=====================
+ DSwiki (v0.1beta1)
+====================
 
 DSwiki is an offline viewer for Wiki markup, for example for the
 Wikipedia, Wikibooks, Wiktionaries, ...
@@ -43,8 +43,9 @@ most homebrew programs can't handle UTF-8.
    and appended letters are supported to create the same look as
    in the online version.
 -- Very good Unicode/UTF8-Support (as much - or as little - as the
-   underlying font covers)
--- A cache to navigate quickly the history of visited pages
+   underlying font covers).
+-- Fast and easy searchable index.
+-- A cache to navigate quickly the history of visited pages.
 
  Planned Features
 ==================
@@ -87,6 +88,7 @@ A random article will be loaded at the start.
                Touching the red button clears the input field.
 
                The D-Pad navigates through the index.
+               The L/R-buttons do bigger steps.
 
                The current highlighted article name can be loaded
                either by
@@ -103,17 +105,31 @@ A random article will be loaded at the start.
 2. Create dumps of your favorite wiki or download already prepared ones.
    Visit <http://code.google.com/p/dswiki/wiki/Dumps> for a list.
 
-3. Copy dewiki.ao1, dewiki.ao2, dewiki.dbz, dewiki.idx and dewiki.ifo
-   into the root directory of your flash card.
+   ----------------------------------------------------------------------
+   IMPORTANT: PLEASE DO NOT DOWNLOAD THESE DUMPS AT THE MOMENT.
+              They were compiled with a buggy indexer, so the sorting
+              may be bad for some articles, others may not load.
+              I prepared new dumps with a correct indexer, and at the
+              moment, I'm working on a way to host these files on a
+              reliable organization's server.
+   ----------------------------------------------------------------------
 
-   IMPORTANT: These names are fixed at the moment, so use them
-              anyway, even if you want to use a different language/wiki.
+3. Copy all files with the extensions
+
+     ifo
+     idx
+     ao1
+     ao2
+     db?    [ ? = one letter, typically "a" or "b", "z" is used in older versions ]
+
+   into the root directory of your flash card.
 
  Bugs/Issues
 =============
 
--- The german article "ß" is not found correctly.
+-- Surely many ;-) Please report them!
+
 
 
 Have Fun!
-ollipolli
+OlliPolli

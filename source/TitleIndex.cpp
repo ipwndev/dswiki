@@ -4,9 +4,9 @@ typedef struct
 {
 	char languageCode[2];
 	u32 numberOfArticles;
-	fpos_t	titlesPos;
-	fpos_t	indexPos_0;
-	fpos_t	indexPos_1;
+	u64	titlesPos;
+	u64	indexPos_0;
+	u64	indexPos_1;
 	unsigned char version;
 	char reserved1[1];
 	char imageNamespace[32];
@@ -28,12 +28,10 @@ TitleIndex::TitleIndex(string basename)
 	_templateNamespace = "";
 
 	_FileName_Header    = basename + ".ifo";
-	_FileName_Data      = basename + ".dbz";
 	_FileName_DataIndex = basename + ".idx";
 	_FileName_Index0    = basename + ".ao1";
 	_FileName_Index1    = basename + ".ao2";
 	_f_header           = fopen(_FileName_Header.c_str(),    "rb");
-	_f_data             = fopen(_FileName_Data.c_str(),      "rb");
 	_f_dataindex        = fopen(_FileName_DataIndex.c_str(), "rb");
 	_f_index0           = fopen(_FileName_Index0.c_str(),    "rb");
 	_f_index1           = fopen(_FileName_Index1.c_str(),    "rb");
@@ -71,10 +69,6 @@ TitleIndex::~TitleIndex()
 	if (_f_header)
 	{
 		fclose(_f_header);
-	}
-	if (_f_data)
-	{
-		fclose(_f_data);
 	}
 	if (_f_dataindex)
 	{
@@ -348,11 +342,6 @@ string TitleIndex::HeaderFileName()
 	return _FileName_Header;
 }
 
-string TitleIndex::DataFileName()
-{
-	return _FileName_Data;
-}
-
 string TitleIndex::DataIndexFileName()
 {
 	return _FileName_DataIndex;
@@ -384,7 +373,7 @@ string TitleIndex::TemplateNamespace()
 }
 
 
-ArticleSearchResult::ArticleSearchResult(string title, string titleInArchive, fpos_t blockPos, int articlePos, int articleLength)
+ArticleSearchResult::ArticleSearchResult(string title, string titleInArchive, u64 blockPos, int articlePos, int articleLength)
 {
 	_title = title;
 	_titleInArchive = titleInArchive;
@@ -405,7 +394,7 @@ string ArticleSearchResult::TitleInArchive()
 }
 
 
-fpos_t ArticleSearchResult::BlockPos()
+u64 ArticleSearchResult::BlockPos()
 {
 	return _blockPos;
 }
@@ -418,6 +407,61 @@ int ArticleSearchResult::ArticlePos()
 int ArticleSearchResult::ArticleLength()
 {
 	return _articleLength;
+}
+
+vector<string> TitleIndex::getPossibleWikis()
+{
+	vector<string> possibleWikis;
+	struct stat st;
+	char filename[256]; // to hold a full filename and string terminator
+	DIR_ITER* dir = diropen("/");
+
+	if (dir == NULL)
+	{
+		PA_OutputText(1,2,2,"Unable to open the directory.");
+	}
+	else
+	{
+		while (dirnext(dir, filename, &st) == 0)
+		{
+			if (!(st.st_mode & S_IFDIR)) // regular file
+			{
+				string filenamestr = filename;
+				if (filenamestr.rfind(".ifo")==filenamestr.length()-4)
+				{
+					string basename = filenamestr.substr(0,filenamestr.length()-4);
+					struct stat inner_st;
+					char inner_filename[256];
+					DIR_ITER* inner_dir = diropen("/");
+					u8 foundidx = 0;
+					u8 foundao1 = 0;
+					u8 foundao2 = 0;
+					u8 founddb  = 0;
+					while (dirnext(inner_dir, inner_filename, &inner_st) == 0)
+					{
+						if (!(inner_st.st_mode & S_IFDIR)) // regular file
+						{
+							string inner_filenamestr = inner_filename;
+							if (inner_filenamestr==basename+".idx")
+								foundidx = 1;
+							if (inner_filenamestr==basename+".ao1")
+								foundao1 = 1;
+							if (inner_filenamestr==basename+".ao2")
+								foundao2 = 1;
+							if (inner_filenamestr.substr(0,inner_filenamestr.length()-1)==basename+".db")
+							{
+								if (inner_filenamestr.substr(inner_filenamestr.length()-1,1).find_first_of("abcdefghijklmnopqrstuvwxyz")!=string::npos)
+									founddb = 1;
+							}
+						}
+					}
+					if (foundidx && foundao1 && founddb)
+						possibleWikis.push_back(basename);
+				}
+			}
+		}
+	}
+	return possibleWikis;
 }
 
 void TitleIndex::test()

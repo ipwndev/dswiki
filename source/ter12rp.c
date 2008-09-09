@@ -16765,4 +16765,3 @@ const u8 ter12rp[]={
 
 //TODO: Einiges wurde per Hand verbessert, aber bei einer Verbesserung von bdf2c ist zu bedenken:
 // * alle &nbsp; korrekt behandeln
-// * alle Ziffern gleich breit und auf die Leerzeichenbreite setzen

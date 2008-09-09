@@ -3,6 +3,7 @@
 
 #include <PA9.h>
 #include <string>
+#include <algorithm>
 
 #include "TitleIndex.h"
 #include "api.h"
@@ -31,9 +32,12 @@ public:
 	string GetLastArticleTitle();
 
 private:
-	FILE*   _f_data;
-	string	_FileName_Data;
-	string _lastArticleTitle;
+	FILE*          _f_data;
+	vector<string> _filenames;
+	vector<FILE*>  _filepointers;
+	vector<fpos_t> _filesizes;
+	vector<u64>    _file_absoluteEnds;
+	string         _lastArticleTitle;
 };
 
 #endif

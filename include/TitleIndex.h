@@ -4,6 +4,8 @@
 #include <PA9.h>
 #include <fat.h>
 #include <stdio.h>
+#include <sys/dir.h>
+#include <unistd.h>
 #include <string>
 #include <deque>
 
@@ -25,19 +27,19 @@ using namespace std;
 class ArticleSearchResult
 {
 	public:
-		ArticleSearchResult(string title, string titleInArchive, fpos_t blockPos, int articlePos, int articleLength);
+		ArticleSearchResult(string title, string titleInArchive, u64 blockPos, int articlePos, int articleLength);
 
 		string Title();
 		string TitleInArchive();
 
-		fpos_t BlockPos();
+		u64 BlockPos();
 		int ArticlePos();
 		int ArticleLength();
 
 	private:
 		string _title;
 		string _titleInArchive;
-		fpos_t _blockPos;
+		u64 _blockPos;
 		int _articlePos;
 		int _articleLength;
 };
@@ -54,12 +56,12 @@ public:
 	string	getTitle(int articleNumber);
 	string	getTitle(int articleNumber, int indexNo, u8 setPosition = 1);
 	int		getSuggestedArticleNumber(string phrase);
+	static vector<string> getPossibleWikis();
 
 	void test();
 
 	int		NumberOfArticles();
 	string	HeaderFileName();
-	string	DataFileName();
 	string	DataIndexFileName();
 	string	Index0FileName();
 	string	Index1FileName();
@@ -68,14 +70,12 @@ public:
 
 private:
 	FILE*   _f_header;
-	FILE*   _f_data;
 	FILE*   _f_dataindex;
 	FILE*   _f_index0;
 	FILE*   _f_index1;
 
 
 	string	_FileName_Header;
-	string	_FileName_Data;
 	string	_FileName_DataIndex;
 	string	_FileName_Index0;
 	string	_FileName_Index1;
@@ -86,7 +86,7 @@ private:
 
 	fpos_t	_titlesPos;
 
-	fpos_t	_lastBlockPos;
+	u64		_lastBlockPos;
 	int		_lastArticlePos;
 	int		_lastArticleLength;
 

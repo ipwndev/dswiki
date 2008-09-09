@@ -22,6 +22,7 @@
 using namespace std;
 
 #define MAX_CACHE_SIZE 2097152
+// #define MAX_CACHE_SIZE 0
 
 //
 // C++ Interface: Cache
@@ -44,6 +45,7 @@ typedef struct
 class Cache
 {
 	public:
+		Cache();
 		void insert(string title, string markup);
 		u8   isInCache(string title);
 		void display();

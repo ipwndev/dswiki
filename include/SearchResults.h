@@ -21,8 +21,7 @@
 using namespace std;
 
 #define MAX_SEARCH_RESULTS 128
-#define INCREASE_STEP 9
-#define BIG_STEPSIZE 9
+#define SEARCHRESULT_LINES 14
 
 //
 // C++ Interface: SearchResults
@@ -43,6 +42,7 @@ class SearchResults
 	public:
 		SearchResults(TitleIndex* t, VirScreen* VScreen, CharStat* CStat1, CharStat* CStat2);
 		void load(string phrase);
+		void load(s32 articleNumber);
 		string currentHighlightedItem();
 		u8	scrollLineDown();
 		u8	scrollLineUp();
