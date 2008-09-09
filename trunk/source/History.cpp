@@ -58,7 +58,6 @@ s32 History::currentLine()
 void History::display()
 {
 	s32 i;
-	PA_ClearTextBg(1);
 	for (i=0;i<_list.size();i++)
 	{
 		if (i==_currentPosition)

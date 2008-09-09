@@ -12,6 +12,12 @@
 //
 //
 
+Cache::Cache()
+{
+	_size = 0;
+	_lastFoundPosition = 0;
+}
+
 void Cache::insert(string title, string markup)
 {
 	CacheEntry newEntry = {title,markup};
@@ -49,10 +55,9 @@ string Cache::getMarkup(string title)
 void Cache::display()
 {
 	s32 i;
-	PA_ClearTextBg(1);
-	PA_OutputText(1,0,2,"SIZE = %d, CAPACITY = %d",_size,MAX_CACHE_SIZE-_size);
+	PA_OutputText(1,0,23,"SIZE = %d, CAPACITY = %d",_size,MAX_CACHE_SIZE-_size);
 	for (i=0;i<_list.size();i++)
 	{
-		PA_OutputText(1,0,i+3,"<%s>",_list[i].title.c_str());
+		PA_OutputText(1,0,22-i,"<%s>",_list[i].title.c_str());
 	}
 }

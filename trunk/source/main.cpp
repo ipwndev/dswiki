@@ -1,5 +1,8 @@
 #include <PA9.h>
+#include <fat.h>
+#include <sys/dir.h>
 #include <string>
+#include <algorithm>
 
 #include "main.h"
 
@@ -12,7 +15,6 @@
 #include "SearchResults.h"
 #include "struct.h"
 #include "ter12rp.h"
-#include "unifont.h"
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
 
@@ -43,11 +45,10 @@ int main(int argc, char ** argv)
 
 	// important variables
 
-// 	string olli = "ABC@ł€¶ŧ←↓→øþ¨æßðđŋħjĸł˝^«»¢“”nµ\n ΩŁ€®Ŧ¥↑ı§ÐªŊĦJ&Ł<>©‘’Nº\u00d7\u00f7\n ÄÖÜßÁÀÂÑØÞÆ";
 	Font terminus12p;
 	InitFont(&terminus12p,ter12rp);
-	Font unifont16p;
-	InitFont(&unifont16p,unifont);
+// 	Font unifont16p;
+// 	InitFont(&unifont16p,unifont);
 
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
@@ -59,19 +60,16 @@ int main(int argc, char ** argv)
 	VirScreen  PercentArea = { 226, 176,  30,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
 	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-	CharStat       TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &unifont16p};
-	CharStat        ContentCS = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), NORMALWRAP, DEG0, NONE, 0, 0, 0, &unifont16p};
-	CharStat      StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &unifont16p};
-	CharStat StatusbarErrorCS = { PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &unifont16p};
-	CharStat SearchResultsCS1 = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &unifont16p};
-	CharStat SearchResultsCS2 = { PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &unifont16p};
+	CharStat       TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
+	CharStat        ContentCS = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
+	CharStat      StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
+	CharStat StatusbarErrorCS = { PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
+	CharStat SearchResultsCS1 = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
+	CharStat SearchResultsCS2 = { PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
 
 	BLOCK ClearBtn = {{216,37},{237,58}};
 	BLOCK OKBtn    = {{ 18,37},{ 39,58}};
 	BLOCK CharArea = {{0,0},{0,0}};
-
-	FillVS(&Titlebar, PA_RGB( 9,16,28));
-	FillVS(&Statusbar,PA_RGB(26,26,26));
 
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
@@ -87,18 +85,62 @@ int main(int argc, char ** argv)
 
 	// start of main program
 
-	FillVS(&Statusbar,PA_RGB(26,26,26));
-	CharArea = (BLOCK) {{2,2},{0,0}};
-	iPrint("Lade dewiki.dat...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-	TitleIndex       t("dewiki");
+	vector<string> possibleWikis = TitleIndex::getPossibleWikis();
+
+	if (possibleWikis.size()==0)
+	{
+		PA_OutputText(1,5,5,"%c1Error: %c0No Wikis found!");
+		return 0;
+	}
+
+	int currentSelectedWiki = 0;
+
+	if (possibleWikis.size()>1)
+	{
+		sort(possibleWikis.begin(),possibleWikis.end());
+		PA_OutputText(1,1,0,"Choose Wiki\n-----------");
+		int i;
+		u8 updateSelectedWiki = 1;
+		while(1)
+		{
+			if (Pad.Newpress.A)
+			{
+				break;
+			}
+			if (Pad.Newpress.Up||Pad.Newpress.Down)
+			{
+				currentSelectedWiki += Pad.Newpress.Down-Pad.Newpress.Up;
+				if (currentSelectedWiki<0) currentSelectedWiki = 0;
+				if (currentSelectedWiki>possibleWikis.size()-1) currentSelectedWiki = possibleWikis.size()-1;
+				updateSelectedWiki = 1;
+				PA_Sleep(10);
+			}
+			if (updateSelectedWiki)
+			{
+				for (i=0;i<possibleWikis.size();i++) {
+					if (i==currentSelectedWiki)
+						PA_OutputText(1,2,2+i,"%c1%s",possibleWikis[i].c_str());
+					else
+						PA_OutputText(1,2,2+i,"%s",possibleWikis[i].c_str());
+				}
+				updateSelectedWiki = 0;
+			}
+		}
+		PA_ClearTextBg(1);
+	}
+
+	FillVS(&Titlebar, PA_RGB( 9,16,28));
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 
-// 	t.test();
+	CharArea = (BLOCK) {{2,2},{0,0}};
+	iPrint("Lade dewiki.dat...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
+	TitleIndex       t(possibleWikis[currentSelectedWiki]);
+	FillVS(&Statusbar,PA_RGB(26,26,26));
 
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
 	iPrint("Initialisiere MarkupGetter...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
-	WikiMarkupGetter m("dewiki");
+	WikiMarkupGetter m(possibleWikis[currentSelectedWiki]);
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 
 	SearchResults s(&t,&ContentWin1,&SearchResultsCS1,&SearchResultsCS2);
@@ -107,9 +149,10 @@ int main(int argc, char ** argv)
 	u8  updateContent     = 0;
 	u8  updateStatusbar   = 0;
 	u8  updatePercent     = 0;
-	u8  loadArticle       = 1;
-	u8  setNewHistoryItem = 1;
+
 	s32 forcedLine        = 0;
+	u8  setNewHistoryItem = 1;
+	u8  loadArticle       = 1;
 
 	while(1)
 	{
@@ -120,8 +163,8 @@ int main(int argc, char ** argv)
 			suchtitel = markup->evaluateClick(Stylus.X,Stylus.Y);
 			if (!suchtitel.empty())
 			{
-				setNewHistoryItem = 1;
 				forcedLine = 0;
+				setNewHistoryItem = 1;
 				loadArticle = 1;
 			}
 		}
@@ -170,6 +213,7 @@ int main(int argc, char ** argv)
 		{
 			suchtitel.clear();
 			forcedLine = 0;
+			setNewHistoryItem = 1;
 			loadArticle = 1;
 		}
 
@@ -217,7 +261,7 @@ int main(int argc, char ** argv)
 				if (Stylus.Newpress)
 				{
 					POINT S = {Stylus.X,Stylus.Y};
-					if (IsInArea(ClearBtn,S))
+					if (IsInArea(ClearBtn,S) && (!suchtitel.empty()) )
 					{
 						suchtitel.clear();
 						updateSearchbar = 1;
@@ -460,7 +504,7 @@ int main(int argc, char ** argv)
 		if (updateTitle)
 		{
 			FillVS(&Titlebar, PA_RGB( 9,16,28));
-			CharArea = (BLOCK) {{5,0},{0,0}};
+			CharArea = (BLOCK) {{5,2},{0,0}};
 			iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
 			updateTitle = 0;
 		}
@@ -477,6 +521,9 @@ int main(int argc, char ** argv)
 			markup->draw();
 			updatePercent = 1;
 			updateContent = 0;
+// 			PA_ClearTextBg(1);
+// 			h.display();
+// 			c.display();
 		}
 
 		if (updatePercent)

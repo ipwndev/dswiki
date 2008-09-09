@@ -20,15 +20,20 @@ SearchResults::SearchResults(TitleIndex* t, VirScreen* VScreen, CharStat* CStat1
 	_cstat2 = CStat2;
 }
 
-void SearchResults::load(string phrase)
+void SearchResults::load(s32 articleNumber)
 {
 	int i;
 
+	if (articleNumber < 0)
+		articleNumber = 0;
+	if (articleNumber >= _titleindex->NumberOfArticles())
+		articleNumber = _titleindex->NumberOfArticles() - 1;
+
 	// getSuggestedArticleNumber is using the highest possible index
-	_absolute_CurrentArticleNumber = _titleindex->getSuggestedArticleNumber(phrase);
+	_absolute_CurrentArticleNumber = articleNumber;
 
 	_absolute_FirstArticleNumber = _absolute_CurrentArticleNumber;
-	_absolute_LastArticleNumber = _absolute_FirstArticleNumber + 9;//13
+	_absolute_LastArticleNumber = _absolute_FirstArticleNumber + SEARCHRESULT_LINES - 1;
 
 	if ( _absolute_LastArticleNumber >= _titleindex->NumberOfArticles())
 	{
@@ -55,6 +60,11 @@ void SearchResults::load(string phrase)
 	_wasScrolled = 1;
 }
 
+void SearchResults::load(string phrase)
+{
+	load(_titleindex->getSuggestedArticleNumber(phrase));
+}
+
 string SearchResults::currentHighlightedItem()
 {
 	if ((_list_CurrentArticleNumber<0) || (_list_CurrentArticleNumber>=_list.size()))
@@ -62,8 +72,6 @@ string SearchResults::currentHighlightedItem()
 	return _list[_list_CurrentArticleNumber];
 }
 
-
-#define PREPARE_TO_DISPLAY 0
 
 void SearchResults::display()
 {
@@ -74,41 +82,17 @@ void SearchResults::display()
 	}
 	BLOCK CharArea = {{0,0},{0,0}};
 	int i;
-	for (i=_list_FirstDisplayNumber;i<=_list_LastDisplayNumber;i++)
+	for (i=_list_FirstDisplayNumber;i<=_list_LastDisplayNumber;i++)  // TODO: Only paint necessary lines, not all
 	{
 		if (i!=_list_CurrentArticleNumber)
 		{
-#if PREPARE_TO_DISPLAY
-			iPrint(preparePhrase(_list[i],1)+"\n",_vscreen,_cstat1,&CharArea,-1,UTF8);
-#else
 			iPrint(_list[i]+"\n",_vscreen,_cstat1,&CharArea,-1,UTF8);
-#endif
 		}
 		else
 		{
-#if PREPARE_TO_DISPLAY
-			iPrint(preparePhrase(_list[i],1)+"\n",_vscreen,_cstat2,&CharArea,-1,UTF8);
-#else
 			iPrint(_list[i]+"\n",_vscreen,_cstat2,&CharArea,-1,UTF8);
-#endif
 		}
 	}
-	PA_OutputText(1,0,0,"                                ");
-	PA_OutputText(1,0,1,"                                ");
-#if PREPARE_TO_DISPLAY
-	for (i=0;(i<preparePhrase(_list[_list_CurrentArticleNumber],1).length()) && (i<11);i++)
-#else
-	for (i=0;(i<_list[_list_CurrentArticleNumber].length()) && (i<11);i++)
-#endif
-	{
-#if PREPARE_TO_DISPLAY
-		PA_OutputText(1,3*i,0,"%x",preparePhrase(_list[_list_CurrentArticleNumber],1).at(i));
-#else
-		PA_OutputText(1,3*i,0,"%x",_list[_list_CurrentArticleNumber].at(i));
-#endif
-	}
-	PA_OutputText(1,0,1,"%d/%d           ",_absolute_CurrentArticleNumber,_titleindex->NumberOfArticles());
-
 }
 
 u8 SearchResults::scrollLineUp()
@@ -133,8 +117,8 @@ u8 SearchResults::scrollLineUp()
 	if (_list_FirstDisplayNumber < 0)
 	{
 		// enlarge at the front neccessary
-		_absolute_FirstArticleNumber -= INCREASE_STEP;
-		_list_FirstArticleNumber -= INCREASE_STEP;
+		_absolute_FirstArticleNumber -= (SEARCHRESULT_LINES-1);
+		_list_FirstArticleNumber -= (SEARCHRESULT_LINES-1);
 
 		if (_absolute_FirstArticleNumber < 0)
 		{
@@ -186,8 +170,8 @@ u8 SearchResults::scrollLineDown()
 	if (_list_LastDisplayNumber > _list_LastArticleNumber)
 	{
 		// enlarge at the tail
-		_list_LastArticleNumber += INCREASE_STEP;
-		_absolute_LastArticleNumber += INCREASE_STEP;
+		_list_LastArticleNumber += (SEARCHRESULT_LINES-1);
+		_absolute_LastArticleNumber += (SEARCHRESULT_LINES-1);
 
 		if (_absolute_LastArticleNumber > _titleindex->NumberOfArticles() - 1)
 		{
@@ -219,7 +203,7 @@ u8 SearchResults::scrollPageUp()
 {
 	u8 any = 0;
 	u8 i;
-	for (i=0;i<BIG_STEPSIZE;i++)
+	for (i=0;i<SEARCHRESULT_LINES-1;i++)
 	{
 		if (scrollLineUp())
 		{
@@ -233,7 +217,7 @@ u8 SearchResults::scrollPageDown()
 {
 	u8 any = 0;
 	u8 i;
-	for (i=0;i<BIG_STEPSIZE;i++)
+	for (i=0;i<SEARCHRESULT_LINES-1;i++)
 	{
 		if (scrollLineDown())
 		{
@@ -245,12 +229,15 @@ u8 SearchResults::scrollPageDown()
 
 u8 SearchResults::scrollLongUp()
 {
-	load(_titleindex->getTitle(_absolute_CurrentArticleNumber-20*BIG_STEPSIZE));
-	return 1;
+	u8 change = _absolute_CurrentArticleNumber==0?0:1;
+	load(_absolute_CurrentArticleNumber-25*(SEARCHRESULT_LINES-1));
+	return change;
 }
 
 u8 SearchResults::scrollLongDown()
 {
-	load(_titleindex->getTitle(_absolute_CurrentArticleNumber+20*BIG_STEPSIZE));
-	return 1;
+	u8 change = _absolute_CurrentArticleNumber==_titleindex->NumberOfArticles()-1?0:1;
+	load(_absolute_CurrentArticleNumber+25*(SEARCHRESULT_LINES-1));
+	return change;
 }
+

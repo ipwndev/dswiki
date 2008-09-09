@@ -11,7 +11,6 @@
 #include "api.h"
 
 #include "ter12rp.h"
-#include "unifont.h"
 
 using namespace std;
 

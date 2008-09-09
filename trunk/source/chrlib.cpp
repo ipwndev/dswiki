@@ -111,19 +111,31 @@ u8 ToUTF(const char* Chr, u16* UTF16, const u16* Table, Lid Lang)
 				UTF16[0]=Chr[0];
 				Length=1;
 			}
-			else
+			else if ((Chr[0]&0xE0)==0xC0)
 			{
-				if(Chr[0]&0x20)
-				{
-					UTF16[0]=((Chr[0]&0xF)<<4)|((Chr[1]&0x3C)>>2);
-					UTF16[0]=(UTF16[0]<<8)|((Chr[1]&0x3)<<6)|(Chr[2]&0x3F);
-					Length=3;
-				}
-				else
-				{
-					UTF16[0]=((Chr[0]&0x1C)>>2);
-					UTF16[0]=(UTF16[0]<<8)|((Chr[0]&0x3)<<6)|(Chr[1]&0x3F);
-				}
+				UTF16[0]=((Chr[0]&0x1C)>>2);
+				UTF16[0]=(UTF16[0]<<8)|((Chr[0]&0x3)<<6)|(Chr[1]&0x3F);
+			}
+			else if ((Chr[0]&0xF0)==0xE0)
+			{
+				UTF16[0]=((Chr[0]&0xF)<<4)|((Chr[1]&0x3C)>>2);
+				UTF16[0]=(UTF16[0]<<8)|((Chr[1]&0x3)<<6)|(Chr[2]&0x3F);
+				Length=3;
+			}
+			else
+			{	// Correct encoding with more than three bytes, or a bad byte
+				UTF16[0]=0xFFFD;
+				if ((Chr[0]&0xF8)==0xF0)
+					Length=4;
+				else if ((Chr[0]&0xFC)==0xF8)
+					Length=5;
+				else if ((Chr[0]&0xFE)==0xFC)
+					Length=6;
+				else if ((Chr[0]&0xFF)==0xFE)
+					Length=7;
+				else if (Chr[0]==0xFF)
+					Length=8;
+				else Length=1;
 			}
 			break;
 		case BIG5:
@@ -721,10 +733,8 @@ u32 SimPrint(const char* Str, Device* Dev, u16 Color, Lid Lang)
 {
 	Font terminus12regular;
 	InitFont(&terminus12regular,ter12rp);
-	Font uf;
-	InitFont(&uf,unifont);
 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
-	CharStat CharStat = { Color, PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &uf/*terminus12regular*/};
+	CharStat CharStat = { Color, PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
 	BLOCK CharArea = {{0,0},{0,0}};
 	return iPrint(Str, &VScreen, &CharStat, &CharArea, -1, Lang);
 }
