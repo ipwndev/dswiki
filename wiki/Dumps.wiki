@@ -5,6 +5,8 @@ On this page, pre-made and ready to use database dumps for DSwiki are available 
 
 = Dumps =
 
-||The complete German Wikipedia (2008/07/12)|| http://dswiki.googlecode.com/files/DSwiki-dewiki-20080712.torrent (1.1GB)||
+||The complete German Wikipedia (2008/07/12)|| http://ftp5.gwdg.de/pub/wikipedia/nintendo/de/dewiki-20080712.tar.gz (1.1GB)||
 ||The complete English Wikipedia (2008/07/24)|| http://dswiki.googlecode.com/files/DSwiki-enwiki-20080724.torrent (3.5GB)||
-||Sample data (German Wikiquotes)|| http://dswiki.googlecode.com/files/DSwiki-sample-data.zip (5.3MB)||
+||German Wikiquotes|| http://ftp5.gwdg.de/pub/wikipedia/nintendo/de/dewikiquote-20080613.tar.gz (5.3MB)||
+
+Just to test DSwiki, download one of the smaller dumps first.
