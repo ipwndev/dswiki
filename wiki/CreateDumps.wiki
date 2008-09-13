@@ -1,89 +1,23 @@
 #summary How to create a custom dump file for the use in DSwiki
+#labels Featured
 
 ==Download==
 
-Download a compressed XML dump from http://dumps.wikimedia.org/.
+Download a compressed XML dump from http://download.wikimedia.org/.
 
-For the German Wikipedia, for example, download http://dumps.wikimedia.org/dewiki/latest/dewiki-latest-pages-articles.xml.bz2. You always need the ...-pages-articles.xml.bz2 version! The others files do not include the neccessary data, or have too much data in them.
+E.g. for the german Wikipedia, download http://dumps.wikimedia.org/dewiki/latest/dewiki-latest-pages-articles.xml.bz2. You always need the ...-pages-articles.xml.bz2 version! The others files do not include the necessary data, or have too much data in them.
 
 ==Reindexing the file==
-Now, the first tricky part:
 
-The file must be re-indexed, we need a tool from http://code.google.com/p/wiki2touch/.
+Download http://dswiki.googlecode.com/files/dswiki-indexer-1.0.zip and unpack it into the same directory that contains the article file.
 
-Windows and MacOSX users take the appropriate "Wiki2TouchUtils-?????.zip" file, found below "Featured downloads", Linux users check out the source code by typing
-
- {{{svn checkout http://wiki2touch.googlecode.com/svn/trunk/ wiki2touch-read-only}}}
-
-and compile the indexer with {{{make}}} in the "linux/indexer" directory.
-
-*IMPORTANT:* If it's possible, change
-
-{{{#define BZIP_BLOCK_SIZE_100K 9}}}
-
-to
-
-{{{#define BZIP_BLOCK_SIZE_100K 1}}}
-
-in "indexer.cpp" before compiling. This will result in larger files, but the memory used in the DS for uncompressing articles will be reduced.
-
-_*NOTE: I cannot guarantee that DSwiki, now and in the future, works with any other block size than 1 => 100KB. Use larger block sizes at your own risk.*_
-
-*IMPORTANT:* A picture index doesn't need to be created (switch: -I (capital i)), a second index of normalized umlauts should be added (switch: -d).
-
-Run the indexer and you should have a file named "articles.bin".
-
-==Splitting the reindexed file==
-And it gets even worse:
-
-The "articles.bin" must be split into a data file and an index. The reason is that in some time to search more bearable,
-because the search index in the large file is SLOWLY! It must
-find out how big the front part of the file is the
-compressed data. This figure is at the byte Places 7-14
-in the "articles.bin".
- * Linux:
- The number of bytes can be found by
-
- {{{cat articles.bin | head -c 14 | tail -c 8 | od -A n -t d8}}}
-
- Then you can split the file by (exchange BYTES with the correct number)
-
- {{{split -b BYTES articles.bin}}}
-
- Renames the files:
-
- {{{mv xaa dewiki.dat}}}
-
- {{{mv xab dewiki.idx}}}
-
- * Windows:
-
- Open "articles.bin" with a hex editor (the Total Commander (http://www.ghisler.com) includes one), looking for the 7th to the 14th bytes (probably, only about the first three bytes are not equal to "00").
-
- Calculate the required number of bytes with the formula
-
- (1 point) {{{*}}} 1 + (2 {{{*}}} 256) + (3rd place) {{{*}}} 256 {{{*}}} 256 + ...
-
- for example if the file starts with
-
-{{{
-       Hex: 64 65 1D 00 00 00 0E 3A 00 00 00 00 00 00 AD 0D
-   Station:  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
-                              |_____________________|
-}}}
-
- then calculate
-
- 0E = 14
-
- 3A = 58
-
- BYTES = 14 + 58 {{{*}}} 256 = 14862
-
- Split the file into files of this size (also possible with the Total Commander).
-
- The large file (with the calculated byte size) must be renamed into "dewiki.dat", the smaller file should be renamed to "dewiki.idx".
+Under Windows, run {{{indexer.exe <filename>}}}, under Linux type {{{./indexer <filename>}}}. After the indexing process, you should have at least these five files (additional files will be created if the source files is too big):
+  * articles.ifo
+  * articles.dba
+  * articles.idx
+  * articles.ao1
+  * articles.ao2
 
 ==Install==
 
-Copy "dewiki.dat" and "dewiki.idx" into the root directory of your flash card.
+For every file, change "articles" into a better name for your dump. Copy all files into the root directory of your flash card.
