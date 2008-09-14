@@ -3,6 +3,8 @@
 
 On this page, pre-made and ready to use database dumps for DSwiki are available for download. If you have compiled your own dump and want to share it with other users, drop me a note and I will list it on this page.
 
+If you just want to test DSwiki, download one of the smaller dumps first.
+
 = Dumps =
 
 == Wikipedia ==
@@ -19,5 +21,3 @@ On this page, pre-made and ready to use database dumps for DSwiki are available 
 ||Englisch Wikiquotes (2008/07/30)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/en/enwikiquote-20080730.tar.gz (40 MB)||
 ||Englisch Wiktionary (2008/06/13)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/en/enwiktionary-20080613.tar.gz (75 MB)||
 ||German Wikiquotes (2008/06/13)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/de/dewikiquote-20080613.tar.gz (5.3 MB)||
-
-If you just want to test DSwiki, download one of the smaller dumps first.
