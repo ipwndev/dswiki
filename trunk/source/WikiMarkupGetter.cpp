@@ -14,9 +14,16 @@
 
 WikiMarkupGetter::WikiMarkupGetter(string basename)
 {
+	u8 subdir = 1;
 	struct stat st;
 	char filename[256]; // to hold a full filename and string terminator
-	DIR_ITER* dir = diropen("/");
+	DIR_ITER* dir = diropen("/dswiki/");
+
+	if (dir == NULL)
+	{
+		subdir = 0;
+		dir = diropen("/");
+	}
 
 	if (dir == NULL)
 	{
@@ -32,7 +39,86 @@ WikiMarkupGetter::WikiMarkupGetter(string basename)
 				if (filenamestr.substr(0,filenamestr.length()-1)==basename+".db")
 				{
 					if (filenamestr.substr(filenamestr.length()-1,1).find_first_of("abcdefghijklmnopqrstuvwxyz")!=string::npos)
-						_filenames.push_back(filenamestr);
+					{
+						if (subdir)
+						{
+							_filenames.push_back("/dswiki/" + filenamestr);
+						}
+						else
+						{
+							_filenames.push_back("/" + filenamestr);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	sort(_filenames.begin(),_filenames.end()); // alphabetical order is assumed
+
+	int i;
+	for (i=0;i<_filenames.size();i++)
+	{
+		_f_data = fopen(_filenames[i].c_str(), "rb");
+		_filepointers.push_back(_f_data);
+		fseek(_f_data,0,SEEK_END);
+		fpos_t size = ftell(_f_data);
+		_filesizes.push_back(size);
+		rewind(_f_data);
+		u64 absoluteEnd;
+		if (i==0)
+			absoluteEnd = size-1;
+		else
+			absoluteEnd = _file_absoluteEnds[i-1] + size;
+		_file_absoluteEnds.push_back(absoluteEnd);
+	}
+}
+
+void WikiMarkupGetter::setNew(string basename)
+{
+	if (_f_data)
+	{
+		fclose(_f_data);
+	}
+	_filenames.clear();
+	_filepointers.clear();
+	_filesizes.clear();
+	_file_absoluteEnds.clear();
+	u8 subdir = 1;
+	struct stat st;
+	char filename[256]; // to hold a full filename and string terminator
+	DIR_ITER* dir = diropen("/dswiki/");
+
+	if (dir == NULL)
+	{
+		subdir = 0;
+		dir = diropen("/");
+	}
+
+	if (dir == NULL)
+	{
+		PA_OutputText(1,2,2,"Unable to open the directory.");
+	}
+	else
+	{
+		while (dirnext(dir, filename, &st) == 0) // collect all *.db? files
+		{
+			if (!(st.st_mode & S_IFDIR)) // regular file
+			{
+				string filenamestr = filename;
+				if (filenamestr.substr(0,filenamestr.length()-1)==basename+".db")
+				{
+					if (filenamestr.substr(filenamestr.length()-1,1).find_first_of("abcdefghijklmnopqrstuvwxyz")!=string::npos)
+					{
+						if (subdir)
+						{
+							_filenames.push_back("/dswiki/" + filenamestr);
+						}
+						else
+						{
+							_filenames.push_back("/" + filenamestr);
+						}
+					}
 				}
 			}
 		}
@@ -59,7 +145,16 @@ WikiMarkupGetter::WikiMarkupGetter(string basename)
 }
 
 WikiMarkupGetter::~WikiMarkupGetter()
-{ // TODO: Does not happen too often
+{
+	if (_f_data)
+	{
+		fclose(_f_data);
+	}
+	_filenames.clear();
+	_filepointers.clear();
+	_filesizes.clear();
+	_file_absoluteEnds.clear();
+	_lastArticleTitle.clear();
 }
 
 string WikiMarkupGetter::getMarkup(TitleIndex* t, string title)

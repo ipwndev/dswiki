@@ -14,7 +14,6 @@
 #include "Markup.h"
 #include "SearchResults.h"
 #include "struct.h"
-#include "ter12rp.h"
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
 
@@ -42,6 +41,7 @@ class History
 {
 	public:
 		History();
+		void clear();
 		string currentTitle();
 		s32    currentLine();
 		void   updateCurrentLine(s32 line);

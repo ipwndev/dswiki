@@ -1,4 +1,4 @@
- DSwiki (v0.1beta1)
+ DSwiki (v0.1)
 ====================
 
 DSwiki is an offline viewer for Wiki markup, for example for the
@@ -28,11 +28,10 @@ most homebrew programs can't handle UTF-8.
 
 -- libbzip2       <http://bzip.org/>
 
--- Terminus fonts <http://www.is-vn.bg/hamster/>
+-- UCS fonts      <http://www.cl.cam.ac.uk/~mgk25/ucs-fonts.html>
+                    Thanks to Markus Kuhn
 
--- GNU Unifont    <http://www.czyborra.com/unifont/> [DOWN]
-                  <http://unifoundry.com/unifont.html>
-                    Thanks to Roman Czyborra
+-- some other fonts
 
  Features
 ==========
@@ -96,6 +95,9 @@ A random article will be loaded at the start.
                 * pressing A
                 * touching Enter on the virtual keyboard
 
+       Select: Choose another available wiki
+
+
  Installation
 ==============
 
@@ -105,15 +107,6 @@ A random article will be loaded at the start.
 2. Create dumps of your favorite wiki or download already prepared ones.
    Visit <http://code.google.com/p/dswiki/wiki/Dumps> for a list.
 
-   ----------------------------------------------------------------------
-   IMPORTANT: PLEASE DO NOT DOWNLOAD THESE DUMPS AT THE MOMENT.
-              They were compiled with a buggy indexer, so the sorting
-              may be bad for some articles, others may not load.
-              I prepared new dumps with a correct indexer, and at the
-              moment, I'm working on a way to host these files on a
-              reliable organization's server.
-   ----------------------------------------------------------------------
-
 3. Copy all files with the extensions
 
      ifo
@@ -122,12 +115,13 @@ A random article will be loaded at the start.
      ao2
      db?    [ ? = one letter, typically "a" or "b", "z" is used in older versions ]
 
-   into the root directory of your flash card.
+   into /dswiki. This directory must exist in the root directory of your flash card.
 
  Bugs/Issues
 =============
 
--- Surely many ;-) Please report them!
+-- In some cases, image captions are not parsed correctly (no caption given, links
+   in the caption).
 
 
 

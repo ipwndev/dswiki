@@ -10,8 +10,6 @@
 #include "Big52Uni16.h"
 #include "api.h"
 
-#include "ter12rp.h"
-
 using namespace std;
 
 typedef enum {UTF,UTF8,BIG5,GBK,JIS} Lid;
@@ -61,9 +59,9 @@ const string diacriticExchangeTable[] =
 
 u8   InitFont(Font* FONT, const u8* ptr);
 
-u8   ToUTF   (const char* Chr, u16* UTF16, const u16* Table, Lid Lang);
-u32  UTF2UTF8(u16* Uni, char* U8);
-u32  UTF82UTF(char* U8, u16* Uni);
+u8   ToUTF   (const char* Chr, u32* UTF16, const u16* Table, Lid Lang);
+u32  UTF2UTF8(u32* Uni, char* U8);
+u32  UTF82UTF(char* U8, u32* Uni);
 
 string trimPhrase(string Str);
 string lowerPhrase(string phrase);
@@ -76,7 +74,7 @@ void SwitchNewLine  (const CharStat* CStat,                   BLOCK* CharArea, s
 u8   CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,                       u8 Height);
 u8   CheckWrap      (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height, u8 doWrap);
 
-void iDrawChar(u16* Uni,         const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea);
+void iDrawChar(u32* Uni,         const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea);
 u32  iPrint   (const char*  Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
 u32  iPrint   (const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
 u32  SimPrint (const char*  Str, Device* Dev, u16 Color, Lid Lang);

@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <string>
 #include <deque>
+#include <set>
 
 #include "api.h"
 #include "Big52Uni16.h"
@@ -18,7 +19,6 @@
 #include "Markup.h"
 #include "SearchResults.h"
 #include "struct.h"
-#include "ter12rp.h"
 #include "WikiMarkupGetter.h"
 
 
@@ -50,6 +50,7 @@ public:
 	TitleIndex(string basename);
 	~TitleIndex();
 
+	void setNew(string basename);
 	ArticleSearchResult*	findArticle(string title, u8 setPosition = 0);
 	ArticleSearchResult*	getRandomArticle();
 	ArticleSearchResult*	isRedirect(string markup);
@@ -58,7 +59,7 @@ public:
 	int		getSuggestedArticleNumber(string phrase);
 	static vector<string> getPossibleWikis();
 
-	void test();
+	void test(Font f);
 
 	int		NumberOfArticles();
 	string	HeaderFileName();

@@ -14,14 +14,13 @@
 #include "Markup.h"
 #include "SearchResults.h"
 #include "struct.h"
-#include "ter12rp.h"
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
 
 
 using namespace std;
 
-typedef enum {TEXT_EL, LINK_EL, ANCHOR_EL} ELEMENTTYPE;
+typedef enum {TEXT_EL, LINK_EL, ANCHOR_EL, IMG_EL} ELEMENTTYPE;
 
 class Element
 {
@@ -54,7 +53,7 @@ class Markupline
 class Markup
 {
 	public:
-		Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* CStat);
+		Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* CStat, TitleIndex* titleindex);
 		~Markup();
 
 		void	createLines(VirScreen* VScreen, CharStat* CStat);
@@ -77,6 +76,7 @@ class Markup
 		CharStat*	_markupCStat;
 		u8	_linesOnVScreen1;
 		u8	_linesOnVScreen2;
+		TitleIndex* _titleindex;
 };
 
 Element* createLink(string Str, u32 startPos, u32 link_id);

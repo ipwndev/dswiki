@@ -14,9 +14,10 @@
 #include "Markup.h"
 #include "SearchResults.h"
 #include "struct.h"
-#include "ter12rp.h"
+#include "frankenstein.h"
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
+#include "TextList.h"
 
 
 
@@ -27,6 +28,7 @@ int main(int argc, char ** argv)
 	PA_Init();
 	PA_InitVBL();
 	PA_InitFat();
+	PA_SetAutoCheckLid(1);
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
@@ -46,7 +48,7 @@ int main(int argc, char ** argv)
 	// important variables
 
 	Font terminus12p;
-	InitFont(&terminus12p,ter12rp);
+	InitFont(&terminus12p,frankenstein);
 // 	Font unifont16p;
 // 	InitFont(&unifont16p,unifont);
 
@@ -85,7 +87,21 @@ int main(int argc, char ** argv)
 
 	// start of main program
 
+#if 1
+	DIR_ITER* dswikiDir = diropen ("fat:/dswiki/");
+	if (dswikiDir == NULL)
+	{
+		SimPrint("The directory \"/dswiki\" does not exist. Please create it and move all dump files into it.\n\n\nDas Verzeichnis \"/dswiki\" existiert nicht. Bitte erstelle es und verschiebe alle Dumps hinein.",&DnScreen,PA_RGB(31,0,0),UTF8);
+		return 0;
+	}
+#endif
+
+/*	createLink("Dies ist ein [[A1#anch|A2|A3]] und mehr.",0,0);
+	while(1);*/
+
 	vector<string> possibleWikis = TitleIndex::getPossibleWikis();
+
+	TextList::show("Wiki wählen",possibleWikis,0,0,0);
 
 	if (possibleWikis.size()==0)
 	{
@@ -125,6 +141,7 @@ int main(int argc, char ** argv)
 				}
 				updateSelectedWiki = 0;
 			}
+			PA_WaitForVBL();
 		}
 		PA_ClearTextBg(1);
 	}
@@ -136,6 +153,8 @@ int main(int argc, char ** argv)
 	iPrint("Lade dewiki.dat...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
 	TitleIndex       t(possibleWikis[currentSelectedWiki]);
 	FillVS(&Statusbar,PA_RGB(26,26,26));
+
+// 	t.test(terminu1s2p);
 
 	FillVS(&Statusbar,PA_RGB(26,26,26));
 	CharArea = (BLOCK) {{2,2},{0,0}};
@@ -407,6 +426,53 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Select)
 		{
+			int currentSelectedWikiBackup = currentSelectedWiki;
+			if (possibleWikis.size()>1)
+			{
+				PA_Clear16bitBg(1);
+				PA_OutputText(1,1,0,"Choose Wiki\n-----------");
+				int i;
+				u8 updateSelectedWiki = 1;
+				while(1)
+				{
+					if (Pad.Newpress.A)
+					{
+						t.setNew(possibleWikis[currentSelectedWiki]);
+						m.setNew(possibleWikis[currentSelectedWiki]);
+						h.clear();
+						c.clear();
+						loadArticle = 1;
+						break;
+					}
+					if (Pad.Newpress.B)
+					{
+						currentSelectedWiki = currentSelectedWikiBackup;
+						break;
+					}
+					if (Pad.Newpress.Up||Pad.Newpress.Down)
+					{
+						currentSelectedWiki += Pad.Newpress.Down-Pad.Newpress.Up;
+						if (currentSelectedWiki<0) currentSelectedWiki = 0;
+						if (currentSelectedWiki>possibleWikis.size()-1) currentSelectedWiki = possibleWikis.size()-1;
+						updateSelectedWiki = 1;
+						PA_Sleep(10);
+					}
+					if (updateSelectedWiki)
+					{
+						for (i=0;i<possibleWikis.size();i++) {
+							if (i==currentSelectedWiki)
+								PA_OutputText(1,2,2+i,"%c1%s",possibleWikis[i].c_str());
+							else
+								PA_OutputText(1,2,2+i,"%s",possibleWikis[i].c_str());
+						}
+						updateSelectedWiki = 0;
+					}
+					PA_WaitForVBL();
+				}
+				PA_ClearTextBg(1);
+				updateTitle = 1;
+				updateContent = 1;
+			}
 		}
 
 		if (loadArticle)
@@ -433,6 +499,7 @@ int main(int argc, char ** argv)
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
 				iPrint("Lade \""+suchergebnis->TitleInArchive()+"\"",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
+				PA_Sleep(30);
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
 
@@ -474,7 +541,15 @@ int main(int argc, char ** argv)
 
 				markupstr = redirectMessage + markupstr;
 				delete markup;
-				markup = new Markup(markupstr, &ContentWin1, &ContentWin2, &ContentCS);
+				FillVS(&Statusbar,PA_RGB(26,26,26));
+				CharArea = (BLOCK) {{2,2},{0,0}};
+				iPrint("Formatiere Markup...",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
+				markup = new Markup(markupstr, &ContentWin1, &ContentWin2, &ContentCS, &t);
+				FillVS(&Statusbar,PA_RGB(26,26,26));
+				CharArea = (BLOCK) {{2,2},{0,0}};
+				iPrint("Formatierung abgeschlossen",&Statusbar,&StatusbarCS,&CharArea,-1,UTF8);
+				PA_Sleep(30);
+
 				markupstr.clear();
 
 				markup->setCurrentLine(forcedLine);

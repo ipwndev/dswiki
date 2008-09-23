@@ -15,7 +15,6 @@
 #include "Markup.h"
 #include "SearchResults.h"
 #include "struct.h"
-#include "ter12rp.h"
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
 
@@ -46,6 +45,7 @@ class Cache
 {
 	public:
 		Cache();
+		void clear();
 		void insert(string title, string markup);
 		u8   isInCache(string title);
 		void display();
