@@ -1,3 +1,4 @@
+#include "frankenstein.h"
 #include "chrlib.h"
 
 string trimPhrase(string Str)
@@ -92,7 +93,7 @@ string preparePhrase(string phrase, u8 indexNo)
 }
 
 
-u8 ToUTF(const char* Chr, u16* UTF16, const u16* Table, Lid Lang)
+u8 ToUTF(const char* Chr, u32* UTF16, const u16* Table, Lid Lang)
 {
 	u16  Row    = 0;
 	u16  Col    = 0;
@@ -247,7 +248,7 @@ u8 ToUTF(const char* Chr, u16* UTF16, const u16* Table, Lid Lang)
 	return Length;
 }
 
-u32 UTF2UTF8(u16* Uni, char* U8)
+u32 UTF2UTF8(u32* Uni, char* U8) // TODO
 {
 	u32 Length=0;
 	u32 i=0;
@@ -274,7 +275,7 @@ u32 UTF2UTF8(u16* Uni, char* U8)
 	return Length;
 }
 
-u32 UTF82UTF(char* U8, u16* Uni)
+u32 UTF82UTF(char* U8, u32* Uni) //TODO
 {
 	u32 i=0;
 	u32 Length=0;
@@ -408,7 +409,7 @@ u8 CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origi
 	return wrap;
 }
 
-void iDrawChar(u16* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK CharArea)
+void iDrawChar(u32* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK CharArea)
 {
 	u8*  DATA;
 	u8   idx;
@@ -519,7 +520,7 @@ void iDrawChar(u16* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK 
 u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang)
 {
 	u8*   DATA;
-	u16   Uni                = 0;
+	u32   Uni                = 0;
 	s16   Origin             = 0;
 	u8    Width              = 0;
 	u8    Height             = CStat->FONT->Height;
@@ -732,7 +733,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 u32 SimPrint(const char* Str, Device* Dev, u16 Color, Lid Lang)
 {
 	Font terminus12regular;
-	InitFont(&terminus12regular,ter12rp);
+	InitFont(&terminus12regular,frankenstein);
 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
 	CharStat CharStat = { Color, PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
 	BLOCK CharArea = {{0,0},{0,0}};

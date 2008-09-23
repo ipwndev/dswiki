@@ -27,6 +27,74 @@ TitleIndex::TitleIndex(string basename)
 	_imageNamespace = "";
 	_templateNamespace = "";
 
+	chdir("/dswiki/");
+	_FileName_Header    = basename + ".ifo";
+	_FileName_DataIndex = basename + ".idx";
+	_FileName_Index0    = basename + ".ao1";
+	_FileName_Index1    = basename + ".ao2";
+	_f_header           = fopen(_FileName_Header.c_str(),    "rb");
+	_f_dataindex        = fopen(_FileName_DataIndex.c_str(), "rb");
+	_f_index0           = fopen(_FileName_Index0.c_str(),    "rb");
+	_f_index1           = fopen(_FileName_Index1.c_str(),    "rb");
+
+	if ( _f_header )
+	{
+		int error = 0;
+
+		FILEHEADER fileheader;
+
+		fread(&fileheader.languageCode,      2, 1, _f_header);
+		fread(&fileheader.numberOfArticles,  4, 1, _f_header);
+		fread(&fileheader.titlesPos,         8, 1, _f_header);
+		fread(&fileheader.indexPos_0,        8, 1, _f_header);
+		fread(&fileheader.indexPos_1,        8, 1, _f_header);
+		fread(&fileheader.version,           1, 1, _f_header);
+		fread(&fileheader.reserved1,         1, 1, _f_header);
+		fread(&fileheader.imageNamespace,    32, 1, _f_header);
+		fread(&fileheader.templateNamespace, 32, 1, _f_header);
+		fread(&fileheader.reserved2,         160, 1, _f_header);
+
+		_numberOfArticles  = fileheader.numberOfArticles;
+		_imageNamespace    = fileheader.imageNamespace;
+		_templateNamespace = fileheader.templateNamespace;
+
+		if (fileheader.indexPos_1)
+		{
+			_using_index1 = 1;
+		}
+	}
+}
+
+void TitleIndex::setNew(string basename)
+{
+	if (_f_header)
+	{
+		fclose(_f_header);
+	}
+	if (_f_dataindex)
+	{
+		fclose(_f_dataindex);
+	}
+	if (_f_index0)
+	{
+		fclose(_f_index0);
+	}
+	if (_f_index1)
+	{
+		fclose(_f_index1);
+	}
+
+	_imageNamespace = "";
+	_templateNamespace = "";
+	isChinese = false;
+
+	_numberOfArticles = -1;
+	_using_index1 = 0;
+
+	_imageNamespace = "";
+	_templateNamespace = "";
+
+	chdir("/dswiki/");
 	_FileName_Header    = basename + ".ifo";
 	_FileName_DataIndex = basename + ".idx";
 	_FileName_Index0    = basename + ".ao1";
@@ -414,7 +482,10 @@ vector<string> TitleIndex::getPossibleWikis()
 	vector<string> possibleWikis;
 	struct stat st;
 	char filename[256]; // to hold a full filename and string terminator
-	DIR_ITER* dir = diropen("/");
+	DIR_ITER* dir = diropen("/dswiki/");
+
+	if (dir == NULL)
+		dir = diropen("/");
 
 	if (dir == NULL)
 	{
@@ -432,7 +503,9 @@ vector<string> TitleIndex::getPossibleWikis()
 					string basename = filenamestr.substr(0,filenamestr.length()-4);
 					struct stat inner_st;
 					char inner_filename[256];
-					DIR_ITER* inner_dir = diropen("/");
+					DIR_ITER* inner_dir = diropen("/dswiki/");
+					if (inner_dir == NULL)
+						inner_dir = diropen("/");
 					u8 foundidx = 0;
 					u8 foundao1 = 0;
 					u8 foundao2 = 0;
@@ -464,40 +537,33 @@ vector<string> TitleIndex::getPossibleWikis()
 	return possibleWikis;
 }
 
-void TitleIndex::test()
+void TitleIndex::test(Font f)
 {
-	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
-
-	PA_OutputText(1,0,2,"Artikel %d",_numberOfArticles);
+	set<u32> baddies;
 	int i;
-	u8 indexNo;
-	string vergleich[2];
-	u8 first = 0;
-	u8 anzfehler=0;
-	for (indexNo=1;indexNo<=_using_index1;indexNo++)
+	string title;
+	u32 Uni = 0;
+	u32 Skip = 0;
+	u32 length = 0;
+	u32 ref;
+	u32 replaceref = f.Index[0xFFFD];
+	for (i=0;i<_numberOfArticles;i++)
 	{
-		PA_OutputText(1,0,3,"Pruefe Index %d",indexNo);
-		first = 0;
-		vergleich[first] = preparePhrase(getTitle(0,indexNo,0),indexNo);
-		for (i=133400;i<_numberOfArticles;i++)
+		if ((i%100)==0) {
+			PA_OutputText(1,0,0,"%d/%d",i,_numberOfArticles);
+		}
+		title = getTitle(i,0,0);
+		length = title.length();
+		Skip = 0;
+		while (Skip<length)
 		{
-			if ((i%100)==0)
-				PA_OutputText(1,0,4,"%d      ",i);
-			vergleich[1-first] = preparePhrase(getTitle(i,indexNo,0),indexNo);
-			if (!(vergleich[first]<=vergleich[1-first]))
+			Skip+=ToUTF(&title[Skip],&Uni,B2U16,UTF8);
+			ref = f.Index[Uni];
+			if (ref==replaceref)
 			{
-				PA_OutputText(0,0,anzfehler,"Fehler bei %d/%d",i-1,i);
-				anzfehler++;
-				SimPrint("\n\n\n "+vergleich[first]+"\n "+vergleich[1-first],&UpScreen,PA_RGB(0,0,0),UTF8);
-				if (anzfehler==24)
-				{
-					anzfehler = 0;
-					PA_OutputText(1,0,5,"Taste druecken");
-					PA_WaitFor(Pad.Newpress.Anykey);
-					PA_OutputText(1,0,5,"              ");
-				}
+				baddies.insert(Uni);
+				PA_OutputText(1,5,5,"%d",baddies.size());
 			}
-			first = 1-first;
 		}
 	}
 }

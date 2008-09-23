@@ -36,9 +36,14 @@ Element::Element(string text)
 Element::Element(string str_namesp, string str_targ, string str_anch, string str_disp, u32 start, u32 length, u32 link_id)
 {
 // 	PA_OutputText(1,5,5,"Creating Link-Element");
-	PA_Sleep(SLEEPTIME);
+// 	PA_Sleep(SLEEPTIME);
 
 	Type = LINK_EL;
+	
+	if ((str_namesp == "Image") || (str_namesp == "Bild")) // TODO
+	{
+		Type = IMG_EL;
+	}
 
 	wikiNamespace = str_namesp;
 	target        = str_targ;
@@ -55,9 +60,15 @@ Element::Element(string str_namesp, string str_targ, string str_anch, string str
 
 
 Element* createLink(string Str, u32 startPos, u32 link_id)
-{
+{	
+	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	while (1)
 	{
+		string nameStr = "";
+		string targStr = "";
+		string anchStr = "";
+		string dispStr = "";
+		
 		if (startPos>=Str.length())
 			break;
 
@@ -72,53 +83,97 @@ Element* createLink(string Str, u32 startPos, u32 link_id)
 			break;
 
 		string linkinnertext = Str.substr(linkstart+2,linkend-linkstart-2);
-
-		int stelle;
-
-		stelle=linkinnertext.find("|");
-
-		string dispStr = "";
-		string targStr = "";
-		string anchStr = "";
-
-		if (stelle==string::npos)
+		if (linkinnertext.empty())
+			continue;
+		
+// 		PA_Clear16bitBg(1);
+// 		SimPrint(linkinnertext,&UpScreen,PA_RGB(0,0,0),UTF8);
+		
+		vector<string> pipeSeperatedContent;
+		
+		int stelleStart = 0;
+		int stelleEnd;
+		
+		// split at each pipe symbol
+		while ( (stelleEnd=linkinnertext.find("|",stelleStart)) != string::npos)
 		{
-			targStr = linkinnertext;
-			dispStr = linkinnertext;
+			if (stelleEnd>stelleStart)
+			{
+				pipeSeperatedContent.push_back(linkinnertext.substr(stelleStart,stelleEnd-stelleStart));
+			}
+			stelleStart = stelleEnd+1;
+		}
+		if (stelleStart<linkinnertext.length())
+		{
+			pipeSeperatedContent.push_back(linkinnertext.substr(stelleStart));
+		}
+		
+		if ((stelleStart=pipeSeperatedContent.front().find(":")) != string::npos) // potential namespace
+		{
+			nameStr = pipeSeperatedContent.front().substr(0,stelleStart);
+			pipeSeperatedContent.front().erase(0,stelleStart+1);
+		}
+		
+		if ((stelleStart=pipeSeperatedContent.front().find("#")) != string::npos) // anchor
+		{
+			anchStr = pipeSeperatedContent.front().substr(stelleStart+1);
+			pipeSeperatedContent.front().resize(stelleStart);
+		}
+		
+		targStr = pipeSeperatedContent.front();
+		
+		if ((nameStr == "Image") || (nameStr == "Bild")) // TODO
+		{   // handle things differently
+			dispStr = pipeSeperatedContent.back();
 		}
 		else
 		{
-			targStr = linkinnertext.substr(0,stelle);
-			dispStr = linkinnertext.substr(stelle+1,stelle+1-linkend);
+			if (pipeSeperatedContent.size() > 1)
+			{
+				dispStr = pipeSeperatedContent[1];
+				int i;
+				for (i=2;i<pipeSeperatedContent.size();i++)
+					dispStr += "|"+pipeSeperatedContent[i];
+			}
+			else
+			{
+				if (nameStr.empty())
+					dispStr = targStr;
+				else
+					dispStr = nameStr+":"+targStr;
+			}
 		}
-
+		
+/*		int i;
+		for (i=0;i<pipeSeperatedContent.size();i++)
+		PA_OutputText(1,5,i,"->%s<-",pipeSeperatedContent[i].c_str());*/
+		
+// 		PA_ClearTextBg(1);
+// 		PA_OutputText(1,5,20,"->%s<-",nameStr.c_str());
+// 		PA_OutputText(1,5,21,"->%s<-",targStr.c_str());
+// 		PA_OutputText(1,5,22,"->%s<-",anchStr.c_str());
+// 		PA_OutputText(1,5,23,"->%s<-",dispStr.c_str());
+		
+		
 		if (targStr.find_first_of("[]<>{}\n")!=string::npos)
 			continue;
 
+		nameStr = trimPhrase(nameStr);
 		dispStr = trimPhrase(dispStr);
-
-		stelle = targStr.find("#");
-
-		if (stelle!=string::npos)
-		{
-			anchStr = targStr.substr(stelle+1);
-			targStr.resize(stelle);
-		}
-
 		targStr = trimPhrase(targStr);
 		anchStr = trimPhrase(anchStr);
 
-		while ((stelle=targStr.find("_"))!=string::npos)
+		while ((stelleStart=targStr.find("_"))!=string::npos)
 		{
-			targStr.replace(stelle,1," ");
+			targStr.replace(stelleStart,1," ");
 		}
 
 		// collect and append any suffix and spaces
-		stelle = Str.find_first_of(" \n.,;?:|<>(){}[]!'\"=",linkend+2);
-		stelle = Str.find_first_not_of(" ",stelle);
-		dispStr.append(Str.substr(linkend+2,stelle-linkend-2));
+		stelleStart = Str.find_first_of(" \n.,;?:|<>(){}[]!'\"=",linkend+2);
+		stelleEnd = Str.find_first_not_of(" ",stelleStart);
+		dispStr.append(Str.substr(linkend+2,stelleEnd-linkend-2));
 
-		return new Element("",targStr,anchStr,dispStr,linkstart,(linkend+2)+Str.substr(linkend+2,stelle-(linkend+2)).length()-linkstart, link_id);
+		return new Element(nameStr,targStr,anchStr,dispStr,linkstart,(linkend+2)+Str.substr(linkend+2,stelleEnd-(linkend+2)).length()-linkstart, link_id);
 	}
 
 	return NULL;
@@ -148,6 +203,9 @@ void Markupline::drawToVScreen(VirScreen* VScreen, CharStat* CStat, s32 line)
 				break;
 			case LINK_EL:
 				CStat->Color = PA_RGB(0,5,23);
+				break;
+			case IMG_EL:
+				CStat->Color = PA_RGB(24,0,24);
 				break;
 		}
 		children[i].BoundingBox.Start.x = CharArea.Start.x;                   // TODO: Rotate & Screen-absolut machen
@@ -199,7 +257,7 @@ string Markup::evaluateClick(s16 x,s16 y)
 }
 
 
-Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* CStat)
+Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* CStat, TitleIndex* titleindex)
 {
 // 	PA_OutputText(1,5,3,"Creating Markup");
 	PA_Sleep(SLEEPTIME);
@@ -208,6 +266,7 @@ Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* C
 	_markupVScreen1 = VScreen1;
 	_markupVScreen2 = VScreen2;
 	_markupCStat    = CStat;
+	_titleindex     = titleindex;
 	_linesOnVScreen1 = 1 + ( ( _markupVScreen1->Height - _markupCStat->FONT->Height ) / ( _markupCStat->FONT->Height + _markupCStat->H_Space ) );
 	_linesOnVScreen2 = 1 + ( ( _markupVScreen2->Height - _markupCStat->FONT->Height ) / ( _markupCStat->FONT->Height + _markupCStat->H_Space ) );
 	_currentLine = 0;
@@ -238,11 +297,15 @@ Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* C
 
 		l = createLink(Str,pos,link_id++);
 	}
+// 	PA_OutputText(1,5,19,"while (l) OK");
 
 	Element t(Str.substr(pos));
 	visibleChildren.push_back(t);
+	
+// 	PA_OutputText(1,5,18,"add (t) OK");
 
 	createLines(VScreen1, CStat);
+// 	PA_OutputText(1,5,17,"createLines OK");
 // 	setCurrentLine(PA_RandMax(numberOfLines()-1));
 
 // 	PA_OutputText(1,5,3,"               ");
@@ -320,6 +383,7 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 						CurrentElement.displayText.erase(0,numOut);
 						break;
 					case LINK_EL:
+					case IMG_EL:
 						CurrentLine.children.push_back(LPart1);
 						CurrentElement.displayText.erase(0,numOut);
 						break;

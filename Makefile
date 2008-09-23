@@ -22,7 +22,7 @@ ADD_LIBS +=
 
 PATH 		:= $(DEVKITARM)/bin:$(PATH)
 
-TEXT1           :=DSwiki 0.1beta1
+TEXT1           :=DSwiki 0.1
 TEXT2           :=Offline Wiki-Reader
 TEXT3           :=by OlliPolli
 ICON 		:= -b $(CURDIR)/../logo.bmp

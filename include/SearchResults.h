@@ -14,14 +14,13 @@
 #include "Markup.h"
 #include "SearchResults.h"
 #include "struct.h"
-#include "ter12rp.h"
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
 
 using namespace std;
 
 #define MAX_SEARCH_RESULTS 128
-#define SEARCHRESULT_LINES 14
+#define SEARCHRESULT_LINES 13
 
 //
 // C++ Interface: SearchResults

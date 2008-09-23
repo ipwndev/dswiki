@@ -15,7 +15,6 @@
 #include "Markup.h"
 #include "SearchResults.h"
 #include "struct.h"
-#include "ter12rp.h"
 #include "WikiMarkupGetter.h"
 
 using namespace std;
@@ -28,6 +27,7 @@ public:
 	WikiMarkupGetter(string basename);
 	~WikiMarkupGetter();
 
+	void setNew(string basename);
 	string getMarkup(TitleIndex* t, string title);
 	string GetLastArticleTitle();
 

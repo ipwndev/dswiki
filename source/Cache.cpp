@@ -18,6 +18,13 @@ Cache::Cache()
 	_lastFoundPosition = 0;
 }
 
+void Cache::clear()
+{
+	_list.clear();
+	_size = 0;
+	_lastFoundPosition = 0;
+}
+
 void Cache::insert(string title, string markup)
 {
 	CacheEntry newEntry = {title,markup};

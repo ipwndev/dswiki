@@ -16,6 +16,12 @@ History::History()
 	_currentPosition = -1;
 }
 
+void History::clear()
+{
+	_list.clear();
+	_currentPosition = -1;
+}
+
 u8 History::back()
 {
 	if ((_list.size()<2)||(_currentPosition==0))
