@@ -6,16 +6,15 @@
 #ifdef _WIN32
 // MS defines off_t always as 32 bit, so we can't use it :-(
 typedef unsigned __int64 offset_t;
-#else 
+#else
 // on other systems (OS X, Linux), off_t should be 64 bit (which is what we need)
 // and fseeko/ftello should be present
 #include <sys/types.h>
 typedef off_t offset_t ;
 #endif
 
-
 #pragma pack(1)
-typedef struct 
+typedef struct
 {
 	char languageCode[2];				// 2 bytes
 	unsigned int numberOfArticles;		// 4 bytes
@@ -30,7 +29,7 @@ typedef struct
 } FILEHEADER;
 #pragma pack()
 
-struct IndexStatus 
+struct IndexStatus
 {
   int articlesWritten;
   int articlesSkipped;
