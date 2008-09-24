@@ -18,7 +18,7 @@
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
 #include "TextList.h"
-
+#include "minIni.h"
 
 
 int main(int argc, char ** argv)
@@ -87,17 +87,13 @@ int main(int argc, char ** argv)
 
 	// start of main program
 
-#if 1
+	// check for DSwiki's home directory
 	DIR_ITER* dswikiDir = diropen ("fat:/dswiki/");
 	if (dswikiDir == NULL)
 	{
 		SimPrint("The directory \"/dswiki\" does not exist. Please create it and move all dump files into it.\n\n\nDas Verzeichnis \"/dswiki\" existiert nicht. Bitte erstelle es und verschiebe alle Dumps hinein.",&DnScreen,PA_RGB(31,0,0),UTF8);
 		return 0;
 	}
-#endif
-
-/*	createLink("Dies ist ein [[A1#anch|A2|A3]] und mehr.",0,0);
-	while(1);*/
 
 	vector<string> possibleWikis = TitleIndex::getPossibleWikis();
 
