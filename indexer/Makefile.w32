@@ -1,0 +1,17 @@
+CC=i586-mingw32msvc-gcc
+CFLAGS=-I/usr/include/mingw/ -O3
+LD=$(CC)
+LDFLAGS=-lstdc++ -lsupc++ /usr/lib/mingw/libbz2.a
+
+all:	indexer.exe
+
+indexer.exe: indexer.o char_convert.o 
+	$(LD) -o $@ $^ $(LDFLAGS)
+
+%.o:	%.cpp
+		$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+clean:
+		rm -f *.o indexer.exe
+
+indexer.o: indexer.h
