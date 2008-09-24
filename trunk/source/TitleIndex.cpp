@@ -482,10 +482,7 @@ vector<string> TitleIndex::getPossibleWikis()
 	vector<string> possibleWikis;
 	struct stat st;
 	char filename[256]; // to hold a full filename and string terminator
-	DIR_ITER* dir = diropen("/dswiki/");
-
-	if (dir == NULL)
-		dir = diropen("/");
+	DIR_ITER* dir = diropen("fat:/dswiki/");
 
 	if (dir == NULL)
 	{
@@ -503,9 +500,7 @@ vector<string> TitleIndex::getPossibleWikis()
 					string basename = filenamestr.substr(0,filenamestr.length()-4);
 					struct stat inner_st;
 					char inner_filename[256];
-					DIR_ITER* inner_dir = diropen("/dswiki/");
-					if (inner_dir == NULL)
-						inner_dir = diropen("/");
+					DIR_ITER* inner_dir = diropen("fat:/dswiki/");
 					u8 foundidx = 0;
 					u8 foundao1 = 0;
 					u8 foundao2 = 0;
