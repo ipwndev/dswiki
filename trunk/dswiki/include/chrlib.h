@@ -28,15 +28,16 @@ typedef struct
 
 typedef struct
 {
-	u16     Color;
-	u16     BgColor;
-	ChrWrap Wrap;
-	ChrRot  Rotate;
-	FX      Fx;
-	u8      CutChar;
+	Font*   FONT;
 	u8      W_Space;
 	u8      H_Space;
-	Font*   FONT;
+	u16     Color;
+	u16     FxColor;
+	u16     BgColor;
+	ChrRot  Rotate;
+	ChrWrap Wrap;
+	FX      Fx;
+	u8      CutChar;
 } CharStat;
 
 #define MAX_TITLE_LENGTH 1000

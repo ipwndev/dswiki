@@ -732,10 +732,10 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 
 u32 SimPrint(const char* Str, Device* Dev, u16 Color, Lid Lang)
 {
-	Font terminus12regular;
-	InitFont(&terminus12regular,frankenstein);
+	Font stdFont;
+	InitFont(&stdFont,frankenstein);
 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
-	CharStat CharStat = { Color, PA_RGB(31,31,31), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12regular};
+	CharStat CharStat = { &stdFont, 0,0, Color, 0, 0, DEG0, NORMALWRAP, NONE, 0};
 	BLOCK CharArea = {{0,0},{0,0}};
 	return iPrint(Str, &VScreen, &CharStat, &CharArea, -1, Lang);
 }
@@ -755,12 +755,6 @@ u32 SimPrint(const string Str, Device* Dev, u16 Color, Lid Lang)
 	else
 		return 0;
 }
-
-
-	// DEG0:   {{0,0},{?,?}}
-	// DEG90:  {{0,?},{?,171}}
-	// DEG180: {{?,?},{251,171}}
-	// DEG270: {{?,0},{251,?}}
 
 u8 InitFont(Font* FONT, const u8* ptr)
 {

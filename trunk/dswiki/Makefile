@@ -22,10 +22,10 @@ ADD_LIBS +=
 
 PATH 		:= $(DEVKITARM)/bin:$(PATH)
 
-TEXT1           :=DSwiki 0.1
+TEXT1           :=DSwiki 0.2alpha1
 TEXT2           :=Offline Wiki-Reader
 TEXT3           :=by OlliPolli
-ICON 		:= -b $(CURDIR)/../logo.bmp
+ICON            := -b $(CURDIR)/../logo.bmp
 
 #---------------------------------------------------------------------------------
 .SUFFIXES:
@@ -48,7 +48,7 @@ BUILD		:=	build
 SOURCES	:=	gfx source data
 INCLUDES	:=	include build data
 
-EXPORT_DIR := /c/ndsexamples/
+EXPORT_DIR := /media/disk/
 #---------------------------------------------------------------------------------
 # ARM7BIN is the path to an arm7 binary other than the default
 #	usage: ARM7BIN := -7 binaryName.bin

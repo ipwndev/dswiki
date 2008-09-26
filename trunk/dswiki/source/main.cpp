@@ -19,6 +19,7 @@
 #include "WikiMarkupGetter.h"
 #include "TextList.h"
 #include "minIni.h"
+#include "GlobalSettings.h"
 
 
 int main(int argc, char ** argv)
@@ -47,10 +48,8 @@ int main(int argc, char ** argv)
 
 	// important variables
 
-	Font terminus12p;
-	InitFont(&terminus12p,frankenstein);
-// 	Font unifont16p;
-// 	InitFont(&unifont16p,unifont);
+	Font stdFont;
+	InitFont(&stdFont,frankenstein);
 
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
@@ -62,12 +61,12 @@ int main(int argc, char ** argv)
 	VirScreen  PercentArea = { 226, 176,  30,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
 	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-	CharStat       TitlebarCS = { PA_RGB(31,31,31), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
-	CharStat        ContentCS = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), NORMALWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
-	CharStat      StatusbarCS = { PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
-	CharStat StatusbarErrorCS = { PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0),   HARDWRAP, DEG0, NONE, 1, 1, 0, &terminus12p};
-	CharStat SearchResultsCS1 = { PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
-	CharStat SearchResultsCS2 = { PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0),     NOWRAP, DEG0, NONE, 0, 0, 0, &terminus12p};
+	CharStat       TitlebarCS = { &stdFont, 1, 1, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
+	CharStat        ContentCS = { &stdFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
+	CharStat      StatusbarCS = { &stdFont, 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
+	CharStat StatusbarErrorCS = { &stdFont, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
+	CharStat SearchResultsCS1 = { &stdFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
+	CharStat SearchResultsCS2 = { &stdFont, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
 
 	BLOCK ClearBtn = {{216,37},{237,58}};
 	BLOCK OKBtn    = {{ 18,37},{ 39,58}};
@@ -86,6 +85,67 @@ int main(int argc, char ** argv)
 	Markup* markup = NULL;
 
 	// start of main program
+/*	CharStat C11 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NORMALWRAP, DEG0, NONE, 0, 0, 0, &stdFont};
+	CharStat C12 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), HARDWRAP, DEG0, NONE, 0, 0, 0, &stdFont};
+	CharStat C13 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NOWRAP, DEG0, NONE, 0, 0, 0, &stdFont};
+	CharStat C21 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NORMALWRAP, DEG0, HOLLOW, 0, 0, 0, &stdFont};
+	CharStat C22 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), HARDWRAP, DEG0, HOLLOW, 0, 0, 0, &stdFont};
+	CharStat C23 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NOWRAP, DEG0, HOLLOW, 0, 0, 0, &stdFont};
+	CharStat C31 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NORMALWRAP, DEG0, SHADOW, 0, 0, 0, &stdFont};
+	CharStat C32 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), HARDWRAP, DEG0, SHADOW, 0, 0, 0, &stdFont};
+	CharStat C33 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NOWRAP, DEG0, SHADOW, 0, 0, 0, &stdFont};
+	CharStat C41 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NORMALWRAP, DEG0, BACKGR, 0, 0, 0, &stdFont};
+	CharStat C42 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), HARDWRAP, DEG0, BACKGR, 0, 0, 0, &stdFont};
+	CharStat C43 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NOWRAP, DEG0, BACKGR, 0, 0, 0, &stdFont};
+	CharStat C51 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NORMALWRAP, DEG0, SIMULATE, 0, 0, 0, &stdFont};
+	CharStat C52 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), HARDWRAP, DEG0, SIMULATE, 0, 0, 0, &stdFont};
+	CharStat C53 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NOWRAP, DEG0, SIMULATE, 0, 0, 0, &stdFont};
+
+
+	string test = "Weit hinter den Wortbergen\n\nWeit hinten, hinter den Wortbergen, fern der Länder Vokalien und Konsonantien leben die Blindtexte.\nAbgeschieden wohnen Sie in Buchstabhausen an der Küste des Semantik, eines großen Sprachozeans.\nEin kleines Bächlein namens Duden fließt durch ihren Ort und versorgt sie mit den nötigen Regelialien.\nEs ist ein paradiesmatisches Land, in dem einem gebratene Satzteile in den Mund fliegen.\nNicht einmal von der allmächtigen Interpunktion werden die Blindtexte beherrscht - ein geradezu unorthographisches Leben.";
+
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C11,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C12,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C13,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	iPrint(test,&ContentWin1,&C21,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C22,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C23,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	iPrint(test,&ContentWin1,&C31,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C32,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C33,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	iPrint(test,&ContentWin1,&C41,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C42,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C43,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	iPrint(test,&ContentWin1,&C51,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C52,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_Clear16bitBg(1);
+	iPrint(test,&ContentWin1,&C53,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
+	PA_WaitFor(Pad.Newpress.Anykey);*/
+// 	while(1);
 
 	// check for DSwiki's home directory
 	DIR_ITER* dswikiDir = diropen ("fat:/dswiki/");
