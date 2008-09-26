@@ -39,7 +39,7 @@ Element::Element(string str_namesp, string str_targ, string str_anch, string str
 // 	PA_Sleep(SLEEPTIME);
 
 	Type = LINK_EL;
-	
+
 	if ((str_namesp == "Image") || (str_namesp == "Bild")) // TODO
 	{
 		Type = IMG_EL;
@@ -60,7 +60,7 @@ Element::Element(string str_namesp, string str_targ, string str_anch, string str
 
 
 Element* createLink(string Str, u32 startPos, u32 link_id)
-{	
+{
 	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	while (1)
 	{
@@ -68,7 +68,7 @@ Element* createLink(string Str, u32 startPos, u32 link_id)
 		string targStr = "";
 		string anchStr = "";
 		string dispStr = "";
-		
+
 		if (startPos>=Str.length())
 			break;
 
@@ -85,15 +85,15 @@ Element* createLink(string Str, u32 startPos, u32 link_id)
 		string linkinnertext = Str.substr(linkstart+2,linkend-linkstart-2);
 		if (linkinnertext.empty())
 			continue;
-		
+
 // 		PA_Clear16bitBg(1);
 // 		SimPrint(linkinnertext,&UpScreen,PA_RGB(0,0,0),UTF8);
-		
+
 		vector<string> pipeSeperatedContent;
-		
+
 		int stelleStart = 0;
 		int stelleEnd;
-		
+
 		// split at each pipe symbol
 		while ( (stelleEnd=linkinnertext.find("|",stelleStart)) != string::npos)
 		{
@@ -107,21 +107,21 @@ Element* createLink(string Str, u32 startPos, u32 link_id)
 		{
 			pipeSeperatedContent.push_back(linkinnertext.substr(stelleStart));
 		}
-		
+
 		if ((stelleStart=pipeSeperatedContent.front().find(":")) != string::npos) // potential namespace
 		{
 			nameStr = pipeSeperatedContent.front().substr(0,stelleStart);
 			pipeSeperatedContent.front().erase(0,stelleStart+1);
 		}
-		
+
 		if ((stelleStart=pipeSeperatedContent.front().find("#")) != string::npos) // anchor
 		{
 			anchStr = pipeSeperatedContent.front().substr(stelleStart+1);
 			pipeSeperatedContent.front().resize(stelleStart);
 		}
-		
+
 		targStr = pipeSeperatedContent.front();
-		
+
 		if ((nameStr == "Image") || (nameStr == "Bild")) // TODO
 		{   // handle things differently
 			dispStr = pipeSeperatedContent.back();
@@ -143,18 +143,18 @@ Element* createLink(string Str, u32 startPos, u32 link_id)
 					dispStr = nameStr+":"+targStr;
 			}
 		}
-		
+
 /*		int i;
 		for (i=0;i<pipeSeperatedContent.size();i++)
 		PA_OutputText(1,5,i,"->%s<-",pipeSeperatedContent[i].c_str());*/
-		
+
 // 		PA_ClearTextBg(1);
 // 		PA_OutputText(1,5,20,"->%s<-",nameStr.c_str());
 // 		PA_OutputText(1,5,21,"->%s<-",targStr.c_str());
 // 		PA_OutputText(1,5,22,"->%s<-",anchStr.c_str());
 // 		PA_OutputText(1,5,23,"->%s<-",dispStr.c_str());
-		
-		
+
+
 		if (targStr.find_first_of("[]<>{}\n")!=string::npos)
 			continue;
 
@@ -301,7 +301,7 @@ Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* C
 
 	Element t(Str.substr(pos));
 	visibleChildren.push_back(t);
-	
+
 // 	PA_OutputText(1,5,18,"add (t) OK");
 
 	createLines(VScreen1, CStat);
@@ -330,7 +330,7 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 	PA_Sleep(SLEEPTIME);
 
 	VirScreen FakeVS = { VScreen->Left, VScreen->Top, VScreen->Width, VScreen->Height, {{0,0},{0,0}}, VScreen->Screen};
-	CharStat  FakeCS = { CStat->Color, CStat->BgColor, CStat->Wrap, CStat->Rotate, SIMULATE, 0, CStat->W_Space, 0, CStat->FONT};
+	CharStat  FakeCS = { CStat->FONT, CStat->W_Space, CStat->H_Space, CStat->Color, CStat->FxColor, CStat->BgColor, CStat->Rotate, CStat->Wrap, SIMULATE, 0};
 	switch (CStat->Rotate)
 	{
 		case DEG0:
