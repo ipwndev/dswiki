@@ -50,7 +50,7 @@ void DrawBlock(const VirScreen* VScreen, BLOCK Area, u16 Color, u8 Fill)
 	s32 ASy = Area.Start.y;
 	s32 AEy = Area.End.y;
 
-	if ((ASx<AEx)&&(ASy<AEy)) // Regular Block
+	if ((ASx<=AEx)&&(ASy<=AEy)) // Regular Block
 	{
 		s32 W = 0;
 		s32 H = 0;
