@@ -67,10 +67,21 @@ int main(int argc, char ** argv)
 	CharStat StatusbarErrorCS = { &stdFont, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
 	CharStat SearchResultsCS1 = { &stdFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
 	CharStat SearchResultsCS2 = { &stdFont, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
+	CharStat SearchResultsCS3 = { &stdFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
 
-	BLOCK ClearBtn = {{216,37},{237,58}};
-	BLOCK OKBtn    = {{ 18,37},{ 39,58}};
-	BLOCK CharArea = {{0,0},{0,0}};
+	BLOCK Btn_ToggleReal  = {{  3,  3},{ 18, 18}}; VirScreen Scr_ToogleReal = {0,0,0,0,Btn_ToggleReal,&DnScreen}; InitVS2(&Scr_ToogleReal);
+	BLOCK Btn_Cancel      = {{ 67,  9},{ 88, 30}};
+	BLOCK Btn_Reload      = {{117,  9},{138, 30}};
+	BLOCK Btn_OK          = {{167,  9},{188, 30}};
+	BLOCK Btn_CursorLeft  = {{ 29, 37},{ 46, 58}};
+	BLOCK Btn_CursorRight = {{209, 37},{226, 58}};
+	BLOCK Btn_Clear       = {{234, 37},{255, 58}};
+	BLOCK Btn_PageUp      = {{234, 72},{255, 93}};
+	BLOCK Btn_LineUp      = {{234, 97},{255,118}};
+	BLOCK Btn_LineDown    = {{234,122},{255,143}};
+	BLOCK Btn_PageDown    = {{234,147},{255,168}};
+
+	BLOCK CharArea = {{  0, 0},{  0, 0}};
 
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
@@ -85,67 +96,7 @@ int main(int argc, char ** argv)
 	Markup* markup = NULL;
 
 	// start of main program
-/*	CharStat C11 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NORMALWRAP, DEG0, NONE, 0, 0, 0, &stdFont};
-	CharStat C12 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), HARDWRAP, DEG0, NONE, 0, 0, 0, &stdFont};
-	CharStat C13 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NOWRAP, DEG0, NONE, 0, 0, 0, &stdFont};
-	CharStat C21 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NORMALWRAP, DEG0, HOLLOW, 0, 0, 0, &stdFont};
-	CharStat C22 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), HARDWRAP, DEG0, HOLLOW, 0, 0, 0, &stdFont};
-	CharStat C23 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NOWRAP, DEG0, HOLLOW, 0, 0, 0, &stdFont};
-	CharStat C31 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NORMALWRAP, DEG0, SHADOW, 0, 0, 0, &stdFont};
-	CharStat C32 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), HARDWRAP, DEG0, SHADOW, 0, 0, 0, &stdFont};
-	CharStat C33 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NOWRAP, DEG0, SHADOW, 0, 0, 0, &stdFont};
-	CharStat C41 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NORMALWRAP, DEG0, BACKGR, 0, 0, 0, &stdFont};
-	CharStat C42 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), HARDWRAP, DEG0, BACKGR, 0, 0, 0, &stdFont};
-	CharStat C43 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NOWRAP, DEG0, BACKGR, 0, 0, 0, &stdFont};
-	CharStat C51 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NORMALWRAP, DEG0, SIMULATE, 0, 0, 0, &stdFont};
-	CharStat C52 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), HARDWRAP, DEG0, SIMULATE, 0, 0, 0, &stdFont};
-	CharStat C53 = { PA_RGB(0, 0, 0), PA_RGB(31,15,15), NOWRAP, DEG0, SIMULATE, 0, 0, 0, &stdFont};
 
-
-	string test = "Weit hinter den Wortbergen\n\nWeit hinten, hinter den Wortbergen, fern der Länder Vokalien und Konsonantien leben die Blindtexte.\nAbgeschieden wohnen Sie in Buchstabhausen an der Küste des Semantik, eines großen Sprachozeans.\nEin kleines Bächlein namens Duden fließt durch ihren Ort und versorgt sie mit den nötigen Regelialien.\nEs ist ein paradiesmatisches Land, in dem einem gebratene Satzteile in den Mund fliegen.\nNicht einmal von der allmächtigen Interpunktion werden die Blindtexte beherrscht - ein geradezu unorthographisches Leben.";
-
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C11,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C12,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C13,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	iPrint(test,&ContentWin1,&C21,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C22,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C23,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	iPrint(test,&ContentWin1,&C31,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C32,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C33,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	iPrint(test,&ContentWin1,&C41,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C42,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C43,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	iPrint(test,&ContentWin1,&C51,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C52,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_Clear16bitBg(1);
-	iPrint(test,&ContentWin1,&C53,&(BLOCK) {{0,0},{0,0}},-1,UTF8);
-	PA_WaitFor(Pad.Newpress.Anykey);*/
-// 	while(1);
 
 	// check for DSwiki's home directory
 	DIR_ITER* dswikiDir = diropen ("fat:/dswiki/");
@@ -224,6 +175,7 @@ int main(int argc, char ** argv)
 	u8  updateContent     = 0;
 	u8  updateStatusbar   = 0;
 	u8  updatePercent     = 0;
+	u8  updateInRealTime  = 1;
 
 	s32 forcedLine        = 0;
 	u8  setNewHistoryItem = 1;
@@ -298,33 +250,67 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.X)
 		{
-			PA_KeyboardIn(24, 72);
 			PA_Clear16bitBg(1);
 			PA_Clear16bitBg(0);
+			PA_KeyboardIn(24,72);
+
+			DrawBlock(&DnScreen,Btn_ToggleReal,	PA_RGB(24,24,24),0);
+
+			DrawBlock(&DnScreen,Btn_Cancel,		PA_RGB(31, 0, 0),1);
+			DrawBlock(&DnScreen,Btn_OK,			PA_RGB( 0,31, 0),1);
+
+			DrawBlock(&DnScreen,Btn_CursorLeft,	PA_RGB(24,24,24),1);
+			DrawBlock(&DnScreen,Btn_CursorRight,PA_RGB(24,24,24),1);
+			DrawBlock(&DnScreen,Btn_Clear,		PA_RGB(31,15,15),1);
+
+			DrawBlock(&DnScreen,Btn_PageUp,		PA_RGB(24,24,24),1);
+			DrawBlock(&DnScreen,Btn_LineUp,		PA_RGB(24,24,24),1);
+			DrawBlock(&DnScreen,Btn_LineDown,	PA_RGB(24,24,24),1);
+			DrawBlock(&DnScreen,Btn_PageDown,	PA_RGB(24,24,24),1);
+
+			FillVS(&Statusbar, PA_RGB(18,22,28));
+			CharArea = (BLOCK) {{5,2},{0,0}};
+			iPrint(currentTitle,&Statusbar,&TitlebarCS,&CharArea,-1,UTF8);
 
 			char letter = 0;
 			u8 updateSearchbar   = 1;
-			u8 updateSuggestions = 0;
-			u8 searchSuggestions = 0;
+			u8 updateSuggestions = 1;
+			u8 searchSuggestions = 1;
+			u8 updateCursor      = 1;
+			s16 cursorPosition = suchtitel.length();
+
+			if (updateInRealTime)
+			{
+				CharArea = (BLOCK) {{5,2},{0,0}};
+				iPrint("✓",&Scr_ToogleReal,&ContentCS,&CharArea,-1,UTF8);
+			}
+			else
+			{
+				DrawBlock(&DnScreen,Btn_Reload,	PA_RGB(15,15,31),1);
+			}
 
 			while(1)
 			{
-				PA_CheckLid();
-
 				letter = PA_CheckKeyboard();
 
 				if (letter > 31) { // there is a new letter
-					suchtitel += letter;
+					suchtitel = suchtitel.substr(0,cursorPosition) + letter + suchtitel.substr(cursorPosition);
+					cursorPosition++;
 					updateSearchbar = 1;
+					if (updateInRealTime)
+						searchSuggestions = 1;
 				}
 
-				if ((letter == PA_BACKSPACE) && (!suchtitel.empty()))
+				if ((letter == PA_BACKSPACE) && (cursorPosition>0))
 				{
-					suchtitel.resize(suchtitel.length()-1); // Erase the last letter
+					suchtitel.erase(cursorPosition-1,1); // Erase the last letter
+					cursorPosition--;
 					updateSearchbar = 1;
+					if (updateInRealTime)
+						searchSuggestions = 1;
 				}
 
-				if ( (letter == '\n') )
+				if ( (letter == '\n') || (Pad.Newpress.A) )
 				{
 					suchtitel = s.currentHighlightedItem();
 					forcedLine = 0;
@@ -336,18 +322,100 @@ int main(int argc, char ** argv)
 				if (Stylus.Newpress)
 				{
 					POINT S = {Stylus.X,Stylus.Y};
-					if (IsInArea(ClearBtn,S) && (!suchtitel.empty()) )
+					if (IsInArea(Btn_Clear,S) && (!suchtitel.empty()) )
 					{
 						suchtitel.clear();
+						cursorPosition = 0;
 						updateSearchbar = 1;
+						if (updateInRealTime)
+							searchSuggestions = 1;
 					}
-					if (IsInArea(OKBtn,S))
+					else if (IsInArea(Btn_OK,S))
 					{
 						suchtitel = s.currentHighlightedItem();
 						forcedLine = 0;
 						setNewHistoryItem = 1;
 						loadArticle = 1;
 						break;
+					}
+					else if (IsInArea(Statusbar.Bound,S))
+					{
+						suchtitel = currentTitle;
+						cursorPosition = suchtitel.length();
+						updateSearchbar = 1;
+						if (updateInRealTime)
+							searchSuggestions = 1;
+					}
+					else if (IsInArea(Btn_Cancel,S))
+					{
+						break;
+					}
+					else if (IsInArea(Btn_PageUp,S))
+					{
+						if (s.scrollPageUp())
+						{
+							PA_Sleep(10);
+							updateSuggestions = 1;
+						}
+					}
+					else if (IsInArea(Btn_LineUp,S))
+					{
+						if (s.scrollLineUp())
+						{
+							PA_Sleep(10);
+							updateSuggestions = 1;
+						}
+					}
+					else if (IsInArea(Btn_LineDown,S))
+					{
+						if (s.scrollLineDown())
+						{
+							PA_Sleep(10);
+							updateSuggestions = 1;
+						}
+					}
+					else if (IsInArea(Btn_PageDown,S))
+					{
+						if (s.scrollPageDown())
+						{
+							PA_Sleep(10);
+							updateSuggestions = 1;
+						}
+					}
+					else if (IsInArea(Btn_ToggleReal,S))
+					{
+						updateInRealTime = 1 - updateInRealTime;
+						CharArea = (BLOCK) {{5,2},{0,0}};
+						if (updateInRealTime)
+						{
+							iPrint("✓",&Scr_ToogleReal,&ContentCS,&CharArea,-1,UTF8);
+							DrawBlock(&DnScreen,Btn_Reload,	PA_RGB(31,31,31),1);
+						}
+						else
+						{
+							iPrint("✓",&Scr_ToogleReal,&TitlebarCS,&CharArea,-1,UTF8);
+							DrawBlock(&DnScreen,Btn_Reload,	PA_RGB(15,15,31),1);
+						}
+					}
+					else if ((!updateInRealTime) && IsInArea(Btn_Reload,S))
+					{
+						searchSuggestions = 1;
+					}
+					else if (IsInArea(Btn_CursorLeft,S))
+					{
+						if (cursorPosition>0)
+						{
+							cursorPosition--;
+							updateSearchbar = 1;
+						}
+					}
+					else if (IsInArea(Btn_CursorRight,S))
+					{
+						if (cursorPosition<suchtitel.length())
+						{
+							cursorPosition++;
+							updateSearchbar = 1;
+						}
 					}
 				}
 
@@ -403,14 +471,6 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if (Pad.Newpress.A)
-				{
-					suchtitel = s.currentHighlightedItem();
-					forcedLine = 0;
-					setNewHistoryItem = 1;
-					loadArticle = 1;
-					break;
-				}
 
 				if (Pad.Newpress.X)
 				{
@@ -419,32 +479,44 @@ int main(int argc, char ** argv)
 
 				if (updateSearchbar)
 				{
-					DrawBlock(&DnScreen,ClearBtn,PA_RGB(31,0,0),1);
-					DrawBlock(&DnScreen,OKBtn,PA_RGB(0,31,0),1);
 					FillVS(&Searchbar,PA_RGB(28,28,28));
 					CharArea = (BLOCK) {{2,5},{0,0}};
 					iPrint(suchtitel,&Searchbar,&SearchResultsCS1,&CharArea,-1,UTF8);
-					searchSuggestions = 1;
+					updateCursor = 1;
 					updateSearchbar = 0;
 				}
 
-				if (searchSuggestions)
+				if (updateCursor)
+				{
+					u16 cursorX = 0;
+					int i;
+					CharArea = (BLOCK) {{2,5},{0,0}};
+					iPrint(suchtitel.substr(0,cursorPosition),&Searchbar,&SearchResultsCS1,&CharArea,-1,UTF8);
+					BLOCK temp = {{CharArea.Start.x-1,2},{CharArea.Start.x-1,19}};
+					DrawBlock(&Searchbar,temp,PA_RGB(20,20,20),1);
+				}
+
+				if (searchSuggestions) // load current searchstring
 				{
 					s.load(suchtitel);
 					updateSuggestions = 1;
 					searchSuggestions = 0;
 				}
 
-				if (updateSuggestions)
+				if (updateSuggestions) // update display
 				{
 					s.display();
 					updateSuggestions = 0;
 				}
 
+				PA_CheckLid();
 				PA_WaitForVBL();
 			}
 
 			PA_KeyboardOut();
+			PA_Clear16bitBg(1);
+			PA_Clear16bitBg(0);
+
 			updateTitle = 1;
 			updateContent = 1;
 			updateStatusbar = 1;
@@ -596,6 +668,7 @@ int main(int argc, char ** argv)
 				currentTitle = suchergebnis->TitleInArchive();
 
 				markupstr = redirectMessage + markupstr;
+				markupstr = exchangeSGMLEntities(markupstr);
 				delete markup;
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
@@ -652,9 +725,6 @@ int main(int argc, char ** argv)
 			markup->draw();
 			updatePercent = 1;
 			updateContent = 0;
-// 			PA_ClearTextBg(1);
-// 			h.display();
-// 			c.display();
 		}
 
 		if (updatePercent)
@@ -672,7 +742,7 @@ int main(int argc, char ** argv)
 			iPrint(percentstr,&PercentArea,&StatusbarCS,&CharArea,-1,UTF8);
 		}
 
-
+		PA_CheckLid();
 		PA_WaitForVBL();
 	}
 	return 0;

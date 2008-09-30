@@ -49,6 +49,99 @@ void tolower_utf8(char* data)
 	}
 }
 
+string exchangeSGMLEntities(string phrase)
+{
+	if ( phrase.empty() )
+		return phrase;
+
+	int posStart;
+	int posEnd = 0;
+
+	int i;
+	u32 basis;
+
+	while (posEnd<phrase.length())
+	{
+		posStart = phrase.find("&",posEnd);
+		if (posStart==string::npos)
+			return phrase;
+		posEnd = phrase.find(";",posStart);
+		if (posEnd==string::npos)
+			return phrase;
+		string entity = phrase.substr(posStart,posEnd-posStart+1);
+
+		// test for named entities
+		for (i=0;i<MAX_NAMED_ENTITIES;i++)
+		{
+			if (entity==entities[i].entity)
+			{
+				char replaced[32];
+				u32 codepoint[] = {entities[i].codepoint,0};
+				UTF2UTF8(codepoint,replaced);
+				int j;
+				string neu = replaced;
+				int l = neu.length();
+				phrase.replace(posStart,entity.length(),neu);
+				posEnd -= (entity.length()-l-1);
+				break;
+			}
+		}
+
+		// test for numeric entities
+		if (entity.substr(1,1)=="#")
+		{
+			string number = entity.substr(2,entity.length()-3);
+			if (number.empty())
+				continue;
+			int temp;
+			char replaced[32];
+			if (number.substr(0,1)=="x")
+			{ // hexadecimal format expected
+				number.erase(0,1);
+				if ((temp=number.find_first_not_of("0123456789aAbBcCdDeEfF"))!=string::npos)
+					continue;
+				// conversion is possible
+				u32 codepoint[] = {0,0};
+				basis = 16;
+				for (i=0;i<number.length();i++)
+				{
+					unsigned char c = number.at(i);
+					if ((0x30<=c) && (c<=0x39))
+						codepoint[0] = codepoint[0] * basis + (c-0x30);
+					else if ((0x41<=c) && (c<=0x46))
+						codepoint[0] = codepoint[0] * basis + (c-55);
+					else if ((0x61<=c) && (c<=0x66))
+						codepoint[0] = codepoint[0] * basis + (c-87);
+				}
+				UTF2UTF8(codepoint,replaced);
+				string neu = replaced;
+				int l = neu.length();
+				phrase.replace(posStart,entity.length(),neu);
+				posEnd -= (entity.length()-l-1);
+			}
+			else
+			{ // decimal format expected
+				if ((temp=number.find_first_not_of("0123456789"))!=string::npos)
+					continue;
+				// conversion is possible
+				u32 codepoint[] = {0,0};
+				basis = 10;
+				for (i=0;i<number.length();i++)
+				{
+					unsigned char c = number.at(i);
+					codepoint[0] = codepoint[0] * basis + (c-0x30);
+				}
+				UTF2UTF8(codepoint,replaced);
+				string neu = replaced;
+				int l = neu.length();
+				phrase.replace(posStart,entity.length(),neu);
+				posEnd -= (entity.length()-l-1);
+			}
+		}
+	}
+	return phrase;
+}
+
 string exchangeDiacriticCharsUTF8Phrase(string phrase)
 {
 	if ( phrase.empty() )
@@ -57,7 +150,7 @@ string exchangeDiacriticCharsUTF8Phrase(string phrase)
 	string dst = phrase;
 
 	int i = 0;
-	int length = dst.length();
+// 	int length = dst.length();
 
 	while ( i < dst.length() )
 	{
