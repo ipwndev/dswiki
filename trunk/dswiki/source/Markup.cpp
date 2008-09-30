@@ -276,11 +276,6 @@ Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* C
 	Element* t2;
 	Element* l;
 
-	while((pos=Str.find("&nbsp;"))!=string::npos)
-	{
-		Str.replace(pos,6,"\u00a0");
-	}
-
 	pos = 0;
 
 	l = createLink(Str,pos,link_id++);
