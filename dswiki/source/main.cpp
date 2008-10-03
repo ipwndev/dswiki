@@ -4,8 +4,11 @@
 #include <string>
 #include <algorithm>
 
-#include "main.h"
+#include "efs_lib.h"
+#include "minIni.h"
+#include "tinyxml.h"
 
+#include "main.h"
 #include "api.h"
 #include "Big52Uni16.h"
 #include "Cache.h"
@@ -18,9 +21,7 @@
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
 #include "TextList.h"
-#include "minIni.h"
 #include "GlobalSettings.h"
-
 
 int main(int argc, char ** argv)
 {
@@ -29,7 +30,6 @@ int main(int argc, char ** argv)
 	PA_Init();
 	PA_InitVBL();
 	PA_InitFat();
-	PA_SetAutoCheckLid(1);
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
@@ -95,8 +95,17 @@ int main(int argc, char ** argv)
 
 	Markup* markup = NULL;
 
-	// start of main program
+	u8  updateTitle       = 0;
+	u8  updateContent     = 0;
+	u8  updateStatusbar   = 0;
+	u8  updatePercent     = 0;
+	u8  updateInRealTime  = 1;
 
+	s32 forcedLine        = 0;
+	u8  setNewHistoryItem = 1;
+	u8  loadArticle       = 1;
+
+	// start of main program
 
 	// check for DSwiki's home directory
 	DIR_ITER* dswikiDir = diropen ("fat:/dswiki/");
@@ -171,15 +180,6 @@ int main(int argc, char ** argv)
 
 	SearchResults s(&t,&ContentWin1,&SearchResultsCS1,&SearchResultsCS2);
 
-	u8  updateTitle       = 0;
-	u8  updateContent     = 0;
-	u8  updateStatusbar   = 0;
-	u8  updatePercent     = 0;
-	u8  updateInRealTime  = 1;
-
-	s32 forcedLine        = 0;
-	u8  setNewHistoryItem = 1;
-	u8  loadArticle       = 1;
 
 	while(1)
 	{
@@ -294,7 +294,7 @@ int main(int argc, char ** argv)
 				letter = PA_CheckKeyboard();
 
 				if (letter > 31) { // there is a new letter
-					suchtitel = suchtitel.substr(0,cursorPosition) + letter + suchtitel.substr(cursorPosition);
+					suchtitel.insert(suchtitel.begin()+cursorPosition,letter);
 					cursorPosition++;
 					updateSearchbar = 1;
 					if (updateInRealTime)
@@ -491,7 +491,7 @@ int main(int argc, char ** argv)
 					u16 cursorX = 0;
 					int i;
 					CharArea = (BLOCK) {{2,5},{0,0}};
-					iPrint(suchtitel.substr(0,cursorPosition),&Searchbar,&SearchResultsCS1,&CharArea,-1,UTF8);
+					iPrint(suchtitel.substr(0,cursorPosition),&Searchbar,&SearchResultsCS3,&CharArea,-1,UTF8);
 					BLOCK temp = {{CharArea.Start.x-1,2},{CharArea.Start.x-1,19}};
 					DrawBlock(&Searchbar,temp,PA_RGB(20,20,20),1);
 				}
@@ -668,7 +668,6 @@ int main(int argc, char ** argv)
 				currentTitle = suchergebnis->TitleInArchive();
 
 				markupstr = redirectMessage + markupstr;
-				markupstr = exchangeSGMLEntities(markupstr);
 				delete markup;
 				FillVS(&Statusbar,PA_RGB(26,26,26));
 				CharArea = (BLOCK) {{2,2},{0,0}};
