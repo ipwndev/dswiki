@@ -4,40 +4,17 @@
 
 Element::~Element()
 {
-	switch (Type)
-	{
-		case TEXT_EL:
-// 			PA_OutputText(1,5,11,"Destructing Text-Element");
-			break;
-		case LINK_EL:
-// 			PA_OutputText(1,5,11,"Destructing Link-Element");
-			break;
-	}
-	PA_Sleep(SLEEPTIME);
-
-// 	PA_OutputText(1,5,11,"                        ");
-	PA_Sleep(SLEEPTIME);
 }
 
 Element::Element(string text)
 {
-// 	PA_OutputText(1,5,5,"Creating Text-Element");
-	PA_Sleep(SLEEPTIME);
-
 	Type = TEXT_EL;
-
 	displayText = text;
-
-// 	PA_OutputText(1,5,5,"                     ");
-	PA_Sleep(SLEEPTIME);
 }
 
 
 Element::Element(string str_namesp, string str_targ, string str_anch, string str_disp, u32 start, u32 length, u32 link_id)
 {
-// 	PA_OutputText(1,5,5,"Creating Link-Element");
-// 	PA_Sleep(SLEEPTIME);
-
 	Type = LINK_EL;
 
 	if ((str_namesp == "Image") || (str_namesp == "Bild")) // TODO
@@ -53,9 +30,6 @@ Element::Element(string str_namesp, string str_targ, string str_anch, string str
 	sourcePositionStart = start;
 	sourceLength        = length;
 	id                  = link_id;
-
-// 	PA_OutputText(1,5,5,"                     ");
-	PA_Sleep(SLEEPTIME);
 }
 
 
@@ -256,6 +230,62 @@ string Markup::evaluateClick(s16 x,s16 y)
 	return "";
 }
 
+string splitNormal(string Str)
+{
+	return Str;
+}
+
+string splitPre(string Str)
+{
+	string markup = "";
+	u32 pos = 0;
+	while ((pos=Str.find("<pre>"))!=string::npos)
+	{
+		string temp = Str.substr(0,pos);
+		Str.erase(0,pos);
+		markup += splitNormal(temp);
+		if ((pos=Str.find("</pre>"))!=string::npos)
+		{
+			markup += treatPreText(Str.substr(5,pos-5));
+			Str.erase(0,pos+6);
+		}
+		else
+		{
+			markup += treatPreText(Str.substr(5));
+			Str.clear();
+		}
+	}
+	markup += splitNormal(Str);
+	Str.clear();
+
+	return markup;
+}
+
+string splitNowiki(string Str)
+{
+	string markup = "";
+	u32 pos = 0;
+	while ((pos=Str.find("<nowiki>"))!=string::npos)
+	{
+		string temp = Str.substr(0,pos);
+		Str.erase(0,pos);
+		markup += splitPre(temp);
+		if ((pos=Str.find("</nowiki>"))!=string::npos)
+		{
+			markup += treatNowikiText(Str.substr(8,pos-8));
+			Str.erase(0,pos+9);
+		}
+		else
+		{
+			markup += treatNowikiText(Str.substr(8));
+			Str.clear();
+		}
+	}
+	markup += splitPre(Str);
+	Str.clear();
+
+	return markup;
+}
 
 Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* CStat, TitleIndex* titleindex)
 {
@@ -272,12 +302,14 @@ Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* C
 	_currentLine = 0;
 
 	u32 pos = 0;
+	u32 posPre = 0;
 	u32 link_id = 0;
 	Element* t2;
 	Element* l;
 
-	pos = 0;
+	Str = splitNowiki(Str);
 
+	pos = 0;
 	l = createLink(Str,pos,link_id++);
 
 	while (l)

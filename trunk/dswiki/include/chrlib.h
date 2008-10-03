@@ -297,8 +297,8 @@ const NamedEntity entities[] =
  {"&rceil;"   ,8969},
  {"&lfloor;"  ,8970},
  {"&rfloor;"  ,8971},
- {"&lang;"    ,9001},//TODO
- {"&rang;"    ,9002},//TODO
+ {"&lang;"    ,9001},
+ {"&rang;"    ,9002},
  {"&loz;"     ,9674},
  {"&spades;"  ,9824},
  {"&clubs;"   ,9827},
@@ -310,8 +310,6 @@ const string  diacriticExchangeTable[] =
 {
 //   this tab le contains the char code for any diacritic char
 //   0    1     2    3    4    5    6    7    8    9    a    b    c    d    e    f
-// 	"",  "",   "",  "",  "",  "",  "",  "",  "",  "",  "S", "",  "",  "",  "Z", "",  // 0x80 - 0x8f
-// 	"",  "",   "",  "",  "",  "",  "",  "",  "",  "",  "s", "",  "",  "",  "z", "Y", // 0x90 - 0x9f
 	"",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0x80 - 0x8f
 	"",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0x90 - 0x9f
 	"",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0xa0 - 0xaf
@@ -333,6 +331,9 @@ string lowerPhrase(string phrase);
 string exchangeDiacriticCharsUTF8Phrase(string phrase);
 string exchangeSGMLEntities(string phrase);
 void tolower_utf8(char* data);
+string treatNowikiText(string phrase);
+string treatPreText(string phrase);
+
 
 string preparePhrase(string phrase, u8 indexNo);
 

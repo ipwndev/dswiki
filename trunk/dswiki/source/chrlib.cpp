@@ -9,7 +9,6 @@ string trimPhrase(string Str)
 		return "";
 	Str = Str.substr(first,last-first+1);
 
-// 	while((first = Str.find("  "))!=string::npos) // TODO: faster possible, Test difference later
 	first = 0;
 	while((first = Str.find("  ",first))!=string::npos)
 	{
@@ -54,38 +53,36 @@ string exchangeSGMLEntities(string phrase)
 	if ( phrase.empty() )
 		return phrase;
 
-	int posStart;
-	int posEnd = 0;
+	int posStart = 0;
+	int entityStart, entityLength;
+	int posEnd;
+	string entity;
 
 	int i;
 	u32 basis;
 
-	while (posEnd<phrase.length())
+	while (posStart<phrase.length())
 	{
-		posStart = phrase.find("&",posEnd);
+		posStart = phrase.find("&",posStart);
 		if (posStart==string::npos)
 			return phrase;
 		posEnd = phrase.find(";",posStart);
 		if (posEnd==string::npos)
 			return phrase;
-		string entity = phrase.substr(posStart,posEnd-posStart+1);
 
-		// test for named entities
-		for (i=0;i<MAX_NAMED_ENTITIES;i++)
-		{
-			if (entity==entities[i].entity)
-			{
-				char replaced[32];
-				u32 codepoint[] = {entities[i].codepoint,0};
-				UTF2UTF8(codepoint,replaced);
-				int j;
-				string neu = replaced;
-				int l = neu.length();
-				phrase.replace(posStart,entity.length(),neu);
-				posEnd -= (entity.length()-l-1);
-				break;
-			}
-		}
+		entity       = phrase.substr(posStart,posEnd-posStart+1);
+		entityStart  = posStart;
+		entityLength = entity.length();
+
+		// Skip the found "&"
+		// Note: this also prevents double interpretations as in &amp;theta;
+		posStart++;
+
+		// each named entity has at least the form "&..;"
+		// each number has at least the form "&#.;"
+		// so we discard any shorter string
+		if (entityLength<4)
+			continue;
 
 		// test for numeric entities
 		if (entity.substr(1,1)=="#")
@@ -93,52 +90,105 @@ string exchangeSGMLEntities(string phrase)
 			string number = entity.substr(2,entity.length()-3);
 			if (number.empty())
 				continue;
-			int temp;
+
+			u32 codepoint[] = {0,0};
 			char replaced[32];
+
 			if (number.substr(0,1)=="x")
-			{ // hexadecimal format expected
+			{
+				// hexadecimal format found
 				number.erase(0,1);
+				int temp;
 				if ((temp=number.find_first_not_of("0123456789aAbBcCdDeEfF"))!=string::npos)
 					continue;
+
 				// conversion is possible
-				u32 codepoint[] = {0,0};
-				basis = 16;
 				for (i=0;i<number.length();i++)
 				{
 					unsigned char c = number.at(i);
 					if ((0x30<=c) && (c<=0x39))
-						codepoint[0] = codepoint[0] * basis + (c-0x30);
+						codepoint[0] = codepoint[0] * 16 + (c-0x30); // 0-9
 					else if ((0x41<=c) && (c<=0x46))
-						codepoint[0] = codepoint[0] * basis + (c-55);
+						codepoint[0] = codepoint[0] * 16 + (c-0x37); // A-F
 					else if ((0x61<=c) && (c<=0x66))
-						codepoint[0] = codepoint[0] * basis + (c-87);
+						codepoint[0] = codepoint[0] * 16 + (c-0x57); // a-f
 				}
-				UTF2UTF8(codepoint,replaced);
-				string neu = replaced;
-				int l = neu.length();
-				phrase.replace(posStart,entity.length(),neu);
-				posEnd -= (entity.length()-l-1);
 			}
 			else
-			{ // decimal format expected
+			{
+				// decimal format found
+				int temp;
 				if ((temp=number.find_first_not_of("0123456789"))!=string::npos)
 					continue;
+
 				// conversion is possible
-				u32 codepoint[] = {0,0};
-				basis = 10;
 				for (i=0;i<number.length();i++)
 				{
 					unsigned char c = number.at(i);
-					codepoint[0] = codepoint[0] * basis + (c-0x30);
+					codepoint[0] = codepoint[0] * 10 + (c-0x30);
 				}
+			}
+
+			// Don't interprete control characters
+			if ( ((codepoint[0]<32) && ((codepoint[0]!=0x0A)||(codepoint[0]!=0x0D))) || (codepoint[0]==0xFFFE) || (codepoint[0]==0xFFFF) )
+				continue;
+
+			UTF2UTF8(codepoint,replaced);
+			phrase.replace(entityStart,entityLength,replaced);
+
+			// we can go to the next entity, because no named entity will start with "&#"
+			continue;
+		}
+
+		// lastly, test for named entities, but at this point, we can check the length first
+		if (entityLength>10)
+			continue;
+
+		for (i=0;i<MAX_NAMED_ENTITIES;i++)
+		{
+			if (entity==entities[i].entity)
+			{
+				char replaced[32];
+				u32 codepoint[] = {entities[i].codepoint,0};
 				UTF2UTF8(codepoint,replaced);
 				string neu = replaced;
 				int l = neu.length();
-				phrase.replace(posStart,entity.length(),neu);
-				posEnd -= (entity.length()-l-1);
+				phrase.replace(entityStart,entity.length(),neu);
+				break;
 			}
 		}
+
 	}
+	return phrase;
+}
+
+string treatNowikiText(string phrase)
+{
+	if (phrase.empty())
+		return phrase;
+
+	phrase = exchangeSGMLEntities(phrase);
+
+	int pos = 0;
+	while((pos = phrase.find("\n",pos))!=string::npos)
+	{
+		phrase.replace(pos,1," ");
+	}
+	pos = 0;
+	while((pos = phrase.find("  ",pos))!=string::npos)
+	{
+		phrase.erase(pos,1);
+	}
+	return phrase;
+}
+
+string treatPreText(string phrase)
+{
+	if (phrase.empty())
+		return phrase;
+
+	phrase = exchangeSGMLEntities(phrase);
+
 	return phrase;
 }
 
@@ -610,6 +660,7 @@ void iDrawChar(u32* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK 
 	}
 }
 
+// TODO: auch ein geprintetes '\n' außerhalb des Screens soll Abbruch verursachen
 u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang)
 {
 	u8*   DATA;
