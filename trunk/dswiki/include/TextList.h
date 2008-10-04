@@ -13,19 +13,5 @@
 //
 
 #include <PA9.h>
-#include <string>
-#include <vector>
-
-#include "main.h"
-#include "struct.h"
-#include "api.h"
-#include "chrlib.h"
-
-class TextList
-{
-	public:
-		static s32 show(string headline, vector<string> lines, s32 highlightedLine, s32 firstLine, u8 wrapAround);
-	private:
-};
 
 #endif

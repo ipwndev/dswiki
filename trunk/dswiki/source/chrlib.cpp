@@ -564,7 +564,7 @@ void iDrawChar(u32* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK 
 	u8   bbx_w, bbx_h;
 	u16  X=0,Y=0;
 	CharStat CopyCStat=*CStat;
-	DATA=&CStat->FONT->Data[CStat->FONT->Index[*Uni]];
+	DATA = CStat->FONT->getCharacterData(*Uni,CStat->FontCut);
 
 	idx=0;
 
@@ -663,11 +663,14 @@ void iDrawChar(u32* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK 
 // TODO: auch ein geprintetes '\n' außerhalb des Screens soll Abbruch verursachen
 u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang)
 {
+	// global
+	u8    Height             = CStat->FONT->Regular.Height;
+	s16   Origin             = 0;
+	// per character
 	u8*   DATA;
 	u32   Uni                = 0;
-	s16   Origin             = 0;
 	u8    Width              = 0;
-	u8    Height             = CStat->FONT->Height;
+	// local variables
 	u32   Skip               = 0;
 	u32   SaveSkipWord       = 0;
 	u32   SaveSkipLetter     = 0;
@@ -755,7 +758,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 			if(Uni==0x20)
 			{
 				GlyphsPrinted++;
-				DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
+				DATA = CStat->FONT->getCharacterData(Uni,CStat->FontCut);
 				Width = DATA[0];
 				switch(CStat->Rotate)
 				{
@@ -784,7 +787,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 			}
 
 			// writing a normal character
-			DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
+			DATA = CStat->FONT->getCharacterData(Uni,CStat->FontCut);
 			Width = DATA[0];
 
 			if (CStat->Wrap==NOWRAP)
@@ -841,7 +844,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 			}
 
 			// collecting a normal character
-			DATA=&CStat->FONT->Data[CStat->FONT->Index[Uni]];
+			DATA = CStat->FONT->getCharacterData(Uni,CStat->FontCut);
 			Width = DATA[0];
 
 			if (CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,1))
@@ -879,7 +882,7 @@ u32 SimPrint(const char* Str, Device* Dev, u16 Color, Lid Lang)
 	Font stdFont;
 // 	InitFont(&stdFont,frankenstein);
 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
-	CharStat CharStat = { &stdFont, 0,0, Color, 0, 0, DEG0, NORMALWRAP, NONE, 0};
+	CharStat CharStat = { &stdFont, REGULAR, 0,0, Color, 0, 0, DEG0, NORMALWRAP, NONE, 0};
 	BLOCK CharArea = {{0,0},{0,0}};
 	return iPrint(Str, &VScreen, &CharStat, &CharArea, -1, Lang);
 }
@@ -900,12 +903,86 @@ u32 SimPrint(const string Str, Device* Dev, u16 Color, Lid Lang)
 		return 0;
 }
 
-u8 InitFont(Font* FONT, const u8* ptr)
+void Font::InitFont(SingleCut* FONT, const u8* ptr)
 {
 	FONT->Name       = (u16*)ptr;
 	FONT->Height     = ptr[32];
 	FONT->Index      = (u32*)(ptr+64);
 	FONT->Data       = (u8*)ptr+0x40040;
 	FONT->Ptr        = (u8*)ptr;
-	return 1;
+}
+
+Font::Font()
+{
+	FILE* f;
+	int size;
+
+	f = fopen("fat:dswiki/fonts/font_r.dat","rb");
+	if (f != NULL)
+	{
+		fseek(f, 0, SEEK_END);
+		size = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		_data_regular = (u8*)malloc(size);
+		fread(_data_regular, 1, size, f);
+		InitFont(&Regular,_data_regular);
+		fclose(f);
+	}
+
+	f = fopen("fat:dswiki/fonts/font_b.dat","rb");
+	if (f != NULL)
+	{
+		fseek(f, 0, SEEK_END);
+		size = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		_data_bold = (u8*)malloc(size);
+		fread(_data_bold, 1, size, f);
+		InitFont(&Bold,_data_bold);
+		fclose(f);
+	}
+
+	f = fopen("fat:dswiki/fonts/font_o.dat","rb");
+	if (f != NULL)
+	{
+		fseek(f, 0, SEEK_END);
+		size = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		_data_italic = (u8*)malloc(size);
+		fread(_data_italic, 1, size, f);
+		InitFont(&Italic,_data_italic);
+		fclose(f);
+	}
+
+	f = fopen("fat:dswiki/fonts/font_bo.dat","rb");
+	if (f != NULL)
+	{
+		fseek(f, 0, SEEK_END);
+		size = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		_data_bolditalic = (u8*)malloc(size);
+		fread(_data_bolditalic, 1, size, f);
+		InitFont(&BoldItalic,_data_bolditalic);
+		fclose(f);
+	}
+}
+
+u8 * Font::getCharacterData(u32 Uni, Cut FontCut)
+{
+	u8* DATA;
+	switch (FontCut)
+	{
+		case REGULAR:
+			DATA=&Regular.Data[Regular.Index[Uni]];
+			break;
+		case BOLD:
+			DATA=&Bold.Data[Bold.Index[Uni]];
+			break;
+		case ITALIC:
+			DATA=&Italic.Data[Italic.Index[Uni]];
+			break;
+		case BOLDITALIC:
+			DATA=&BoldItalic.Data[BoldItalic.Index[Uni]];
+			break;
+	}
+	return DATA;
 }

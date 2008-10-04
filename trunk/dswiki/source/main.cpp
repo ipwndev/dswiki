@@ -18,7 +18,6 @@
 #include "History.h"
 #include "Markup.h"
 #include "SearchResults.h"
-#include "frankenstein.h"
 #include "TitleIndex.h"
 #include "WikiMarkupGetter.h"
 
@@ -48,11 +47,16 @@ int main(int argc, char ** argv)
 
 	PA_OutputText(1,0,0,"Initializing FAT...");
 	PA_InitFat();
+	PA_ClearTextBg(1);
+
+	PA_OutputText(1,0,0,"Initializing Fonts...");
+	Font CompleteFont;
+	PA_ClearTextBg(1);
+
 /*	PA_OutputText(1,0,0,"Initializing EFS. Please Wait...");
 	if ( EFS_Init(EFS_AND_FAT | EFS_DEFAULT_DEVICE, NULL) )
-	{*/
-		PA_ClearTextBg(1);
-
+	{
+*/
 		// check for DSwiki's home directory
 		DIR_ITER* dswikiDir = diropen ("fat:/dswiki/");
 		if (dswikiDir == NULL)
@@ -142,26 +146,23 @@ int main(int argc, char ** argv)
 
 		// important variables
 
-		Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
-		Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
+			Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
+			Device	DnScreen = {"D", 0, (u16*)PA_DrawBg[0], 256, 192};
 
-		Font stdFont;
-		InitFont(&stdFont,frankenstein);
+			VirScreen  Titlebar    = {   0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
+			VirScreen  ContentWin1 = {   2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
+			VirScreen  ContentWin2 = {   2,   2, 252, 172, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
+			VirScreen  Statusbar   = {   0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
+			VirScreen  PercentArea = { 226, 176,  30,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
+			VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-		VirScreen  Titlebar    = {   0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
-		VirScreen  ContentWin1 = {   2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
-		VirScreen  ContentWin2 = {   2,   2, 252, 172, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
-		VirScreen  Statusbar   = {   0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
-		VirScreen  PercentArea = { 226, 176,  30,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&Statusbar);
-		VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
-
-		CharStat       TitlebarCS = { &stdFont, 1, 1, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
-		CharStat        ContentCS = { &stdFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
-		CharStat      StatusbarCS = { &stdFont, 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
-		CharStat StatusbarErrorCS = { &stdFont, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
-		CharStat SearchResultsCS1 = { &stdFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
-		CharStat SearchResultsCS2 = { &stdFont, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
-		CharStat SearchResultsCS3 = { &stdFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
+			CharStat       TitlebarCS = { &CompleteFont, REGULAR, 1, 1, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+			CharStat        ContentCS = { &CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP,     NONE, 0 };
+			CharStat      StatusbarCS = { &CompleteFont, REGULAR, 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+			CharStat StatusbarErrorCS = { &CompleteFont, REGULAR, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+			CharStat SearchResultsCS1 = { &CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP,     NONE, 0 };
+			CharStat SearchResultsCS2 = { &CompleteFont, REGULAR, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP,     NONE, 0 };
+			CharStat SearchResultsCS3 = { &CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
 
 		BLOCK Btn_ToggleReal  = {{  3,  3},{ 18, 18}}; VirScreen Scr_ToogleReal = {0,0,0,0,Btn_ToggleReal,&DnScreen}; InitVS2(&Scr_ToogleReal);
 		BLOCK Btn_Cancel      = {{ 67,  9},{ 88, 30}};
@@ -309,6 +310,7 @@ int main(int argc, char ** argv)
 				u8 searchSuggestions = 1;
 				u8 updateCursor      = 1;
 				s16 cursorPosition = suchtitel.length();
+				s32 countdown = 0;
 
 				if (updateInRealTime)
 				{
@@ -329,7 +331,13 @@ int main(int argc, char ** argv)
 						cursorPosition++;
 						updateSearchbar = 1;
 						if (updateInRealTime)
+						{
 							searchSuggestions = 1;
+						}
+						else
+						{
+							countdown = COUNTDOWN_START;
+						}
 					}
 
 					if ((letter == PA_BACKSPACE) && (cursorPosition>0))
@@ -338,7 +346,13 @@ int main(int argc, char ** argv)
 						cursorPosition--;
 						updateSearchbar = 1;
 						if (updateInRealTime)
+						{
 							searchSuggestions = 1;
+						}
+						else
+						{
+							countdown = COUNTDOWN_START;
+						}
 					}
 
 					if ( (letter == '\n') || (Pad.Newpress.A) )
@@ -359,7 +373,13 @@ int main(int argc, char ** argv)
 							cursorPosition = 0;
 							updateSearchbar = 1;
 							if (updateInRealTime)
+							{
 								searchSuggestions = 1;
+							}
+							else
+							{
+								countdown = COUNTDOWN_START;
+							}
 						}
 						else if (IsInArea(Btn_OK,S))
 						{
@@ -375,7 +395,13 @@ int main(int argc, char ** argv)
 							cursorPosition = suchtitel.length();
 							updateSearchbar = 1;
 							if (updateInRealTime)
+							{
 								searchSuggestions = 1;
+							}
+							else
+							{
+								countdown = COUNTDOWN_START;
+							}
 						}
 						else if (IsInArea(Btn_Cancel,S))
 						{
@@ -431,6 +457,7 @@ int main(int argc, char ** argv)
 						else if ((!updateInRealTime) && IsInArea(Btn_Reload,S))
 						{
 							searchSuggestions = 1;
+							countdown = 0;
 						}
 						else if (IsInArea(Btn_CursorLeft,S))
 						{
@@ -527,7 +554,7 @@ int main(int argc, char ** argv)
 						DrawBlock(&Searchbar,temp,PA_RGB(20,20,20),1);
 					}
 
-					if (searchSuggestions) // load current searchstring
+					if (searchSuggestions) // load current searchstring, time expensive
 					{
 						s.load(suchtitel);
 						updateSuggestions = 1;
@@ -540,6 +567,14 @@ int main(int argc, char ** argv)
 						updateSuggestions = 0;
 					}
 
+					if (countdown > 0)
+					{
+						countdown--;
+						if (countdown==0)
+						{
+							searchSuggestions = 1;
+						}
+					}
 					PA_CheckLid();
 					PA_WaitForVBL();
 				}
