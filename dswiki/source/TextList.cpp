@@ -1,3 +1,5 @@
+#include "TextList.h"
+
 //
 // C++ Implementation: TextList
 //
@@ -10,9 +12,3 @@
 //
 //
 
-#include "TextList.h"
-
-s32 TextList::show(string headline, vector<string> lines, s32 highlightedLine, s32 firstLine, u8 wrapAround)
-{
-	return 0;
-}

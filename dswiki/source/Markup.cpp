@@ -166,7 +166,7 @@ Markupline::~Markupline()
 
 void Markupline::drawToVScreen(VirScreen* VScreen, CharStat* CStat, s32 line)
 {
-	BLOCK CharArea = {{0,line*(CStat->FONT->Height+CStat->H_Space)},{0,0}}; // TODO: switch(Rotate)
+	BLOCK CharArea = {{0,line*(CStat->FONT->Regular.Height+CStat->H_Space)},{0,0}}; // TODO: switch(Rotate)
 	int i;
 	for (i=0;i<children.size();i++)
 	{
@@ -186,7 +186,7 @@ void Markupline::drawToVScreen(VirScreen* VScreen, CharStat* CStat, s32 line)
 		children[i].BoundingBox.Start.y = CharArea.Start.y;                   // TODO: Rotate
 		iPrint(children[i].displayText,VScreen,CStat,&CharArea,-1,UTF8);
 		children[i].BoundingBox.End.x = CharArea.Start.x;                     // TODO: Rotate
-		children[i].BoundingBox.End.y = CharArea.Start.y+CStat->FONT->Height; // TODO: Rotate
+		children[i].BoundingBox.End.y = CharArea.Start.y+CStat->FONT->Regular.Height; // TODO: Rotate
 	}
 }
 u8 Markupline::containsCertainLink(u32 id)
@@ -207,7 +207,7 @@ u8 Markupline::containsCertainLink(u32 id)
 string Markup::evaluateClick(s16 x,s16 y)
 {
 	POINT p = {x,y};
-	u16 zeile = y / ( _markupCStat->FONT->Height + _markupCStat->H_Space );
+	u16 zeile = y / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space );
 	Markupline ClickedLine;
 	Element* l;
 	int i;
@@ -297,8 +297,8 @@ Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* C
 	_markupVScreen2 = VScreen2;
 	_markupCStat    = CStat;
 	_titleindex     = titleindex;
-	_linesOnVScreen1 = 1 + ( ( _markupVScreen1->Height - _markupCStat->FONT->Height ) / ( _markupCStat->FONT->Height + _markupCStat->H_Space ) );
-	_linesOnVScreen2 = 1 + ( ( _markupVScreen2->Height - _markupCStat->FONT->Height ) / ( _markupCStat->FONT->Height + _markupCStat->H_Space ) );
+	_linesOnVScreen1 = 1 + ( ( _markupVScreen1->Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
+	_linesOnVScreen2 = 1 + ( ( _markupVScreen2->Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
 	_currentLine = 0;
 
 	u32 pos = 0;
@@ -357,16 +357,16 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 	PA_Sleep(SLEEPTIME);
 
 	VirScreen FakeVS = { VScreen->Left, VScreen->Top, VScreen->Width, VScreen->Height, {{0,0},{0,0}}, VScreen->Screen};
-	CharStat  FakeCS = { CStat->FONT, CStat->W_Space, CStat->H_Space, CStat->Color, CStat->FxColor, CStat->BgColor, CStat->Rotate, CStat->Wrap, SIMULATE, 0};
+	CharStat  FakeCS = { CStat->FONT, REGULAR, CStat->W_Space, CStat->H_Space, CStat->Color, CStat->FxColor, CStat->BgColor, CStat->Rotate, CStat->Wrap, SIMULATE, 0};
 	switch (CStat->Rotate)
 	{
 		case DEG0:
 		case DEG180:
-			FakeVS.Height = FakeCS.FONT->Height;
+			FakeVS.Height = FakeCS.FONT->Regular.Height;
 			break;
 		case DEG90:
 		case DEG270:
-			FakeVS.Width = FakeCS.FONT->Height;
+			FakeVS.Width = FakeCS.FONT->Regular.Height;
 			break;
 	}
 	InitVS(&FakeVS);

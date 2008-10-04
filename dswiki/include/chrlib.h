@@ -13,22 +13,41 @@
 using namespace std;
 
 typedef enum {UTF,UTF8,BIG5,GBK,JIS} Lid;
+typedef enum {REGULAR,BOLD,ITALIC,BOLDITALIC} Cut;
 typedef enum {NORMALWRAP,HARDWRAP,NOWRAP} ChrWrap;
 typedef enum {DEG0,DEG90,DEG180,DEG270} ChrRot;
 typedef enum {NONE,HOLLOW,SHADOW,BACKGR,SIMULATE} FX;
 
 typedef struct
 {
-  u16*      Name;
-  u8        Height;
-  u32*      Index;
-  u8*       Data;
-  const u8* Ptr;
-} Font;
+	u16*      Name;
+	u8        Height;
+	u32*      Index;
+	u8*       Data;
+	const u8* Ptr;
+} SingleCut;
+
+class Font
+{
+	public:
+		Font();
+		u8 * getCharacterData(u32 Uni, Cut CutType);
+		SingleCut Regular;
+		SingleCut Bold;
+		SingleCut Italic;
+		SingleCut BoldItalic;
+	private:
+		u8* _data_regular;
+		u8* _data_bold;
+		u8* _data_italic;
+		u8* _data_bolditalic;
+		void InitFont(SingleCut* FONT, const u8* ptr);
+};
 
 typedef struct
 {
 	Font*   FONT;
+	Cut     FontCut;
 	u8      W_Space;
 	u8      H_Space;
 	u16     Color;
@@ -49,9 +68,33 @@ typedef struct
 #define MAX_TITLE_LENGTH 1000
 #define MAX_NAMED_ENTITIES 253
 
+u8   ToUTF   (const char* Chr, u32* UTF16, const u16* Table, Lid Lang);
+u32  UTF2UTF8(u32* Uni, char* U8);
+u32  UTF82UTF(char* U8, u32* Uni);
+
+string trimPhrase(string Str);
+string lowerPhrase(string phrase);
+string exchangeDiacriticCharsUTF8Phrase(string phrase);
+string exchangeSGMLEntities(string phrase);
+void tolower_utf8(char* data);
+string treatNowikiText(string phrase);
+string treatPreText(string phrase);
+
+string preparePhrase(string phrase, u8 indexNo);
+
+void SwitchNewLine  (const CharStat* CStat,                   BLOCK* CharArea, s16 Origin,           u8 Height);
+u8   CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,                       u8 Height);
+u8   CheckWrap      (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height, u8 doWrap);
+
+void iDrawChar(u32* Uni,         const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea);
+u32  iPrint   (const char*  Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
+u32  iPrint   (const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
+u32  SimPrint (const char*  Str, Device* Dev, u16 Color, Lid Lang);
+u32  SimPrint (const string Str, Device* Dev, u16 Color, Lid Lang);
+
 const NamedEntity entities[] =
 {
- {"&quot;"    , 34},
+	{"&quot;"    , 34},
  {"&amp;"     , 38},
  {"&apos;"    , 39},
  {"&gt;"      , 62},
@@ -311,40 +354,13 @@ const string  diacriticExchangeTable[] =
 //   this tab le contains the char code for any diacritic char
 //   0    1     2    3    4    5    6    7    8    9    a    b    c    d    e    f
 	"",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0x80 - 0x8f
-	"",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0x90 - 0x9f
-	"",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0xa0 - 0xaf
-	"",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0xb0 - 0xbf
-	"A", "A", "A ", "A", "A", "A", "",  "C", "E", "E", "E", "E", "I", "I", "I", "I", // 0xc0 - 0xcf
-	"D", "N", "O ", "O", "O", "O", "O", "",  "O", "U", "U", "U", "U", "Y", "",  "",  // 0xd0 - 0xdf
-	"a", "a", "a ", "a", "a", "a", "",  "c", "e", "e", "e", "e", "i", "i", "i", "i", // 0xe0 - 0xef
-	"",  "n", "o ", "o", "o", "o", "o", "",  "o", "u", "u", "u", "u", "y", "",  "y"  // 0xf0 - 0xff
+ "",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0x90 - 0x9f
+ "",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0xa0 - 0xaf
+ "",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0xb0 - 0xbf
+ "A", "A", "A ", "A", "A", "A", "",  "C", "E", "E", "E", "E", "I", "I", "I", "I", // 0xc0 - 0xcf
+ "D", "N", "O ", "O", "O", "O", "O", "",  "O", "U", "U", "U", "U", "Y", "",  "",  // 0xd0 - 0xdf
+ "a", "a", "a ", "a", "a", "a", "",  "c", "e", "e", "e", "e", "i", "i", "i", "i", // 0xe0 - 0xef
+ "",  "n", "o ", "o", "o", "o", "o", "",  "o", "u", "u", "u", "u", "y", "",  "y"  // 0xf0 - 0xff
 };
-
-u8   InitFont (Font* FONT, const u8* ptr);
-
-u8   ToUTF   (const char* Chr, u32* UTF16, const u16* Table, Lid Lang);
-u32  UTF2UTF8(u32* Uni, char* U8);
-u32  UTF82UTF(char* U8, u32* Uni);
-
-string trimPhrase(string Str);
-string lowerPhrase(string phrase);
-string exchangeDiacriticCharsUTF8Phrase(string phrase);
-string exchangeSGMLEntities(string phrase);
-void tolower_utf8(char* data);
-string treatNowikiText(string phrase);
-string treatPreText(string phrase);
-
-
-string preparePhrase(string phrase, u8 indexNo);
-
-void SwitchNewLine  (const CharStat* CStat,                   BLOCK* CharArea, s16 Origin,           u8 Height);
-u8   CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,                       u8 Height);
-u8   CheckWrap      (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height, u8 doWrap);
-
-void iDrawChar(u32* Uni,         const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea);
-u32  iPrint   (const char*  Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
-u32  iPrint   (const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang);
-u32  SimPrint (const char*  Str, Device* Dev, u16 Color, Lid Lang);
-u32  SimPrint (const string Str, Device* Dev, u16 Color, Lid Lang);
 
 #endif
