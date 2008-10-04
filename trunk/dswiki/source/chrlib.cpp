@@ -1,4 +1,4 @@
-#include "frankenstein.h"
+// #include "frankenstein.h"
 #include "chrlib.h"
 
 string trimPhrase(string Str)
@@ -877,7 +877,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 u32 SimPrint(const char* Str, Device* Dev, u16 Color, Lid Lang)
 {
 	Font stdFont;
-	InitFont(&stdFont,frankenstein);
+// 	InitFont(&stdFont,frankenstein);
 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
 	CharStat CharStat = { &stdFont, 0,0, Color, 0, 0, DEG0, NORMALWRAP, NONE, 0};
 	BLOCK CharArea = {{0,0},{0,0}};
