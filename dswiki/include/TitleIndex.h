@@ -3,24 +3,9 @@
 
 #include <PA9.h>
 #include <fat.h>
-#include <stdio.h>
-#include <sys/dir.h>
-#include <unistd.h>
+#include "efs_lib.h"
 #include <string>
-#include <deque>
-#include <set>
-
-#include "api.h"
-#include "Big52Uni16.h"
-#include "Cache.h"
-#include "chrlib.h"
-#include "History.h"
-#include "main.h"
-#include "Markup.h"
-#include "SearchResults.h"
-#include "struct.h"
-#include "WikiMarkupGetter.h"
-
+#include <vector>
 
 using namespace std;
 
@@ -58,8 +43,6 @@ public:
 	string	getTitle(int articleNumber, int indexNo, u8 setPosition = 1);
 	int		getSuggestedArticleNumber(string phrase);
 	static vector<string> getPossibleWikis();
-
-	void test(Font f);
 
 	int		NumberOfArticles();
 	string	HeaderFileName();

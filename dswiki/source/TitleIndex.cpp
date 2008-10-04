@@ -1,5 +1,20 @@
 #include "TitleIndex.h"
 
+#include <stdio.h>
+#include <sys/dir.h>
+#include <unistd.h>
+
+#include "api.h"
+#include "Big52Uni16.h"
+#include "Cache.h"
+#include "chrlib.h"
+#include "History.h"
+#include "main.h"
+#include "Markup.h"
+#include "SearchResults.h"
+#include "struct.h"
+#include "WikiMarkupGetter.h"
+
 typedef struct
 {
 	char languageCode[2];
@@ -27,7 +42,7 @@ TitleIndex::TitleIndex(string basename)
 	_imageNamespace = "";
 	_templateNamespace = "";
 
-	chdir("/dswiki/");
+	chdir("fat:/dswiki/");
 	_FileName_Header    = basename + ".ifo";
 	_FileName_DataIndex = basename + ".idx";
 	_FileName_Index0    = basename + ".ao1";
@@ -94,7 +109,7 @@ void TitleIndex::setNew(string basename)
 	_imageNamespace = "";
 	_templateNamespace = "";
 
-	chdir("/dswiki/");
+	chdir("fat:/dswiki/");
 	_FileName_Header    = basename + ".ifo";
 	_FileName_DataIndex = basename + ".idx";
 	_FileName_Index0    = basename + ".ao1";
@@ -479,16 +494,12 @@ int ArticleSearchResult::ArticleLength()
 
 vector<string> TitleIndex::getPossibleWikis()
 {
-	vector<string> possibleWikis;
+	vector<string> _possibleWikis;
 	struct stat st;
 	char filename[256]; // to hold a full filename and string terminator
 	DIR_ITER* dir = diropen("fat:/dswiki/");
 
-	if (dir == NULL)
-	{
-		PA_OutputText(1,2,2,"Unable to open the directory.");
-	}
-	else
+	if (dir != NULL)
 	{
 		while (dirnext(dir, filename, &st) == 0)
 		{
@@ -498,67 +509,71 @@ vector<string> TitleIndex::getPossibleWikis()
 				if (filenamestr.rfind(".ifo")==filenamestr.length()-4)
 				{
 					string basename = filenamestr.substr(0,filenamestr.length()-4);
+					PA_ClearTextBg(1);
+					PA_OutputText(1,0,6,"%s,%s",filename,basename.c_str());
+					PA_Sleep(10);
 					struct stat inner_st;
 					char inner_filename[256];
 					DIR_ITER* inner_dir = diropen("fat:/dswiki/");
-					u8 foundidx = 0;
-					u8 foundao1 = 0;
-					u8 foundao2 = 0;
-					u8 founddb  = 0;
-					while (dirnext(inner_dir, inner_filename, &inner_st) == 0)
+					if (inner_dir != NULL)
 					{
-						if (!(inner_st.st_mode & S_IFDIR)) // regular file
+						u8 foundidx = 0;
+						u8 foundao1 = 0;
+						u8 foundao2 = 0;
+						u8 founddb  = 0;
+						while (dirnext(inner_dir, inner_filename, &inner_st) == 0)
 						{
-							string inner_filenamestr = inner_filename;
-							if (inner_filenamestr==basename+".idx")
-								foundidx = 1;
-							if (inner_filenamestr==basename+".ao1")
-								foundao1 = 1;
-							if (inner_filenamestr==basename+".ao2")
-								foundao2 = 1;
-							if (inner_filenamestr.substr(0,inner_filenamestr.length()-1)==basename+".db")
+							if (!(inner_st.st_mode & S_IFDIR)) // regular file
 							{
-								if (inner_filenamestr.substr(inner_filenamestr.length()-1,1).find_first_of("abcdefghijklmnopqrstuvwxyz")!=string::npos)
-									founddb = 1;
+								string inner_filenamestr = inner_filename;
+								if (inner_filenamestr==basename+".idx")
+								{
+									foundidx = 1;
+									PA_OutputText(1,0,9,"1");
+									PA_Sleep(10);
+								}
+								if (inner_filenamestr==basename+".ao1")
+								{
+									foundao1 = 1;
+									PA_OutputText(1,1,9,"1");
+									PA_Sleep(10);
+								}
+								if (inner_filenamestr==basename+".ao2")
+								{
+									foundao2 = 1;
+									PA_OutputText(1,2,9,"1");
+									PA_Sleep(10);
+								}
+								if (inner_filenamestr.substr(0,inner_filenamestr.length()-1)==basename+".db")
+								{
+									if (inner_filenamestr.substr(inner_filenamestr.length()-1,1).find_first_of("abcdefghijklmnopqrstuvwxyz")!=string::npos)
+									{
+										founddb = 1;
+										PA_OutputText(1,3,9,"1");
+										PA_Sleep(10);
+									}
+								}
 							}
 						}
+						if (foundidx && foundao1 && founddb)
+						{
+							_possibleWikis.push_back(basename);
+							PA_OutputText(1,0,10,"Adding %s, %d insg.",basename.c_str(),_possibleWikis.size());
+							PA_Sleep(30);
+						}
 					}
-					if (foundidx && foundao1 && founddb)
-						possibleWikis.push_back(basename);
+					else
+					{
+						PA_OutputText(1,0,7,"error: inner_dir");
+					}
 				}
 			}
 		}
 	}
-	return possibleWikis;
-}
-
-void TitleIndex::test(Font f)
-{
-	set<u32> baddies;
-	int i;
-	string title;
-	u32 Uni = 0;
-	u32 Skip = 0;
-	u32 length = 0;
-	u32 ref;
-	u32 replaceref = f.Index[0xFFFD];
-	for (i=0;i<_numberOfArticles;i++)
+	else
 	{
-		if ((i%100)==0) {
-			PA_OutputText(1,0,0,"%d/%d",i,_numberOfArticles);
-		}
-		title = getTitle(i,0,0);
-		length = title.length();
-		Skip = 0;
-		while (Skip<length)
-		{
-			Skip+=ToUTF(&title[Skip],&Uni,B2U16,UTF8);
-			ref = f.Index[Uni];
-			if (ref==replaceref)
-			{
-				baddies.insert(Uni);
-				PA_OutputText(1,5,5,"%d",baddies.size());
-			}
-		}
+		PA_OutputText(1,0,5,"error: dir");
 	}
+	PA_ClearTextBg(1);
+	return _possibleWikis;
 }

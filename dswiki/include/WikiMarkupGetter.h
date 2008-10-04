@@ -4,6 +4,7 @@
 #include <PA9.h>
 #include <string>
 #include <algorithm>
+#include <fat.h>
 
 #include "TitleIndex.h"
 #include "api.h"
