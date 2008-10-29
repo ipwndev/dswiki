@@ -1,6 +1,12 @@
 #include "Markup.h"
 
-#define SLEEPTIME 0
+#include <PA9.h>
+#include <string>
+#include <vector>
+#include "chrlib.h"
+#include "main.h"
+#include "Globals.h"
+#include "PercentIndicator.h"
 
 Element::~Element()
 {
@@ -35,7 +41,6 @@ Element::Element(string str_namesp, string str_targ, string str_anch, string str
 
 Element* createLink(string Str, u32 startPos, u32 link_id)
 {
-	Device	UpScreen = {"U", 1, (u16*)PA_DrawBg[1], 256, 192};
 	while (1)
 	{
 		string nameStr = "";
@@ -59,9 +64,6 @@ Element* createLink(string Str, u32 startPos, u32 link_id)
 		string linkinnertext = Str.substr(linkstart+2,linkend-linkstart-2);
 		if (linkinnertext.empty())
 			continue;
-
-// 		PA_Clear16bitBg(1);
-// 		SimPrint(linkinnertext,&UpScreen,PA_RGB(0,0,0),UTF8);
 
 		vector<string> pipeSeperatedContent;
 
@@ -155,13 +157,7 @@ Element* createLink(string Str, u32 startPos, u32 link_id)
 
 Markupline::~Markupline()
 {
-// 	PA_OutputText(1,5,15,"Destructing Markup-Line");
-	PA_Sleep(SLEEPTIME);
-
 	children.clear();
-
-// 	PA_OutputText(1,5,15,"                       ");
-	PA_Sleep(SLEEPTIME);
 }
 
 void Markupline::drawToVScreen(VirScreen* VScreen, CharStat* CStat, s32 line)
@@ -261,11 +257,12 @@ string splitPre(string Str)
 	return markup;
 }
 
-string splitNowiki(string Str)
+void Markup::splitNowiki()
 {
-	string markup = "";
-	u32 pos = 0;
-	while ((pos=Str.find("<nowiki>"))!=string::npos)
+// 	string Str = _xml->FirstChild()->Value();
+// 	PA_OutputText(1,5,6,"%s",Str.c_str());
+
+/*	while ((pos=Str.find("<nowiki>"))!=string::npos)
 	{
 		string temp = Str.substr(0,pos);
 		Str.erase(0,pos);
@@ -284,21 +281,15 @@ string splitNowiki(string Str)
 	markup += splitPre(Str);
 	Str.clear();
 
-	return markup;
+	return markup;*/
 }
 
-Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* CStat, TitleIndex* titleindex)
+Markup::Markup(string Str, CharStat* CStat, TitleIndex* titleindex)
 {
-// 	PA_OutputText(1,5,3,"Creating Markup");
-	PA_Sleep(SLEEPTIME);
-
-
-	_markupVScreen1 = VScreen1;
-	_markupVScreen2 = VScreen2;
 	_markupCStat    = CStat;
 	_titleindex     = titleindex;
-	_linesOnVScreen1 = 1 + ( ( _markupVScreen1->Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
-	_linesOnVScreen2 = 1 + ( ( _markupVScreen2->Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
+	_linesOnVScreen1 = 1 + ( ( ContentWin1.Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
+	_linesOnVScreen2 = 1 + ( ( ContentWin2.Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
 	_currentLine = 0;
 
 	u32 pos = 0;
@@ -307,9 +298,18 @@ Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* C
 	Element* t2;
 	Element* l;
 
-	Str = splitNowiki(Str);
+	Str = exchangeSGMLEntities(Str);
+
+// 	vector<string> zeilen;
+// 	explode('\n',Str,zeilen);
+// 	WIKI2XML w2x(zeilen);
+// 	w2x.parse();
+
+// 	Str=w2x.get_xml();
 
 	pos = 0;
+	_globals->getPercentIndicator()->update(0);
+
 	l = createLink(Str,pos,link_id++);
 
 	while (l)
@@ -320,42 +320,26 @@ Markup::Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* C
 		visibleChildren.push_back(*l);
 
 		pos = l->sourcePositionStart + l->sourceLength;
+		_globals->getPercentIndicator()->update(pos*100/Str.length());
 		delete l;
 
 		l = createLink(Str,pos,link_id++);
 	}
-// 	PA_OutputText(1,5,19,"while (l) OK");
 
 	Element t(Str.substr(pos));
 	visibleChildren.push_back(t);
 
-// 	PA_OutputText(1,5,18,"add (t) OK");
-
-	createLines(VScreen1, CStat);
-// 	PA_OutputText(1,5,17,"createLines OK");
-// 	setCurrentLine(PA_RandMax(numberOfLines()-1));
-
-// 	PA_OutputText(1,5,3,"               ");
-	PA_Sleep(SLEEPTIME);
+	createLines(&ContentWin1, CStat);
 }
 
 Markup::~Markup()
 {
-// 	PA_OutputText(1,5,9,"Destructing Markup");
-	PA_Sleep(SLEEPTIME);
-
 	visibleChildren.clear();
 	lines.clear();
-
-// 	PA_OutputText(1,5,9,"                  ");
-	PA_Sleep(SLEEPTIME);
 }
 
 void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 {
-// 	PA_OutputText(1,5,13,"Creating Lines");
-	PA_Sleep(SLEEPTIME);
-
 	VirScreen FakeVS = { VScreen->Left, VScreen->Top, VScreen->Width, VScreen->Height, {{0,0},{0,0}}, VScreen->Screen};
 	CharStat  FakeCS = { CStat->FONT, REGULAR, CStat->W_Space, CStat->H_Space, CStat->Color, CStat->FxColor, CStat->BgColor, CStat->Rotate, CStat->Wrap, SIMULATE, 0};
 	switch (CStat->Rotate)
@@ -378,6 +362,7 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 
 	while (elementNumber<visibleChildren.size()) // Loop until every token is put on some line
 	{
+		_globals->getPercentIndicator()->update(PA_RandMinMax(0,100));
 		BLOCK FakeCA = {{0,0},{0,0}};
 		Markupline CurrentLine;
 
@@ -422,8 +407,6 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 		lines.push_back(CurrentLine);
 	}
 
-// 	PA_OutputText(1,5,13,"              ");
-	PA_Sleep(SLEEPTIME);
 }
 
 u32 Markup::numberOfLines()
@@ -479,16 +462,21 @@ u8 Markup::scrollPageUp()
 void Markup::draw()
 {
 	s32 i;
-	FillVS(_markupVScreen1,PA_RGB(31,31,31));
-	FillVS(_markupVScreen2,PA_RGB(31,31,31));
+	FillVS(&ContentWin1,PA_RGB(31,31,31));
+	FillVS(&ContentWin2,PA_RGB(31,31,31));
 	for (i=0;i<_linesOnVScreen1;i++)
 	{
 		if (((i+_currentLine-_linesOnVScreen1)>=0) && ((i+_currentLine-_linesOnVScreen1)<numberOfLines()))
-			lines[i+_currentLine-_linesOnVScreen1].drawToVScreen(_markupVScreen1,_markupCStat,i);
+			lines[i+_currentLine-_linesOnVScreen1].drawToVScreen(&ContentWin1,_markupCStat,i);
 	}
 	for (i=0;i<_linesOnVScreen2;i++)
 	{
 		if (((i+_currentLine)>=0) && ((i+_currentLine)<numberOfLines()))
-			lines[i+_currentLine].drawToVScreen(_markupVScreen2,_markupCStat,i);
+			lines[i+_currentLine].drawToVScreen(&ContentWin2,_markupCStat,i);
 	}
+}
+
+void Markup::setGlobals(Globals* globals)
+{
+	_globals = globals;
 }

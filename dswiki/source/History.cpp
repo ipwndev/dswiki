@@ -1,5 +1,9 @@
 #include "History.h"
 
+#include <PA9.h>
+#include <string>
+#include <vector>
+
 //
 // C++ Implementation: History
 //

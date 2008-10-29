@@ -1,56 +1,30 @@
-#include <PA9.h>
-#include <fat.h>
+#include "WikiMarkupGetter.h"
+
+#include <sys/dir.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <bzlib.h>
 #include <string>
 
-#include "WikiMarkupGetter.h"
-#include "TitleIndex.h"
 #include "main.h"
+#include "TitleIndex.h"
+#include "Globals.h"
+#include "PercentIndicator.h"
 
 #define BUFFER_SIZE 8192
 #define BZ_DECOMPRESS_SMALL 1
 
-WikiMarkupGetter::WikiMarkupGetter(string basename)
+
+WikiMarkupGetter::WikiMarkupGetter(vector<string> wikidbs)
 {
-	struct stat st;
-	char filename[256]; // to hold a full filename and string terminator
-	DIR_ITER* dir = diropen("/dswiki/");
-
-	if (dir == NULL)
+	for (int i=0;i<wikidbs.size();i++)
 	{
-		PA_OutputText(1,2,2,"Unable to open the directory.");
-	}
-	else
-	{
-		while (dirnext(dir, filename, &st) == 0) // collect all *.db? files
-		{
-			if (!(st.st_mode & S_IFDIR)) // regular file
-			{
-				string filenamestr = filename;
-				if (filenamestr.substr(0,filenamestr.length()-1)==basename+".db")
-				{
-					if (filenamestr.substr(filenamestr.length()-1,1).find_first_of("abcdefghijklmnopqrstuvwxyz")!=string::npos)
-					{
-						_filenames.push_back("/dswiki/" + filenamestr);
-					}
-				}
-			}
-		}
-	}
-
-	sort(_filenames.begin(),_filenames.end()); // alphabetical order is assumed
-
-	int i;
-	for (i=0;i<_filenames.size();i++)
-	{
-		_f_data = fopen(_filenames[i].c_str(), "rb");
-		_filepointers.push_back(_f_data);
-		fseek(_f_data,0,SEEK_END);
-		fpos_t size = ftell(_f_data);
+		FILE* _f = fopen(wikidbs[i].c_str(), "rb");
+		_filepointers.push_back(_f);
+		fseek(_f,0,SEEK_END);
+		fpos_t size = ftell(_f);
+		fseek(_f,0,SEEK_SET);
 		_filesizes.push_back(size);
-		rewind(_f_data);
 		u64 absoluteEnd;
 		if (i==0)
 			absoluteEnd = size-1;
@@ -60,53 +34,24 @@ WikiMarkupGetter::WikiMarkupGetter(string basename)
 	}
 }
 
-void WikiMarkupGetter::setNew(string basename)
+void WikiMarkupGetter::setNew(vector<string> wikidbs)
 {
-	if (_f_data)
+	for (int i=0;i<_filepointers.size();i++)
 	{
-		fclose(_f_data);
+		fclose(_filepointers[i]);
 	}
-	_filenames.clear();
 	_filepointers.clear();
 	_filesizes.clear();
 	_file_absoluteEnds.clear();
-	struct stat st;
-	char filename[256]; // to hold a full filename and string terminator
-	DIR_ITER* dir = diropen("/dswiki/");
-
-	if (dir == NULL)
+	_lastArticleTitle.clear();
+	for (int i=0;i<wikidbs.size();i++)
 	{
-		PA_OutputText(1,2,2,"Unable to open the directory.");
-	}
-	else
-	{
-		while (dirnext(dir, filename, &st) == 0) // collect all *.db? files
-		{
-			if (!(st.st_mode & S_IFDIR)) // regular file
-			{
-				string filenamestr = filename;
-				if (filenamestr.substr(0,filenamestr.length()-1)==basename+".db")
-				{
-					if (filenamestr.substr(filenamestr.length()-1,1).find_first_of("abcdefghijklmnopqrstuvwxyz")!=string::npos)
-					{
-						_filenames.push_back("/dswiki/" + filenamestr);
-					}
-				}
-			}
-		}
-	}
-
-	sort(_filenames.begin(),_filenames.end()); // alphabetical order is assumed
-
-	int i;
-	for (i=0;i<_filenames.size();i++)
-	{
-		_f_data = fopen(_filenames[i].c_str(), "rb");
-		_filepointers.push_back(_f_data);
-		fseek(_f_data,0,SEEK_END);
-		fpos_t size = ftell(_f_data);
+		FILE* _f = fopen(wikidbs[i].c_str(), "rb");
+		_filepointers.push_back(_f);
+		fseek(_f,0,SEEK_END);
+		fpos_t size = ftell(_f);
+		fseek(_f,0,SEEK_SET);
 		_filesizes.push_back(size);
-		rewind(_f_data);
 		u64 absoluteEnd;
 		if (i==0)
 			absoluteEnd = size-1;
@@ -118,11 +63,10 @@ void WikiMarkupGetter::setNew(string basename)
 
 WikiMarkupGetter::~WikiMarkupGetter()
 {
-	if (_f_data)
+	for (int i=0;i<_filepointers.size();i++)
 	{
-		fclose(_f_data);
+		fclose(_filepointers[i]);
 	}
-	_filenames.clear();
 	_filepointers.clear();
 	_filesizes.clear();
 	_file_absoluteEnds.clear();
@@ -147,21 +91,15 @@ string WikiMarkupGetter::getMarkup(TitleIndex* t, string title)
 // 	PA_OutputText(1,5,8,"%d        ",articleLength);
 // 	PA_OutputText(1,5,9,"%s        ",_lastArticleTitle.c_str());
 
-
-	// TODO: Determine correct part
-	// The text is completely in that file!
-
-	FILE* _f_data = NULL;
 	int fileNo = 0;
-	int i;
 	while (_file_absoluteEnds[fileNo]<blockPos) fileNo++;
-	for (i=0;i<fileNo;i++)
+	for (int i=0;i<fileNo;i++)
 		blockPos -= _filesizes[i];
-	_f_data = _filepointers[fileNo];
+	FILE* _f_data = _filepointers[fileNo];
 
 	if ( !_f_data ) {
 // 		PA_OutputText(1,5,10,"!fdata");
-		return NULL;
+		return "";
 	}
 	// seek to the block
 	fseek(_f_data, blockPos, SEEK_SET);
@@ -172,7 +110,7 @@ string WikiMarkupGetter::getMarkup(TitleIndex* t, string title)
 	if (bzerror != BZ_OK) {
 // 		PA_OutputText(1,5,10,"BZ_ReadOpen failed");
 		BZ2_bzReadClose ( &bzerror, bzf );
-		return NULL;
+		return "";
 	}
 
 // 	PA_OutputText(1,5,11,"Bis kurz vorm Loop");
@@ -184,6 +122,7 @@ string WikiMarkupGetter::getMarkup(TitleIndex* t, string title)
 
 	while ( read = BZ2_bzRead(&bzerror, bzf, buffer, BUFFER_SIZE) )
 	{
+		_globals->getPercentIndicator()->update(read);
 // 		PA_OutputText(1,5,12,"Read %d       ",read);
 // 		PA_Sleep(10);
 // 		PA_OutputText(1,5,12,"              ",read);
@@ -229,4 +168,9 @@ string WikiMarkupGetter::getMarkup(TitleIndex* t, string title)
 string WikiMarkupGetter::GetLastArticleTitle()
 {
 	return _lastArticleTitle;
+}
+
+void WikiMarkupGetter::setGlobals(Globals* globals)
+{
+	_globals = globals;
 }

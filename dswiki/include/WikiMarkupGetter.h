@@ -2,43 +2,32 @@
 #define _WIKIMARKUPGETTER_H
 
 #include <PA9.h>
-#include <string>
-#include <algorithm>
 #include <fat.h>
-
-#include "TitleIndex.h"
-#include "api.h"
-#include "Big52Uni16.h"
-#include "Cache.h"
-#include "chrlib.h"
-#include "History.h"
-#include "main.h"
-#include "Markup.h"
-#include "SearchResults.h"
-#include "struct.h"
-#include "WikiMarkupGetter.h"
+#include <vector>
+#include <string>
 
 using namespace std;
 
 class TitleIndex;
+class Globals;
 
 class WikiMarkupGetter
 {
 public:
-	WikiMarkupGetter(string basename);
+	WikiMarkupGetter(vector<string> wikidbs);
 	~WikiMarkupGetter();
 
-	void setNew(string basename);
+	void setNew(vector<string> wikidbs);
 	string getMarkup(TitleIndex* t, string title);
 	string GetLastArticleTitle();
 
+	void setGlobals(Globals* globals);
 private:
-	FILE*          _f_data;
-	vector<string> _filenames;
 	vector<FILE*>  _filepointers;
 	vector<fpos_t> _filesizes;
 	vector<u64>    _file_absoluteEnds;
 	string         _lastArticleTitle;
+	Globals* _globals;
 };
 
 #endif

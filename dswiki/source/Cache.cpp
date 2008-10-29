@@ -1,5 +1,3 @@
-#include "Cache.h"
-
 //
 // C++ Implementation: Cache
 //
@@ -11,6 +9,16 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
+
+#include "Cache.h"
+
+#include <PA9.h>
+#include <string>
+#include <deque>
+
+
+// #define MAX_CACHE_SIZE 2097152
+#define MAX_CACHE_SIZE 0
 
 Cache::Cache()
 {

@@ -1,28 +1,3 @@
-#ifndef _CACHE_H
-#define _CACHE_H
-
-#include <PA9.h>
-#include <string>
-#include <vector>
-#include <deque>
-
-#include "api.h"
-#include "Big52Uni16.h"
-#include "Cache.h"
-#include "chrlib.h"
-#include "History.h"
-#include "main.h"
-#include "Markup.h"
-#include "SearchResults.h"
-#include "struct.h"
-#include "TitleIndex.h"
-#include "WikiMarkupGetter.h"
-
-using namespace std;
-
-#define MAX_CACHE_SIZE 2097152
-// #define MAX_CACHE_SIZE 0
-
 //
 // C++ Interface: Cache
 //
@@ -34,6 +9,15 @@ using namespace std;
 // Copyright: See COPYING file that comes with this distribution
 //
 //
+
+#ifndef _CACHE_H
+#define _CACHE_H
+
+#include <PA9.h>
+#include <string>
+#include <deque>
+
+using namespace std;
 
 typedef struct
 {

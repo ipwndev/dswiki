@@ -1,29 +1,5 @@
-#ifndef _SEARCHRESULTS_H
-#define _SEARCHRESULTS_H
-
-#include <PA9.h>
-#include <string>
-#include <deque>
-
-#include "api.h"
-#include "Big52Uni16.h"
-#include "Cache.h"
-#include "chrlib.h"
-#include "History.h"
-#include "main.h"
-#include "Markup.h"
-#include "SearchResults.h"
-#include "struct.h"
-#include "TitleIndex.h"
-#include "WikiMarkupGetter.h"
-
-using namespace std;
-
-#define MAX_SEARCH_RESULTS 128
-#define SEARCHRESULT_LINES 13
-
 //
-// C++ Interface: SearchResults
+// C++ Interface: Search
 //
 // Description:
 //
@@ -34,12 +10,24 @@ using namespace std;
 //
 //
 
+#ifndef _SEARCHRESULTS_H
+#define _SEARCHRESULTS_H
+
+#include <PA9.h>
+#include <string>
+#include <deque>
+#include "api.h"
+#include "chrlib.h"
+#include "main.h"
+
+using namespace std;
+
 class TitleIndex;
 
-class SearchResults
+class Search
 {
 	public:
-		SearchResults(TitleIndex* t, VirScreen* VScreen, CharStat* CStat1, CharStat* CStat2);
+		Search(TitleIndex* t, CharStat* CStat1, CharStat* CStat2);
 		void load(string phrase);
 		void load(s32 articleNumber);
 		string currentHighlightedItem();
@@ -52,7 +40,6 @@ class SearchResults
 		void display();
 	private:
 		TitleIndex*	_titleindex;
-		VirScreen*	_vscreen;
 		CharStat*	_cstat1;
 		CharStat*	_cstat2;
 

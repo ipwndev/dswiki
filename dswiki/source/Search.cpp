@@ -1,7 +1,5 @@
-#include "SearchResults.h"
-
 //
-// C++ Implementation: SearchResults
+// C++ Implementation: Search
 //
 // Description:
 //
@@ -12,15 +10,26 @@
 //
 //
 
-SearchResults::SearchResults(TitleIndex* t, VirScreen* VScreen, CharStat* CStat1, CharStat* CStat2)
+#include "Search.h"
+
+#include <PA9.h>
+#include <string>
+#include <deque>
+#include "api.h"
+#include "chrlib.h"
+#include "TitleIndex.h"
+
+#define MAX_SEARCH_RESULTS 128
+#define SEARCHRESULT_LINES 13
+
+Search::Search(TitleIndex* t, CharStat* CStat1, CharStat* CStat2)
 {
 	_titleindex = t;
-	_vscreen = VScreen;
 	_cstat1 = CStat1;
 	_cstat2 = CStat2;
 }
 
-void SearchResults::load(s32 articleNumber)
+void Search::load(s32 articleNumber)
 {
 	int i;
 
@@ -60,12 +69,12 @@ void SearchResults::load(s32 articleNumber)
 	_wasScrolled = 1;
 }
 
-void SearchResults::load(string phrase)
+void Search::load(string phrase)
 {
 	load(_titleindex->getSuggestedArticleNumber(phrase));
 }
 
-string SearchResults::currentHighlightedItem()
+string Search::currentHighlightedItem()
 {
 	if ((_list_CurrentArticleNumber<0) || (_list_CurrentArticleNumber>=_list.size()))
 		return "";
@@ -73,11 +82,11 @@ string SearchResults::currentHighlightedItem()
 }
 
 
-void SearchResults::display()
+void Search::display()
 {
 	if (_wasScrolled)
 	{
-		FillVS(_vscreen,PA_RGB(31,31,31));
+		FillVS(&ContentWin1,PA_RGB(31,31,31));
 		_wasScrolled = 0;
 	}
 	BLOCK CharArea = {{0,0},{0,0}};
@@ -86,16 +95,16 @@ void SearchResults::display()
 	{
 		if (i!=_list_CurrentArticleNumber)
 		{
-			iPrint(_list[i]+"\n",_vscreen,_cstat1,&CharArea,-1,UTF8);
+			iPrint(_list[i]+"\n",&ContentWin1,_cstat1,&CharArea,-1,UTF8);
 		}
 		else
 		{
-			iPrint(_list[i]+"\n",_vscreen,_cstat2,&CharArea,-1,UTF8);
+			iPrint(_list[i]+"\n",&ContentWin1,_cstat2,&CharArea,-1,UTF8);
 		}
 	}
 }
 
-u8 SearchResults::scrollLineUp()
+u8 Search::scrollLineUp()
 {
 	if (_absolute_CurrentArticleNumber <= 0)
 		return 0;
@@ -148,7 +157,7 @@ u8 SearchResults::scrollLineUp()
 	return 1;
 }
 
-u8 SearchResults::scrollLineDown()
+u8 Search::scrollLineDown()
 {
 	if (_absolute_CurrentArticleNumber >= _titleindex->NumberOfArticles() - 1)
 		return 0;
@@ -199,7 +208,7 @@ u8 SearchResults::scrollLineDown()
 	return 1;
 }
 
-u8 SearchResults::scrollPageUp()
+u8 Search::scrollPageUp()
 {
 	u8 any = 0;
 	u8 i;
@@ -213,7 +222,7 @@ u8 SearchResults::scrollPageUp()
 	return any;
 }
 
-u8 SearchResults::scrollPageDown()
+u8 Search::scrollPageDown()
 {
 	u8 any = 0;
 	u8 i;
@@ -227,14 +236,14 @@ u8 SearchResults::scrollPageDown()
 	return any;
 }
 
-u8 SearchResults::scrollLongUp()
+u8 Search::scrollLongUp()
 {
 	u8 change = _absolute_CurrentArticleNumber==0?0:1;
 	load(_absolute_CurrentArticleNumber-25*(SEARCHRESULT_LINES-1));
 	return change;
 }
 
-u8 SearchResults::scrollLongDown()
+u8 Search::scrollLongDown()
 {
 	u8 change = _absolute_CurrentArticleNumber==_titleindex->NumberOfArticles()-1?0:1;
 	load(_absolute_CurrentArticleNumber+25*(SEARCHRESULT_LINES-1));

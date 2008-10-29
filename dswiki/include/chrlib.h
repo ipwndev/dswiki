@@ -3,11 +3,8 @@
 
 #include <PA9.h>
 #include <string>
-#include <algorithm>
 
-#include "main.h"
 #include "struct.h"
-#include "Big52Uni16.h"
 #include "api.h"
 
 using namespace std;
@@ -32,6 +29,7 @@ class Font
 	public:
 		Font();
 		u8 * getCharacterData(u32 Uni, Cut CutType);
+		u8 initOK();
 		SingleCut Regular;
 		SingleCut Bold;
 		SingleCut Italic;
@@ -42,6 +40,7 @@ class Font
 		u8* _data_italic;
 		u8* _data_bolditalic;
 		void InitFont(SingleCut* FONT, const u8* ptr);
+		u8 _initOK;
 };
 
 typedef struct
@@ -68,7 +67,7 @@ typedef struct
 #define MAX_TITLE_LENGTH 1000
 #define MAX_NAMED_ENTITIES 253
 
-u8   ToUTF   (const char* Chr, u32* UTF16, const u16* Table, Lid Lang);
+u8   ToUTF   (const char* Chr, u32* UTF16, Lid Lang);
 u32  UTF2UTF8(u32* Uni, char* U8);
 u32  UTF82UTF(char* U8, u32* Uni);
 
@@ -353,14 +352,22 @@ const string  diacriticExchangeTable[] =
 {
 //   this tab le contains the char code for any diacritic char
 //   0    1     2    3    4    5    6    7    8    9    a    b    c    d    e    f
-	"",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0x80 - 0x8f
- "",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0x90 - 0x9f
- "",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0xa0 - 0xaf
- "",  "",  "" ,  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  // 0xb0 - 0xbf
- "A", "A", "A ", "A", "A", "A", "",  "C", "E", "E", "E", "E", "I", "I", "I", "I", // 0xc0 - 0xcf
- "D", "N", "O ", "O", "O", "O", "O", "",  "O", "U", "U", "U", "U", "Y", "",  "",  // 0xd0 - 0xdf
- "a", "a", "a ", "a", "a", "a", "",  "c", "e", "e", "e", "e", "i", "i", "i", "i", // 0xe0 - 0xef
- "",  "n", "o ", "o", "o", "o", "o", "",  "o", "u", "u", "u", "u", "y", "",  "y"  // 0xf0 - 0xff
+  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "", // 0x0080 - 0x008F
+  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "", // 0x0090 - 0x009F
+  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "", // 0x00A0 - 0x00AF
+  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "",  "", // 0x00B0 - 0x00BF
+ "A", "A", "A", "A", "A", "A","AE", "C", "E", "E", "E", "E", "I", "I", "I", "I", // 0x00C0 - 0x00CF
+ "D", "N", "O", "O", "O", "O", "O",  "", "O", "U", "U", "U", "U", "Y","TH","ss", // 0x00D0 - 0x00DF
+ "a", "a", "a", "a", "a", "a","ae", "c", "e", "e", "e", "e", "i", "i", "i", "i", // 0x00E0 - 0x00EF
+ "d", "n", "o", "o", "o", "o", "o",  "", "o", "u", "u", "u", "u", "y","th", "y", // 0x00F0 - 0x00FF
+ "A", "a", "A", "a", "A", "a", "C", "c", "C", "c", "C", "c", "C", "c", "D", "d", // 0x0100 - 0x010F
+ "D", "d", "E", "e", "E", "e", "E", "e", "E", "e", "E", "e", "G", "g", "G", "g", // 0x0110 - 0x011F
+ "G", "g", "G", "g", "H", "h", "H", "h", "I", "i", "I", "i", "I", "i", "I", "i", // 0x0120 - 0x012F
+ "I", "i","IJ","ij", "J", "j", "K", "k", "k", "L", "l", "L", "l", "L", "l", "L", // 0x0130 - 0x013F
+ "l", "L", "l", "N", "n", "N", "n", "N", "n", "n",  "",  "", "O", "o", "O", "o", // 0x0140 - 0x014F
+ "O", "o","OE","oe", "R", "r", "R", "r", "R", "r", "S", "s", "S", "s", "S", "s", // 0x0150 - 0x015F
+ "S", "s", "T", "t", "T", "t", "T", "t", "U", "u", "U", "u", "U", "u", "U", "u", // 0x0160 - 0x016F
+ "U", "u", "U", "u", "W", "w", "Y", "y", "Y", "Z", "z", "Z", "z", "Z", "z", "s", // 0x0170 - 0x017F
 };
 
 #endif
