@@ -3,20 +3,12 @@
 
 #include <PA9.h>
 #include <string>
-
-
+#include <vector>
 #include "api.h"
-#include "Big52Uni16.h"
-#include "Cache.h"
 #include "chrlib.h"
-#include "History.h"
-#include "main.h"
-#include "Markup.h"
-#include "SearchResults.h"
-#include "struct.h"
-#include "TitleIndex.h"
-#include "WikiMarkupGetter.h"
 
+class TitleIndex;
+class Globals;
 
 using namespace std;
 
@@ -53,7 +45,7 @@ class Markupline
 class Markup
 {
 	public:
-		Markup(string Str, VirScreen* VScreen1, VirScreen* VScreen2, CharStat* CStat, TitleIndex* titleindex);
+		Markup(string Str, CharStat* CStat, TitleIndex* titleindex);
 		~Markup();
 
 		void	createLines(VirScreen* VScreen, CharStat* CStat);
@@ -67,16 +59,17 @@ class Markup
 		u8	scrollPageDown();
 		u8	scrollPageUp();
 		string	evaluateClick(s16 x,s16 y);
+		void setGlobals(Globals* globals);
 	private:
+		void splitNowiki();
 		s32	_currentLine;
 		vector<Markupline>	lines;
 		vector<Element>	visibleChildren;
-		VirScreen*	_markupVScreen1;
-		VirScreen*	_markupVScreen2;
 		CharStat*	_markupCStat;
 		u8	_linesOnVScreen1;
 		u8	_linesOnVScreen2;
 		TitleIndex* _titleindex;
+		Globals* _globals;
 };
 
 Element* createLink(string Str, u32 startPos, u32 link_id);

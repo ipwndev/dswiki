@@ -1,19 +1,13 @@
 #include "TitleIndex.h"
 
-#include <stdio.h>
 #include <sys/dir.h>
 #include <unistd.h>
-
-#include "api.h"
-#include "Big52Uni16.h"
-#include "Cache.h"
-#include "chrlib.h"
-#include "History.h"
-#include "main.h"
+#include <algorithm>
 #include "Markup.h"
-#include "SearchResults.h"
-#include "struct.h"
-#include "WikiMarkupGetter.h"
+#include "main.h"
+#include "chrlib.h"
+#include "Globals.h"
+#include "Dumps.h"
 
 typedef struct
 {
@@ -29,28 +23,13 @@ typedef struct
 	char reserved2[160];
 } FILEHEADER;
 
-
-TitleIndex::TitleIndex(string basename)
+void TitleIndex::load(string basename)
 {
-	_imageNamespace = "";
-	_templateNamespace = "";
-	isChinese = false;
-
-	_numberOfArticles = -1;
-	_using_index1 = 0;
-
-	_imageNamespace = "";
-	_templateNamespace = "";
-
 	chdir("fat:/dswiki/");
-	_FileName_Header    = basename + ".ifo";
-	_FileName_DataIndex = basename + ".idx";
-	_FileName_Index0    = basename + ".ao1";
-	_FileName_Index1    = basename + ".ao2";
-	_f_header           = fopen(_FileName_Header.c_str(),    "rb");
-	_f_dataindex        = fopen(_FileName_DataIndex.c_str(), "rb");
-	_f_index0           = fopen(_FileName_Index0.c_str(),    "rb");
-	_f_index1           = fopen(_FileName_Index1.c_str(),    "rb");
+	_f_header           = fopen(_globals->getDumps()->get_ifo(basename).c_str(), "rb");
+	_f_dataindex        = fopen(_globals->getDumps()->get_idx(basename).c_str(), "rb");
+	_f_index0           = fopen(_globals->getDumps()->get_ao1(basename).c_str(), "rb");
+	_f_index1           = fopen(_globals->getDumps()->get_ao2(basename).c_str(), "rb");
 
 	if ( _f_header )
 	{
@@ -58,15 +37,15 @@ TitleIndex::TitleIndex(string basename)
 
 		FILEHEADER fileheader;
 
-		fread(&fileheader.languageCode,      2, 1, _f_header);
-		fread(&fileheader.numberOfArticles,  4, 1, _f_header);
-		fread(&fileheader.titlesPos,         8, 1, _f_header);
-		fread(&fileheader.indexPos_0,        8, 1, _f_header);
-		fread(&fileheader.indexPos_1,        8, 1, _f_header);
-		fread(&fileheader.version,           1, 1, _f_header);
-		fread(&fileheader.reserved1,         1, 1, _f_header);
-		fread(&fileheader.imageNamespace,    32, 1, _f_header);
-		fread(&fileheader.templateNamespace, 32, 1, _f_header);
+		fread(&fileheader.languageCode,        2, 1, _f_header);
+		fread(&fileheader.numberOfArticles,    4, 1, _f_header);
+		fread(&fileheader.titlesPos,           8, 1, _f_header);
+		fread(&fileheader.indexPos_0,          8, 1, _f_header);
+		fread(&fileheader.indexPos_1,          8, 1, _f_header);
+		fread(&fileheader.version,             1, 1, _f_header);
+		fread(&fileheader.reserved1,           1, 1, _f_header);
+		fread(&fileheader.imageNamespace,     32, 1, _f_header);
+		fread(&fileheader.templateNamespace,  32, 1, _f_header);
 		fread(&fileheader.reserved2,         160, 1, _f_header);
 
 		_numberOfArticles  = fileheader.numberOfArticles;
@@ -80,25 +59,8 @@ TitleIndex::TitleIndex(string basename)
 	}
 }
 
-void TitleIndex::setNew(string basename)
+TitleIndex::TitleIndex()
 {
-	if (_f_header)
-	{
-		fclose(_f_header);
-	}
-	if (_f_dataindex)
-	{
-		fclose(_f_dataindex);
-	}
-	if (_f_index0)
-	{
-		fclose(_f_index0);
-	}
-	if (_f_index1)
-	{
-		fclose(_f_index1);
-	}
-
 	_imageNamespace = "";
 	_templateNamespace = "";
 	isChinese = false;
@@ -109,42 +71,6 @@ void TitleIndex::setNew(string basename)
 	_imageNamespace = "";
 	_templateNamespace = "";
 
-	chdir("fat:/dswiki/");
-	_FileName_Header    = basename + ".ifo";
-	_FileName_DataIndex = basename + ".idx";
-	_FileName_Index0    = basename + ".ao1";
-	_FileName_Index1    = basename + ".ao2";
-	_f_header           = fopen(_FileName_Header.c_str(),    "rb");
-	_f_dataindex        = fopen(_FileName_DataIndex.c_str(), "rb");
-	_f_index0           = fopen(_FileName_Index0.c_str(),    "rb");
-	_f_index1           = fopen(_FileName_Index1.c_str(),    "rb");
-
-	if ( _f_header )
-	{
-		int error = 0;
-
-		FILEHEADER fileheader;
-
-		fread(&fileheader.languageCode,      2, 1, _f_header);
-		fread(&fileheader.numberOfArticles,  4, 1, _f_header);
-		fread(&fileheader.titlesPos,         8, 1, _f_header);
-		fread(&fileheader.indexPos_0,        8, 1, _f_header);
-		fread(&fileheader.indexPos_1,        8, 1, _f_header);
-		fread(&fileheader.version,           1, 1, _f_header);
-		fread(&fileheader.reserved1,         1, 1, _f_header);
-		fread(&fileheader.imageNamespace,    32, 1, _f_header);
-		fread(&fileheader.templateNamespace, 32, 1, _f_header);
-		fread(&fileheader.reserved2,         160, 1, _f_header);
-
-		_numberOfArticles  = fileheader.numberOfArticles;
-		_imageNamespace    = fileheader.imageNamespace;
-		_templateNamespace = fileheader.templateNamespace;
-
-		if (fileheader.indexPos_1)
-		{
-			_using_index1 = 1;
-		}
-	}
 }
 
 TitleIndex::~TitleIndex()
@@ -420,26 +346,6 @@ ArticleSearchResult* TitleIndex::getRandomArticle()
 	return new ArticleSearchResult(titleInArchive, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 }
 
-string TitleIndex::HeaderFileName()
-{
-	return _FileName_Header;
-}
-
-string TitleIndex::DataIndexFileName()
-{
-	return _FileName_DataIndex;
-}
-
-string TitleIndex::Index0FileName()
-{
-	return _FileName_Index0;
-}
-
-string TitleIndex::Index1FileName()
-{
-	return _FileName_Index1;
-}
-
 int TitleIndex::NumberOfArticles()
 {
 	return _numberOfArticles;
@@ -492,88 +398,7 @@ int ArticleSearchResult::ArticleLength()
 	return _articleLength;
 }
 
-vector<string> TitleIndex::getPossibleWikis()
+void TitleIndex::setGlobals(Globals* globals)
 {
-	vector<string> _possibleWikis;
-	struct stat st;
-	char filename[256]; // to hold a full filename and string terminator
-	DIR_ITER* dir = diropen("fat:/dswiki/");
-
-	if (dir != NULL)
-	{
-		while (dirnext(dir, filename, &st) == 0)
-		{
-			if (!(st.st_mode & S_IFDIR)) // regular file
-			{
-				string filenamestr = filename;
-				if (filenamestr.rfind(".ifo")==filenamestr.length()-4)
-				{
-					string basename = filenamestr.substr(0,filenamestr.length()-4);
-					PA_ClearTextBg(1);
-					PA_OutputText(1,0,6,"%s,%s",filename,basename.c_str());
-					PA_Sleep(10);
-					struct stat inner_st;
-					char inner_filename[256];
-					DIR_ITER* inner_dir = diropen("fat:/dswiki/");
-					if (inner_dir != NULL)
-					{
-						u8 foundidx = 0;
-						u8 foundao1 = 0;
-						u8 foundao2 = 0;
-						u8 founddb  = 0;
-						while (dirnext(inner_dir, inner_filename, &inner_st) == 0)
-						{
-							if (!(inner_st.st_mode & S_IFDIR)) // regular file
-							{
-								string inner_filenamestr = inner_filename;
-								if (inner_filenamestr==basename+".idx")
-								{
-									foundidx = 1;
-									PA_OutputText(1,0,9,"1");
-									PA_Sleep(10);
-								}
-								if (inner_filenamestr==basename+".ao1")
-								{
-									foundao1 = 1;
-									PA_OutputText(1,1,9,"1");
-									PA_Sleep(10);
-								}
-								if (inner_filenamestr==basename+".ao2")
-								{
-									foundao2 = 1;
-									PA_OutputText(1,2,9,"1");
-									PA_Sleep(10);
-								}
-								if (inner_filenamestr.substr(0,inner_filenamestr.length()-1)==basename+".db")
-								{
-									if (inner_filenamestr.substr(inner_filenamestr.length()-1,1).find_first_of("abcdefghijklmnopqrstuvwxyz")!=string::npos)
-									{
-										founddb = 1;
-										PA_OutputText(1,3,9,"1");
-										PA_Sleep(10);
-									}
-								}
-							}
-						}
-						if (foundidx && foundao1 && founddb)
-						{
-							_possibleWikis.push_back(basename);
-							PA_OutputText(1,0,10,"Adding %s, %d insg.",basename.c_str(),_possibleWikis.size());
-							PA_Sleep(30);
-						}
-					}
-					else
-					{
-						PA_OutputText(1,0,7,"error: inner_dir");
-					}
-				}
-			}
-		}
-	}
-	else
-	{
-		PA_OutputText(1,0,5,"error: dir");
-	}
-	PA_ClearTextBg(1);
-	return _possibleWikis;
+	_globals = globals;
 }

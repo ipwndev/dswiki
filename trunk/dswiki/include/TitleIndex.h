@@ -3,9 +3,10 @@
 
 #include <PA9.h>
 #include <fat.h>
-#include "efs_lib.h"
 #include <string>
 #include <vector>
+
+class Globals;
 
 using namespace std;
 
@@ -29,21 +30,21 @@ class ArticleSearchResult
 		int _articleLength;
 };
 
+
 class TitleIndex
 {
 public:
-	TitleIndex(string basename);
+	TitleIndex();
 	~TitleIndex();
 
-	void setNew(string basename);
+	void load(string basename);
+
 	ArticleSearchResult*	findArticle(string title, u8 setPosition = 0);
 	ArticleSearchResult*	getRandomArticle();
 	ArticleSearchResult*	isRedirect(string markup);
 	string	getTitle(int articleNumber);
 	string	getTitle(int articleNumber, int indexNo, u8 setPosition = 1);
 	int		getSuggestedArticleNumber(string phrase);
-	static vector<string> getPossibleWikis();
-
 	int		NumberOfArticles();
 	string	HeaderFileName();
 	string	DataIndexFileName();
@@ -51,18 +52,13 @@ public:
 	string	Index1FileName();
 	string	ImageNamespace();
 	string	TemplateNamespace();
+	void setGlobals(Globals* globals);
 
 private:
 	FILE*   _f_header;
 	FILE*   _f_dataindex;
 	FILE*   _f_index0;
 	FILE*   _f_index1;
-
-
-	string	_FileName_Header;
-	string	_FileName_DataIndex;
-	string	_FileName_Index0;
-	string	_FileName_Index1;
 
 	int		_numberOfArticles;
 	u8      _using_index1;
@@ -76,6 +72,7 @@ private:
 
 	string	_imageNamespace;
 	string	_templateNamespace;
+	Globals* _globals;
 };
 
 #endif

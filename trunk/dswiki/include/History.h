@@ -1,22 +1,3 @@
-#ifndef _HISTORY_H
-#define _HISTORY_H
-
-#include <PA9.h>
-#include <string>
-#include <vector>
-
-#include "api.h"
-#include "Big52Uni16.h"
-#include "Cache.h"
-#include "chrlib.h"
-#include "History.h"
-#include "main.h"
-#include "Markup.h"
-#include "SearchResults.h"
-#include "struct.h"
-#include "TitleIndex.h"
-#include "WikiMarkupGetter.h"
-
 //
 // C++ Interface: History
 //
@@ -28,6 +9,13 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
+
+#ifndef _HISTORY_H
+#define _HISTORY_H
+
+#include <PA9.h>
+#include <string>
+#include <vector>
 
 using namespace std;
 

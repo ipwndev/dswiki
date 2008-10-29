@@ -1,4 +1,3 @@
-// #include "frankenstein.h"
 #include "chrlib.h"
 
 string trimPhrase(string Str)
@@ -200,7 +199,6 @@ string exchangeDiacriticCharsUTF8Phrase(string phrase)
 	string dst = phrase;
 
 	int i = 0;
-// 	int length = dst.length();
 
 	while ( i < dst.length() )
 	{
@@ -208,7 +206,7 @@ string exchangeDiacriticCharsUTF8Phrase(string phrase)
 		if ( (c&0xe0)==0xc0 ) // Start-Byte of a two byte sequence
 		{
 			int d = ((c&0x1f)<<6) + (((unsigned char) dst[i]) & 0x3f);
-			if ( (d>=0x80) && (d<=0xff) )
+			if ( (d>=0x80) && (d<=0x17f) )
 			{
 				string ex = diacriticExchangeTable[d-0x80];
 				if ( ex!="" )
@@ -230,13 +228,13 @@ string exchangeDiacriticCharsUTF8Phrase(string phrase)
 string preparePhrase(string phrase, u8 indexNo)
 {
 	if (indexNo==1)
-		return exchangeDiacriticCharsUTF8Phrase(lowerPhrase(trimPhrase(phrase)));
+		return lowerPhrase(exchangeDiacriticCharsUTF8Phrase(lowerPhrase(trimPhrase(phrase))));
 	else
 		return lowerPhrase(trimPhrase(phrase));
 }
 
 
-u8 ToUTF(const char* Chr, u32* UTF16, const u16* Table, Lid Lang)
+u8 ToUTF(const char* Chr, u32* UTF16, Lid Lang)
 {
 	u16  Row    = 0;
 	u16  Col    = 0;
@@ -282,110 +280,6 @@ u8 ToUTF(const char* Chr, u32* UTF16, const u16* Table, Lid Lang)
 				else Length=1;
 			}
 			break;
-		case BIG5:
-			Line = 157; //(7E-40+FE-A1)
-			if((Chr[0] >= 0xA1) && (Chr[0] <= 0xC6))
-			{
-				Row = Chr[0] - 0xA1 ;
-				if((Chr[1] >= 0x40) && (Chr[1] <= 0x7E))
-					Col = Chr[1] - 0x40 ;
-				else
-				{
-					if((Chr[1] >= 0xA1) && (Chr[1] <= 0xFE))
-						Col = Chr[1] - 0x62 ;
-				}
-				UTF16[0]=Table[(Row*Line+Col)];
-			}
-			else
-			{
-				if((Chr[0] >= 0xC9) && (Chr[0] <= 0xF9))
-				{
-					Row = Chr[0] - 0xA3 ;
-					if((Chr[1] >= 0x40) && (Chr[1] <= 0x7E))
-						Col = Chr[1] - 0x40 ;
-					else
-					{
-						if((Chr[1] >= 0xA1) && (Chr[1] <= 0xFE))
-							Col = Chr[1] - 0x62 ;
-					}
-					UTF16[0]=Table[(Row*Line+Col)];
-				}
-				else
-				{
-					if(Chr[0]<0x80)
-					{
-						UTF16[0]=Chr[0];
-						Length=1;
-					}
-				}
-			}
-			break;
-		case GBK:
-			Line = 94 ; //(FE-A1+1)
-			if((Chr[0] >= 0xA1) && (Chr[0] <=0xA9))
-			{
-				Row = Chr[0] - 0xA1 ;
-				if((Chr[1] >= 0xA1) && (Chr[1] <= 0xFE))
-					Col = Chr[1] - 0xA1 ;
-				UTF16[0]=Table[(Row*Line+Col)];
-			}
-			else
-			{
-				if((Chr[0] >= 0xB0) && (Chr[0] <= 0xF7))
-				{
-					Row = Chr[0] - 0xA6;
-					if((Chr[1] >= 0xA1) && (Chr[1] <= 0xFE))
-						Col = Chr[1] - 0xA1 ;
-					UTF16[0]=Table[(Row*Line+Col)];
-				}
-				else
-				{
-					if(Chr[0]<0x80)
-					{
-						UTF16[0]=Chr[0];
-						Length=1;
-					}
-				}
-			}
-			break;
-		case JIS:
-			Line = 188; //(7E-40+1+FC-80+1)
-			if((Chr[0] >= 0xA1) && (Chr[0] <= 0xC6))
-			{
-				Row = Chr[0] - 0xA1 ;
-				if((Chr[1] >= 0x40) && (Chr[1] <= 0x7E))
-					Col = Chr[1] - 0x40 ;
-				else
-				{
-					if((Chr[1] >= 0xA1) && (Chr[1] <= 0xFE))
-						Col = Chr[1] - 0x62 ;
-				}
-				UTF16[0]=Table[(Row*Line+Col)];
-			}
-			else
-			{
-				if((Chr[0] >= 0xC9) && (Chr[0] <= 0xF9))
-				{
-					Row = Chr[0] - 0xA3 ;
-					if((Chr[1] >= 0x40) && (Chr[1] <= 0x7E))
-						Col = Chr[1] - 0x40 ;
-					else
-					{
-						if((Chr[1] >= 0xA1) && (Chr[1] <= 0xFE))
-							Col = Chr[1] - 0x62 ;
-					}
-					UTF16[0]=Table[(Row*Line+Col)];
-				}
-				else
-				{
-					if(Chr[0]<0x80)
-					{
-						UTF16[0]=Chr[0];
-						Length=1;
-					}
-				}
-			}
-			break;
 	}
 
 	return Length;
@@ -424,7 +318,7 @@ u32 UTF82UTF(char* U8, u32* Uni) //TODO
 	u32 Length=0;
 	while(U8[i])
 	{
-		i+=ToUTF(&U8[i],&Uni[Length++],0,UTF8);
+		i+=ToUTF(&U8[i],&Uni[Length++],UTF8);
 	}
 	Uni[Length]=0;
 	return Length;
@@ -724,7 +618,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 			break;
 	}
 
-	Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+	Skip+=ToUTF(&Str[Skip],&Uni,Lang);
 
 	while((Limit==-1)||(GlyphsPrinted < Limit)){
 		if (ForceInnerWordWrap||HardWrap) // Writing
@@ -737,12 +631,12 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 			{
 				GlyphsPrinted++;
 				SaveSkipLetter = Skip;
-				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+				Skip+=ToUTF(&Str[Skip],&Uni,Lang);
 				if(Uni==0x0A)
 				{
 					GlyphsPrinted++;
 					SaveSkipLetter = Skip;
-					Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+					Skip+=ToUTF(&Str[Skip],&Uni,Lang);
 				}
 				SwitchNewLine(CStat,CharArea,Origin,Height);
 				continue;
@@ -752,7 +646,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 				GlyphsPrinted++;
 				SwitchNewLine(CStat,CharArea,Origin,Height);
 				SaveSkipLetter = Skip;
-				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+				Skip+=ToUTF(&Str[Skip],&Uni,Lang);
 				continue;
 			}
 			if(Uni==0x20)
@@ -782,7 +676,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 				SaveCharArea.Start.y = CharArea->Start.y;
 				SaveCharArea.End.x   = CharArea->End.x;
 				SaveCharArea.End.y   = CharArea->End.y;
-				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+				Skip+=ToUTF(&Str[Skip],&Uni,Lang);
 				continue;
 			}
 
@@ -827,7 +721,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 					break;
 			}
 			SaveSkipLetter = Skip;
-			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+			Skip+=ToUTF(&Str[Skip],&Uni,Lang);
 		}
 		else // Collecting
 		{
@@ -838,7 +732,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 				CharArea->Start.y = SaveCharArea.Start.y;
 				CharArea->End.x   = SaveCharArea.End.x;
 				CharArea->End.y   = SaveCharArea.End.y;
-				Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+				Skip+=ToUTF(&Str[Skip],&Uni,Lang);
 				ForceInnerWordWrap = 1;
 				continue;
 			}
@@ -870,7 +764,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 						break;
 				}
 			}
-			Skip+=ToUTF(&Str[Skip],&Uni,B2U16,Lang);
+			Skip+=ToUTF(&Str[Skip],&Uni,Lang);
 		}
 	}
 
@@ -914,6 +808,8 @@ void Font::InitFont(SingleCut* FONT, const u8* ptr)
 
 Font::Font()
 {
+	_initOK = 1;
+
 	FILE* f;
 	int size;
 
@@ -928,6 +824,10 @@ Font::Font()
 		InitFont(&Regular,_data_regular);
 		fclose(f);
 	}
+	else
+	{
+		_initOK = 0;
+	}
 
 	f = fopen("fat:dswiki/fonts/font_b.dat","rb");
 	if (f != NULL)
@@ -939,6 +839,10 @@ Font::Font()
 		fread(_data_bold, 1, size, f);
 		InitFont(&Bold,_data_bold);
 		fclose(f);
+	}
+	else
+	{
+		_initOK = 0;
 	}
 
 	f = fopen("fat:dswiki/fonts/font_o.dat","rb");
@@ -952,6 +856,10 @@ Font::Font()
 		InitFont(&Italic,_data_italic);
 		fclose(f);
 	}
+	else
+	{
+		_initOK = 0;
+	}
 
 	f = fopen("fat:dswiki/fonts/font_bo.dat","rb");
 	if (f != NULL)
@@ -963,6 +871,10 @@ Font::Font()
 		fread(_data_bolditalic, 1, size, f);
 		InitFont(&BoldItalic,_data_bolditalic);
 		fclose(f);
+	}
+	else
+	{
+		_initOK = 0;
 	}
 }
 
@@ -985,4 +897,9 @@ u8 * Font::getCharacterData(u32 Uni, Cut FontCut)
 			break;
 	}
 	return DATA;
+}
+
+u8 Font::initOK()
+{
+	return _initOK;
 }
