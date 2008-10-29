@@ -14,11 +14,12 @@ class Globals;
 class WikiMarkupGetter
 {
 public:
-	WikiMarkupGetter(vector<string> wikidbs);
+	WikiMarkupGetter();
 	~WikiMarkupGetter();
 
-	void setNew(vector<string> wikidbs);
-	string getMarkup(TitleIndex* t, string title);
+	void load(string basename);
+
+	string getMarkup(string title);
 	string GetLastArticleTitle();
 
 	void setGlobals(Globals* globals);

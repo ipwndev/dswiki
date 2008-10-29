@@ -22,12 +22,13 @@
 
 using namespace std;
 
-class TitleIndex;
+// class TitleIndex;
+class Globals;
 
 class Search
 {
 	public:
-		Search(TitleIndex* t, CharStat* CStat1, CharStat* CStat2);
+		Search(CharStat* CStat1, CharStat* CStat2);
 		void load(string phrase);
 		void load(s32 articleNumber);
 		string currentHighlightedItem();
@@ -38,8 +39,8 @@ class Search
 		u8	scrollLongDown();
 		u8	scrollLongUp();
 		void display();
+		void setGlobals(Globals* globals);
 	private:
-		TitleIndex*	_titleindex;
 		CharStat*	_cstat1;
 		CharStat*	_cstat2;
 
@@ -59,6 +60,8 @@ class Search
 		s32 _absolute_LastArticleNumber;
 
 		u8	_wasScrolled;
+
+		Globals* _globals;
 };
 
 #endif

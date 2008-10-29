@@ -18,13 +18,13 @@
 #include "api.h"
 #include "chrlib.h"
 #include "TitleIndex.h"
+#include "Globals.h"
 
 #define MAX_SEARCH_RESULTS 128
 #define SEARCHRESULT_LINES 13
 
-Search::Search(TitleIndex* t, CharStat* CStat1, CharStat* CStat2)
+Search::Search(CharStat* CStat1, CharStat* CStat2)
 {
-	_titleindex = t;
 	_cstat1 = CStat1;
 	_cstat2 = CStat2;
 }
@@ -35,8 +35,8 @@ void Search::load(s32 articleNumber)
 
 	if (articleNumber < 0)
 		articleNumber = 0;
-	if (articleNumber >= _titleindex->NumberOfArticles())
-		articleNumber = _titleindex->NumberOfArticles() - 1;
+	if (articleNumber >= _globals->getTitleIndex()->NumberOfArticles())
+		articleNumber = _globals->getTitleIndex()->NumberOfArticles() - 1;
 
 	// getSuggestedArticleNumber is using the highest possible index
 	_absolute_CurrentArticleNumber = articleNumber;
@@ -44,10 +44,10 @@ void Search::load(s32 articleNumber)
 	_absolute_FirstArticleNumber = _absolute_CurrentArticleNumber;
 	_absolute_LastArticleNumber = _absolute_FirstArticleNumber + SEARCHRESULT_LINES - 1;
 
-	if ( _absolute_LastArticleNumber >= _titleindex->NumberOfArticles())
+	if ( _absolute_LastArticleNumber >= _globals->getTitleIndex()->NumberOfArticles())
 	{
-		_absolute_FirstArticleNumber -= _absolute_LastArticleNumber - _titleindex->NumberOfArticles() + 1;
-		_absolute_LastArticleNumber = _titleindex->NumberOfArticles() - 1;
+		_absolute_FirstArticleNumber -= _absolute_LastArticleNumber - _globals->getTitleIndex()->NumberOfArticles() + 1;
+		_absolute_LastArticleNumber = _globals->getTitleIndex()->NumberOfArticles() - 1;
 	}
 
 	_absolute_FirstDisplayNumber   = _absolute_FirstArticleNumber;
@@ -63,7 +63,7 @@ void Search::load(s32 articleNumber)
 	for (i=_absolute_FirstArticleNumber;i<=_absolute_LastArticleNumber;i++)
 	{
 		// getTitle is using the highest possible index
-		_list.push_back(_titleindex->getTitle(i));
+		_list.push_back(_globals->getTitleIndex()->getTitle(i));
 	}
 
 	_wasScrolled = 1;
@@ -71,7 +71,7 @@ void Search::load(s32 articleNumber)
 
 void Search::load(string phrase)
 {
-	load(_titleindex->getSuggestedArticleNumber(phrase));
+	load(_globals->getTitleIndex()->getSuggestedArticleNumber(phrase));
 }
 
 string Search::currentHighlightedItem()
@@ -138,7 +138,7 @@ u8 Search::scrollLineUp()
 		int i;
 		for (i=_absolute_CurrentArticleNumber;i>=_absolute_FirstArticleNumber;i--)
 		{
-			_list.push_front(_titleindex->getTitle(i));
+			_list.push_front(_globals->getTitleIndex()->getTitle(i));
 			_list_FirstArticleNumber++;
 			_list_FirstDisplayNumber++;
 			_list_CurrentArticleNumber++;
@@ -159,7 +159,7 @@ u8 Search::scrollLineUp()
 
 u8 Search::scrollLineDown()
 {
-	if (_absolute_CurrentArticleNumber >= _titleindex->NumberOfArticles() - 1)
+	if (_absolute_CurrentArticleNumber >= _globals->getTitleIndex()->NumberOfArticles() - 1)
 		return 0;
 	// we do one step more
 
@@ -182,16 +182,16 @@ u8 Search::scrollLineDown()
 		_list_LastArticleNumber += (SEARCHRESULT_LINES-1);
 		_absolute_LastArticleNumber += (SEARCHRESULT_LINES-1);
 
-		if (_absolute_LastArticleNumber > _titleindex->NumberOfArticles() - 1)
+		if (_absolute_LastArticleNumber > _globals->getTitleIndex()->NumberOfArticles() - 1)
 		{
-			_absolute_LastArticleNumber = _titleindex->NumberOfArticles() - 1;
+			_absolute_LastArticleNumber = _globals->getTitleIndex()->NumberOfArticles() - 1;
 			_list_LastArticleNumber = _absolute_LastArticleNumber - _absolute_FirstArticleNumber;
 		}
 
 		int i;
 		for (i=_absolute_CurrentArticleNumber;i<=_absolute_LastArticleNumber;i++)
 		{
-			_list.push_back(_titleindex->getTitle(i));
+			_list.push_back(_globals->getTitleIndex()->getTitle(i));
 		}
 
 		while (_list.size() > MAX_SEARCH_RESULTS)
@@ -245,8 +245,12 @@ u8 Search::scrollLongUp()
 
 u8 Search::scrollLongDown()
 {
-	u8 change = _absolute_CurrentArticleNumber==_titleindex->NumberOfArticles()-1?0:1;
+	u8 change = _absolute_CurrentArticleNumber==_globals->getTitleIndex()->NumberOfArticles()-1?0:1;
 	load(_absolute_CurrentArticleNumber+25*(SEARCHRESULT_LINES-1));
 	return change;
 }
 
+void Search::setGlobals(Globals* globals)
+{
+	_globals = globals;
+}

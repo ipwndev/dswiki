@@ -14,13 +14,12 @@
 
 #include <PA9.h>
 
-class Globals;
-
 class PercentIndicator
 {
 	public:
 		void update(int value);
 		void redraw();
+		void clear();
 	private:
 		int _currentValue;
 };
