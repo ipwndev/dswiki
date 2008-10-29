@@ -11,42 +11,18 @@
 //
 #include "Globals.h"
 
-void Globals::setPercentIndicator(PercentIndicator* percentIndicator)
-{
-	_percentIndicator = percentIndicator;
-}
+void Globals::setDumps(Dumps* dumps) { _dumps = dumps; }
+void Globals::setTitleIndex(TitleIndex* titleIndex) { _titleIndex = titleIndex; }
+void Globals::setWikiMarkupGetter(WikiMarkupGetter* wikiMarkupGetter) {	_wikiMarkupGetter = wikiMarkupGetter; }
+void Globals::setMarkup(Markup* markup) { _markup = markup; }
+void Globals::setSearch(Search* search) { _search = search; }
+void Globals::setPercentIndicator(PercentIndicator* percentIndicator) { _percentIndicator = percentIndicator; }
+void Globals::setStatusbar(Statusbar* statusbar) { _statusbar = statusbar; }
 
-PercentIndicator* Globals::getPercentIndicator()
-{
-	return _percentIndicator;
-}
-
-void Globals::setMarkup(Markup* markup)
-{
-	_markup = markup;
-}
-
-Markup* Globals::getMarkup()
-{
-	return _markup;
-}
-
-void Globals::setDumps(Dumps* dumps)
-{
-	_dumps = dumps;
-}
-
-Dumps* Globals::getDumps()
-{
-	return _dumps;
-}
-
-void Globals::setTitleIndex(TitleIndex* titleIndex)
-{
-	_titleIndex = titleIndex;
-}
-
-TitleIndex* Globals::getTitleIndex()
-{
-	return _titleIndex;
-}
+Dumps*            Globals::getDumps() {	return _dumps; }
+TitleIndex*       Globals::getTitleIndex() { return _titleIndex; }
+WikiMarkupGetter* Globals::getWikiMarkupGetter() { return _wikiMarkupGetter; }
+Markup*           Globals::getMarkup() { return _markup; }
+Search*           Globals::getSearch() { return _search; }
+PercentIndicator* Globals::getPercentIndicator() { return _percentIndicator; }
+Statusbar*        Globals::getStatusbar() { return _statusbar; }

@@ -36,6 +36,11 @@ void PercentIndicator::update(int value)
 	}
 }
 
+void PercentIndicator::clear()
+{
+	FillVS(&PercentArea,PA_RGB(26,26,26));
+}
+
 void PercentIndicator::redraw()
 {
 	FillVS(&PercentArea,PA_RGB(26,26,26));

@@ -9,33 +9,45 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
-#ifndef _GLOBALS_H
-#define _GLOBALS_H
+#ifndef GLOBALS_H_
+#define GLOBALS_H_
 
 #include <PA9.h>
 #include "struct.h"
 
-class PercentIndicator;
-class Markup;
 class Dumps;
 class TitleIndex;
+class WikiMarkupGetter;
+class Markup;
+class Search;
+class PercentIndicator;
+class Statusbar;
 
 class Globals
 {
 	public:
-		void setPercentIndicator(PercentIndicator* percentIndicator);
-		PercentIndicator* getPercentIndicator();
-		void setMarkup(Markup* markup);
-		Markup* getMarkup();
 		void setDumps(Dumps* dumps);
-		Dumps* getDumps();
 		void setTitleIndex(TitleIndex* titleIndex);
-		TitleIndex* getTitleIndex();
+		void setWikiMarkupGetter(WikiMarkupGetter* wikiMarkupGetter);
+		void setMarkup(Markup* markup);
+		void setSearch(Search* search);
+		void setPercentIndicator(PercentIndicator* percentIndicator);
+		void setStatusbar(Statusbar* statusbar);
+		Dumps*            getDumps();
+		TitleIndex*       getTitleIndex();
+		WikiMarkupGetter* getWikiMarkupGetter();
+		Markup*           getMarkup();
+		Search*           getSearch();
+		PercentIndicator* getPercentIndicator();
+		Statusbar*        getStatusbar();
 	private:
+		Dumps*            _dumps;
+		TitleIndex*       _titleIndex;
+		WikiMarkupGetter* _wikiMarkupGetter;
+		Markup*           _markup;
+		Search*           _search;
 		PercentIndicator* _percentIndicator;
-		Markup* _markup;
-		Dumps* _dumps;
-		TitleIndex* _titleIndex;
+		Statusbar*        _statusbar;
 };
 
 

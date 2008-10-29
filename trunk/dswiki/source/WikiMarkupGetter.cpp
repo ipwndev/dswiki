@@ -10,40 +10,19 @@
 #include "TitleIndex.h"
 #include "Globals.h"
 #include "PercentIndicator.h"
+#include "Dumps.h"
 
 #define BUFFER_SIZE 8192
 #define BZ_DECOMPRESS_SMALL 1
 
 
-WikiMarkupGetter::WikiMarkupGetter(vector<string> wikidbs)
+WikiMarkupGetter::WikiMarkupGetter()
 {
-	for (int i=0;i<wikidbs.size();i++)
-	{
-		FILE* _f = fopen(wikidbs[i].c_str(), "rb");
-		_filepointers.push_back(_f);
-		fseek(_f,0,SEEK_END);
-		fpos_t size = ftell(_f);
-		fseek(_f,0,SEEK_SET);
-		_filesizes.push_back(size);
-		u64 absoluteEnd;
-		if (i==0)
-			absoluteEnd = size-1;
-		else
-			absoluteEnd = _file_absoluteEnds[i-1] + size;
-		_file_absoluteEnds.push_back(absoluteEnd);
-	}
 }
 
-void WikiMarkupGetter::setNew(vector<string> wikidbs)
+void WikiMarkupGetter::load(string basename)
 {
-	for (int i=0;i<_filepointers.size();i++)
-	{
-		fclose(_filepointers[i]);
-	}
-	_filepointers.clear();
-	_filesizes.clear();
-	_file_absoluteEnds.clear();
-	_lastArticleTitle.clear();
+	vector<string> wikidbs = _globals->getDumps()->get_dbs(basename);
 	for (int i=0;i<wikidbs.size();i++)
 	{
 		FILE* _f = fopen(wikidbs[i].c_str(), "rb");
@@ -73,9 +52,9 @@ WikiMarkupGetter::~WikiMarkupGetter()
 	_lastArticleTitle.clear();
 }
 
-string WikiMarkupGetter::getMarkup(TitleIndex* t, string title)
+string WikiMarkupGetter::getMarkup(string title)
 {
-	ArticleSearchResult* articleSearchResult = t->findArticle(title, 1);
+	ArticleSearchResult* articleSearchResult = _globals->getTitleIndex()->findArticle(title, 1);
 	if ( !articleSearchResult )
 	{
 		return NULL;

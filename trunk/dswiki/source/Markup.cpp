@@ -308,7 +308,6 @@ Markup::Markup(string Str, CharStat* CStat, TitleIndex* titleindex)
 // 	Str=w2x.get_xml();
 
 	pos = 0;
-	_globals->getPercentIndicator()->update(0);
 
 	l = createLink(Str,pos,link_id++);
 
@@ -320,7 +319,6 @@ Markup::Markup(string Str, CharStat* CStat, TitleIndex* titleindex)
 		visibleChildren.push_back(*l);
 
 		pos = l->sourcePositionStart + l->sourceLength;
-		_globals->getPercentIndicator()->update(pos*100/Str.length());
 		delete l;
 
 		l = createLink(Str,pos,link_id++);
@@ -362,7 +360,6 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 
 	while (elementNumber<visibleChildren.size()) // Loop until every token is put on some line
 	{
-		_globals->getPercentIndicator()->update(PA_RandMinMax(0,100));
 		BLOCK FakeCA = {{0,0},{0,0}};
 		Markupline CurrentLine;
 
