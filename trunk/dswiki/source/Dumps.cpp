@@ -89,7 +89,7 @@ vector<string> Dumps::get_dbs(string basename)
 void Dumps::_setPossibleWikis()
 {
 	_possibleWikis.clear();
-	int line = 2;
+// 	int line = 2;
 	vector<string> filenames;
 	struct stat st;
 	char filename[256]; // to hold a full filename and string terminator

@@ -39,17 +39,13 @@ public:
 
 	void load(string basename);
 
+	string	getTitle(int articleNumber, u8 indexNo = 1, u8 setPosition = 0);
+
 	ArticleSearchResult*	findArticle(string title, u8 setPosition = 0);
 	ArticleSearchResult*	getRandomArticle();
 	ArticleSearchResult*	isRedirect(string markup);
-	string	getTitle(int articleNumber);
-	string	getTitle(int articleNumber, int indexNo, u8 setPosition = 1);
-	int		getSuggestedArticleNumber(string phrase);
+	int		getSuggestedArticleNumber(string phrase, u8 indexNo = 1, u8 setPosition = 0);
 	int		NumberOfArticles();
-	string	HeaderFileName();
-	string	DataIndexFileName();
-	string	Index0FileName();
-	string	Index1FileName();
 	string	ImageNamespace();
 	string	TemplateNamespace();
 	void setGlobals(Globals* globals);
@@ -60,7 +56,8 @@ private:
 	FILE*   _f_index0;
 	FILE*   _f_index1;
 
-	int		_numberOfArticles;
+	int     _numberOfArticles;
+	u8      _indexVersion;
 	u8      _using_index1;
 	bool	isChinese;
 
