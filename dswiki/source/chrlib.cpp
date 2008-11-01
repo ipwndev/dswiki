@@ -1,31 +1,73 @@
+#include "main.h"
 #include "chrlib.h"
 
 string trimPhrase(string Str)
 {
+	if (Str.empty())
+		return "";
+
 	int first = Str.find_first_not_of(" ");
 	int last = Str.find_last_not_of(" ");
+
 	if ((first==string::npos) || (last==string::npos))
 		return "";
-	Str = Str.substr(first,last-first+1);
 
-	first = 0;
-	while((first = Str.find("  ",first))!=string::npos)
-	{
-		Str.erase(first,1);
-	}
+	Str = Str.substr(first,last-first+1);
 	return Str;
 }
 
-string lowerPhrase(string phrase)
+
+
+string lowerPhrase(string phrase, u8 indexVersion)
 {
 	if (phrase.empty())
 		return "";
 	string dest = phrase;
-	tolower_utf8(&dest.at(0));
+	tolower_utf8(&dest.at(0),indexVersion);
 	return dest;
 }
 
-void tolower_utf8(char* data)
+string lowerPhraseNeu(string phrase)
+{
+	if (phrase.empty())
+		return "";
+	string dest = phrase;
+	char* Str = &dest.at(0);
+	u32 Uni;
+	u32 Skip = 0;
+	u32 l;
+	while(Str[Skip])
+	{
+		l = ToUTF(&Str[Skip],&Uni,UTF8);
+		for (int i=0;i<983;i++)
+		{
+			if (toLowerTable[i].UTF32_from == Uni)
+			{
+				char temp[5];
+				u32 codepoint[] = {toLowerTable[i].UTF32_to,0};
+				UTF2UTF8(codepoint,temp);
+				dest.replace(Skip,l,temp);
+				l = strlen(temp);
+			}
+		}
+		Skip+=l;
+	}
+	return dest;
+}
+
+
+u32 tolower_utf32(u32 UTF32Char)
+{
+	int i;
+	for (i=0;i<983;i++)
+	{
+		if (UTF32Char == toLowerTable[i].UTF32_from)
+			return toLowerTable[i].UTF32_to;
+	}
+	return UTF32Char;
+}
+
+void tolower_utf8(char* data, u8 indexVersion)
 {
 	if ( !data )
 		return;
@@ -58,8 +100,6 @@ string exchangeSGMLEntities(string phrase)
 	string entity;
 
 	int i;
-	u32 basis;
-
 	while (posStart<phrase.length())
 	{
 		posStart = phrase.find("&",posStart);
@@ -151,7 +191,6 @@ string exchangeSGMLEntities(string phrase)
 				u32 codepoint[] = {entities[i].codepoint,0};
 				UTF2UTF8(codepoint,replaced);
 				string neu = replaced;
-				int l = neu.length();
 				phrase.replace(entityStart,entity.length(),neu);
 				break;
 			}
@@ -161,37 +200,8 @@ string exchangeSGMLEntities(string phrase)
 	return phrase;
 }
 
-string treatNowikiText(string phrase)
-{
-	if (phrase.empty())
-		return phrase;
 
-	phrase = exchangeSGMLEntities(phrase);
-
-	int pos = 0;
-	while((pos = phrase.find("\n",pos))!=string::npos)
-	{
-		phrase.replace(pos,1," ");
-	}
-	pos = 0;
-	while((pos = phrase.find("  ",pos))!=string::npos)
-	{
-		phrase.erase(pos,1);
-	}
-	return phrase;
-}
-
-string treatPreText(string phrase)
-{
-	if (phrase.empty())
-		return phrase;
-
-	phrase = exchangeSGMLEntities(phrase);
-
-	return phrase;
-}
-
-string exchangeDiacriticCharsUTF8Phrase(string phrase)
+string exchangeDiacriticCharsUTF8Phrase(string phrase, u8 indexVersion)
 {
 	if ( phrase.empty() )
 		return phrase;
@@ -225,48 +235,46 @@ string exchangeDiacriticCharsUTF8Phrase(string phrase)
 }
 
 
-string preparePhrase(string phrase, u8 indexNo)
+string preparePhrase(string phrase, u8 indexNo, u8 indexVersion)
 {
+	phrase = trimPhrase(phrase);
 	if (indexNo==1)
-		return lowerPhrase(exchangeDiacriticCharsUTF8Phrase(lowerPhrase(trimPhrase(phrase))));
+		return lowerPhrase(exchangeDiacriticCharsUTF8Phrase(lowerPhrase(phrase,indexVersion),indexVersion), indexVersion);
 	else
-		return lowerPhrase(trimPhrase(phrase));
+		return lowerPhrase(phrase,indexVersion);
 }
 
 
-u8 ToUTF(const char* Chr, u32* UTF16, Lid Lang)
+u8 ToUTF(const char* Chr, u32* UTF32, Lid Lang)
 {
-	u16  Row    = 0;
-	u16  Col    = 0;
-	u16  Line   = 0;
 	u8   Length = 2;
 
 	switch(Lang)
 	{
 		case UTF:
-			UTF16[0]=Chr[1];
-			UTF16[0]=(UTF16[0]<<8)+Chr[0];
+			UTF32[0]=Chr[1];
+			UTF32[0]=(UTF32[0]<<8)+Chr[0];
 			break;
 		case UTF8:
 			if(Chr[0]<0x80)
 			{
-				UTF16[0]=Chr[0];
+				UTF32[0]=Chr[0];
 				Length=1;
 			}
 			else if ((Chr[0]&0xE0)==0xC0)
 			{
-				UTF16[0]=((Chr[0]&0x1C)>>2);
-				UTF16[0]=(UTF16[0]<<8)|((Chr[0]&0x3)<<6)|(Chr[1]&0x3F);
+				UTF32[0]=((Chr[0]&0x1C)>>2);
+				UTF32[0]=(UTF32[0]<<8)|((Chr[0]&0x3)<<6)|(Chr[1]&0x3F);
 			}
 			else if ((Chr[0]&0xF0)==0xE0)
 			{
-				UTF16[0]=((Chr[0]&0xF)<<4)|((Chr[1]&0x3C)>>2);
-				UTF16[0]=(UTF16[0]<<8)|((Chr[1]&0x3)<<6)|(Chr[2]&0x3F);
+				UTF32[0]=((Chr[0]&0xF)<<4)|((Chr[1]&0x3C)>>2);
+				UTF32[0]=(UTF32[0]<<8)|((Chr[1]&0x3)<<6)|(Chr[2]&0x3F);
 				Length=3;
 			}
 			else
 			{	// Correct encoding with more than three bytes, or a bad byte
-				UTF16[0]=0xFFFD;
+				UTF32[0]=0xFFFD;
 				if ((Chr[0]&0xF8)==0xF0)
 					Length=4;
 				else if ((Chr[0]&0xFC)==0xF8)
@@ -880,7 +888,7 @@ Font::Font()
 
 u8 * Font::getCharacterData(u32 Uni, Cut FontCut)
 {
-	u8* DATA;
+	u8* DATA = NULL;
 	switch (FontCut)
 	{
 		case REGULAR:

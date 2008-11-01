@@ -33,8 +33,6 @@ void TitleIndex::load(string basename)
 
 	if ( _f_header )
 	{
-		int error = 0;
-
 		FILEHEADER fileheader;
 
 		fread(&fileheader.languageCode,        2, 1, _f_header);
@@ -51,6 +49,7 @@ void TitleIndex::load(string basename)
 		_numberOfArticles  = fileheader.numberOfArticles;
 		_imageNamespace    = fileheader.imageNamespace;
 		_templateNamespace = fileheader.templateNamespace;
+		_indexVersion      = fileheader.version;
 
 		if (fileheader.indexPos_1)
 		{
@@ -93,10 +92,13 @@ TitleIndex::~TitleIndex()
 	}
 }
 
-string TitleIndex::getTitle(int articleNumber, int indexNo, u8 setPosition)
+string TitleIndex::getTitle(int articleNumber, u8 indexNo, u8 setPosition)
 {
 	if ( _numberOfArticles<=0  )
 		return "";
+
+	if (!(_using_index1))
+		indexNo = 0;
 
 	if ( articleNumber < 0 )
 		articleNumber = 0;
@@ -104,7 +106,7 @@ string TitleIndex::getTitle(int articleNumber, int indexNo, u8 setPosition)
 		articleNumber = _numberOfArticles - 1;
 
 	FILE* f_index = _f_index0;
-	if ( (indexNo==1) && (_using_index1) )
+	if ( indexNo==1 )
 		f_index = _f_index1;
 
 	int error = fseek(f_index, articleNumber*sizeof(int), SEEK_SET);
@@ -145,11 +147,6 @@ string TitleIndex::getTitle(int articleNumber, int indexNo, u8 setPosition)
 	return string(fgets(readstr,MAX_TITLE_LENGTH+1,_f_dataindex));
 }
 
-string TitleIndex::getTitle(int articleNumber)
-{
-	// Try index1, but the other getTitle has an integrated fallback to index0
-	return getTitle(articleNumber, 1, 0);
-}
 
 ArticleSearchResult* TitleIndex::findArticle(string title, u8 setPosition)
 {
@@ -162,19 +159,20 @@ ArticleSearchResult* TitleIndex::findArticle(string title, u8 setPosition)
 	int lBound = 0;
 	int uBound = _numberOfArticles - 1;
 	int index = 0;
+	string titleAtIndex;
 
 	while ( lBound<=uBound )
 	{
 		index = (lBound + uBound) >> 1;
 
 		// get the title at the specific index
-		string titleAtIndex = getTitle(index, 0, setPosition);
+		titleAtIndex = getTitle(index, 0, setPosition);
 
 		// make it lowercase and skip the prefix
 		titleAtIndex = lowerPhrase(titleAtIndex);
 
 		if ( lowercaseTitle<titleAtIndex )
-			uBound = index - 1;
+			uBound = --index;
 		else if ( lowercaseTitle>titleAtIndex )
 			lBound = ++index;
 		else
@@ -193,7 +191,7 @@ ArticleSearchResult* TitleIndex::findArticle(string title, u8 setPosition)
 	int startIndex = foundAt;
 	while ( startIndex>0 )
 	{
-		string titleAtIndex = getTitle(startIndex-1, 0, setPosition);
+		titleAtIndex = getTitle(startIndex-1, 0, setPosition);
 		titleAtIndex = lowerPhrase(titleAtIndex);
 
 		if ( lowercaseTitle != titleAtIndex )
@@ -205,7 +203,7 @@ ArticleSearchResult* TitleIndex::findArticle(string title, u8 setPosition)
 	int endIndex = foundAt;
 	while ( endIndex<(_numberOfArticles-1) )
 	{
-		string titleAtIndex = getTitle(endIndex+1, 0, setPosition);
+		titleAtIndex = getTitle(endIndex+1, 0, setPosition);
 		titleAtIndex = lowerPhrase(titleAtIndex);
 
 		if ( lowercaseTitle != titleAtIndex )
@@ -241,22 +239,25 @@ ArticleSearchResult* TitleIndex::findArticle(string title, u8 setPosition)
 	return NULL;
 }
 
-int TitleIndex::getSuggestedArticleNumber(string phrase)
+int TitleIndex::getSuggestedArticleNumber(string title, u8 indexNo, u8 setPosition)
 {
-	int indexNo = 0;
-	if ( _using_index1 )
-		indexNo = 1;
-
-	string lowercasePhrase = preparePhrase(phrase, indexNo);
-
-	int phraseLength = phrase.length();
-	if ( phraseLength==0 )
+	if ( _numberOfArticles<=0 )
 		return 0;
 
+	if ( title.empty() )
+		return 0;
+
+	if ( !(_using_index1) )
+		indexNo = 0;
+
+	string lowercaseTitle = preparePhrase(title, indexNo, _indexVersion);
+
+	int titleLength = title.length();
+
+	int foundAt = -1;
 	int lBound = 0;
 	int uBound = _numberOfArticles - 1;
 	int index = 0;
-	int foundAt = -1;
 	string titleAtIndex;
 
 	while ( lBound<=uBound )
@@ -264,13 +265,13 @@ int TitleIndex::getSuggestedArticleNumber(string phrase)
 		index = (lBound + uBound) >> 1;
 
 		// get the title at the specific index
-		titleAtIndex = getTitle(index, indexNo);
-		titleAtIndex = preparePhrase(titleAtIndex, indexNo);
+		titleAtIndex = getTitle(index, indexNo, setPosition);
+		titleAtIndex = preparePhrase(titleAtIndex, indexNo, _indexVersion);
 
-		if ( lowercasePhrase < titleAtIndex)
-			uBound = index - 1;
-		else if ( lowercasePhrase > titleAtIndex )
-			lBound = index + 1;
+		if ( lowercaseTitle < titleAtIndex)
+			uBound = --index;
+		else if ( lowercaseTitle > titleAtIndex )
+			lBound = ++index;
 		else
 		{
 			foundAt = index;
@@ -280,7 +281,7 @@ int TitleIndex::getSuggestedArticleNumber(string phrase)
 
 	if ( foundAt<0 ) // not found
 	{
-		if ( lowercasePhrase > titleAtIndex )
+		if ( lowercaseTitle > titleAtIndex )
 		{
 			index++;
 		}
@@ -292,13 +293,13 @@ int TitleIndex::getSuggestedArticleNumber(string phrase)
 	// go to the first article which starts with the phrase
 	while ( startIndex>0 )
 	{
-		titleAtIndex = getTitle(startIndex-1, indexNo);
-		titleAtIndex = preparePhrase(titleAtIndex, indexNo);
+		titleAtIndex = getTitle(startIndex-1, indexNo, setPosition);
+		titleAtIndex = preparePhrase(titleAtIndex, indexNo, _indexVersion);
 
-		if ( titleAtIndex.length() > phraseLength )
-			titleAtIndex.resize(phraseLength);
+		if ( titleAtIndex.length() > titleLength )
+			titleAtIndex.resize(titleLength);
 
-		if ( lowercasePhrase!=titleAtIndex )
+		if ( lowercaseTitle!=titleAtIndex )
 			break;
 
 		startIndex--;
@@ -341,7 +342,7 @@ ArticleSearchResult* TitleIndex::getRandomArticle()
 
 	int articleNo = PA_RandMax(_numberOfArticles-1);
 
-	string titleInArchive = getTitle(articleNo, 0);
+	string titleInArchive = getTitle(articleNo, 0, 1);
 
 	return new ArticleSearchResult(titleInArchive, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 }

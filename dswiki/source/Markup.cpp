@@ -7,6 +7,7 @@
 #include "main.h"
 #include "Globals.h"
 #include "PercentIndicator.h"
+#include "WIKI2XML.h"
 
 Element::~Element()
 {
@@ -226,63 +227,6 @@ string Markup::evaluateClick(s16 x,s16 y)
 	return "";
 }
 
-string splitNormal(string Str)
-{
-	return Str;
-}
-
-string splitPre(string Str)
-{
-	string markup = "";
-	u32 pos = 0;
-	while ((pos=Str.find("<pre>"))!=string::npos)
-	{
-		string temp = Str.substr(0,pos);
-		Str.erase(0,pos);
-		markup += splitNormal(temp);
-		if ((pos=Str.find("</pre>"))!=string::npos)
-		{
-			markup += treatPreText(Str.substr(5,pos-5));
-			Str.erase(0,pos+6);
-		}
-		else
-		{
-			markup += treatPreText(Str.substr(5));
-			Str.clear();
-		}
-	}
-	markup += splitNormal(Str);
-	Str.clear();
-
-	return markup;
-}
-
-void Markup::splitNowiki()
-{
-// 	string Str = _xml->FirstChild()->Value();
-// 	PA_OutputText(1,5,6,"%s",Str.c_str());
-
-/*	while ((pos=Str.find("<nowiki>"))!=string::npos)
-	{
-		string temp = Str.substr(0,pos);
-		Str.erase(0,pos);
-		markup += splitPre(temp);
-		if ((pos=Str.find("</nowiki>"))!=string::npos)
-		{
-			markup += treatNowikiText(Str.substr(8,pos-8));
-			Str.erase(0,pos+9);
-		}
-		else
-		{
-			markup += treatNowikiText(Str.substr(8));
-			Str.clear();
-		}
-	}
-	markup += splitPre(Str);
-	Str.clear();
-
-	return markup;*/
-}
 
 Markup::Markup(string Str, CharStat* CStat, TitleIndex* titleindex)
 {
@@ -293,19 +237,18 @@ Markup::Markup(string Str, CharStat* CStat, TitleIndex* titleindex)
 	_currentLine = 0;
 
 	u32 pos = 0;
-	u32 posPre = 0;
 	u32 link_id = 0;
-	Element* t2;
 	Element* l;
 
 	Str = exchangeSGMLEntities(Str);
 
-// 	vector<string> zeilen;
-// 	explode('\n',Str,zeilen);
-// 	WIKI2XML w2x(zeilen);
-// 	w2x.parse();
+	vector<string> zeilen;
+	explode('\n',Str,zeilen);
+// 	zeilen.push_back(Str);
+	WIKI2XML w2x(zeilen);
+	w2x.parse();
 
-// 	Str=w2x.get_xml();
+	Str = w2x.get_xml();
 
 	pos = 0;
 

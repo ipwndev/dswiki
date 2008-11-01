@@ -61,7 +61,6 @@ class Markup
 		string	evaluateClick(s16 x,s16 y);
 		void setGlobals(Globals* globals);
 	private:
-		void splitNowiki();
 		s32	_currentLine;
 		vector<Markupline>	lines;
 		vector<Element>	visibleChildren;

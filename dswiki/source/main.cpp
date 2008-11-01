@@ -19,6 +19,7 @@
 #include "Globals.h"
 #include "PercentIndicator.h"
 #include "Statusbar.h"
+#include "TextBox.h"
 
 Device UpScreen;
 Device DnScreen;
@@ -144,56 +145,57 @@ int main(int argc, char ** argv)
 // 		{
 // 			PA_OutputText(0,1,5+j,"%s",dbs[j].c_str());
 // 		}
-// 		PA_WaitFor(Pad.Newpress.Anykey);
+// 		PA_WaitFor(Pad.Anykey.Newpress);
 // 		PA_Sleep(120);
 // 	}
 // 	PA_OutputText(1,0,23,"Press any key...");
-// 	PA_WaitFor(Pad.Newpress.Anykey);
+// 	PA_WaitFor(Pad.Anykey.Newpress);
 
 // 	PA_ClearTextBg(0);
 	PA_ClearTextBg(1);
 
 	//  TODO: Use graphical interface from now on
 
+
 	int currentSelectedWiki = 0;
 
-	if ( possibleWikis.size() > 1 )
-	{
-		int loopi = 0;
-		PA_OutputText(1,1,0,"Choose Wiki\n-----------");
-		u8 updateSelectedWiki = 1;
-		while(1)
-		{
-			if (Pad.Newpress.A)
-			{
-				break;
-			}
-			if (Pad.Newpress.Up||Pad.Newpress.Down)
-			{
-				currentSelectedWiki += Pad.Newpress.Down-Pad.Newpress.Up;
-				if (currentSelectedWiki<0) currentSelectedWiki = 0;
-				if (currentSelectedWiki>possibleWikis.size()-1) currentSelectedWiki = possibleWikis.size()-1;
-				updateSelectedWiki = 1;
-				PA_Sleep(10);
-			}
-			if (updateSelectedWiki)
-			{
-				for (loopi=0;loopi<possibleWikis.size();loopi++) {
-					if (loopi==currentSelectedWiki)
-					{
-						PA_OutputText(1,2,2+loopi,"%c1%s",possibleWikis[loopi].c_str());
-					}
-					else
-					{
-						PA_OutputText(1,2,2+loopi,"%s",possibleWikis[loopi].c_str());
-					}
-				}
-				updateSelectedWiki = 0;
-			}
-			PA_WaitForVBL();
-		}
-		PA_ClearTextBg(1);
-	}
+// 	if ( possibleWikis.size() > 1 )
+// 	{
+// 		int loopi = 0;
+// 		PA_OutputText(1,1,0,"Choose Wiki\n-----------");
+// 		u8 updateSelectedWiki = 1;
+// 		while(1)
+// 		{
+// 			if (Pad.A.Newpress)
+// 			{
+// 				break;
+// 			}
+// 			if (Pad.Up.Newpress||Pad.Down.Newpress)
+// 			{
+// 				currentSelectedWiki += Pad.Down.Newpress-Pad.Up.Newpress;
+// 				if (currentSelectedWiki<0) currentSelectedWiki = 0;
+// 				if (currentSelectedWiki>possibleWikis.size()-1) currentSelectedWiki = possibleWikis.size()-1;
+// 				updateSelectedWiki = 1;
+// 				PA_Sleep(10);
+// 			}
+// 			if (updateSelectedWiki)
+// 			{
+// 				for (loopi=0;loopi<possibleWikis.size();loopi++) {
+// 					if (loopi==currentSelectedWiki)
+// 					{
+// 						PA_OutputText(1,2,2+loopi,"%c1%s",possibleWikis[loopi].c_str());
+// 					}
+// 					else
+// 					{
+// 						PA_OutputText(1,2,2+loopi,"%s",possibleWikis[loopi].c_str());
+// 					}
+// 				}
+// 				updateSelectedWiki = 0;
+// 			}
+// 			PA_WaitForVBL();
+// 		}
+// 		PA_ClearTextBg(1);
+// 	}
 
 
 	// important variables
@@ -236,6 +238,16 @@ int main(int argc, char ** argv)
 	BLOCK Btn_PageDown    = {{234,147},{255,168}};
 
 	BLOCK CharArea = {{  0, 0},{  0, 0}};
+
+	const u32 ollipolli[] = {0x0398,0x03B8,0x0399,0x03B9,0x039A,0x03BA,0x039B,0x03BB,0x039C,0x03BC};
+
+	string olli = "STRAẞE ABCÄÖ\u1e9eßẞ Ŧ¥ØĦŊJÐ ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫ";
+	string olli2 = lowerPhraseNeu(olli);
+	string olli3 = "ABCDEFGHIJKL";
+	char olli4[50] = "123456789";
+	olli3.replace(4,2,olli4,6);
+	iPrint(olli+"\n"+olli2,&ContentWin1,&NormalCS,&CharArea,PA_RGB(0,0,0),UTF8);
+// 	while(1);
 
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
@@ -298,7 +310,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if ((Pad.Newpress.Left||Pad.Held.Left))
+		if ((Pad.Left.Newpress||Pad.Left.Held))
 		{
 			if (markup->scrollPageUp())
 			{
@@ -308,7 +320,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.Newpress.Right||Pad.Held.Right)
+		if (Pad.Right.Newpress||Pad.Right.Held)
 		{
 			if (markup->scrollPageDown())
 			{
@@ -318,7 +330,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.Newpress.Up||Pad.Held.Up)
+		if (Pad.Up.Newpress||Pad.Up.Held)
 		{
 			if (markup->scrollLineUp())
 			{
@@ -328,7 +340,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if ((Pad.Newpress.Down||Pad.Held.Down))
+		if ((Pad.Down.Newpress||Pad.Down.Held))
 		{
 			if (markup->scrollLineDown())
 			{
@@ -338,7 +350,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.Newpress.A)
+		if (Pad.A.Newpress)
 		{
 			suchtitel.clear();
 			forcedLine = 0;
@@ -346,11 +358,11 @@ int main(int argc, char ** argv)
 			loadArticle = 1;
 		}
 
-		if (Pad.Newpress.B)
+		if (Pad.B.Newpress)
 		{
 		}
 
-		if (Pad.Newpress.X)
+		if (Pad.X.Newpress)
 		{
 			PA_Clear16bitBg(1);
 			PA_Clear16bitBg(0);
@@ -395,6 +407,7 @@ int main(int argc, char ** argv)
 			while(1)
 			{
 				letter = PA_CheckKeyboard();
+				if (letter > 0) PA_OutputText(1,29,23,"%d  ",letter);
 
 				if (letter > 31) { // there is a new letter
 					suchtitel.insert(suchtitel.begin()+cursorPosition,letter);
@@ -425,7 +438,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ( (letter == '\n') || (Pad.Newpress.A) )
+				if ( (letter == '\n') || (Pad.A.Newpress) )
 				{
 					suchtitel = s->currentHighlightedItem();
 					forcedLine = 0;
@@ -547,7 +560,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.Newpress.Up||Pad.Held.Up))
+				if ((Pad.Up.Newpress||Pad.Up.Held))
 				{
 					if (s->scrollLineUp())
 					{
@@ -556,7 +569,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.Newpress.Down||Pad.Held.Down))
+				if ((Pad.Down.Newpress||Pad.Down.Held))
 				{
 					if (s->scrollLineDown())
 					{
@@ -565,7 +578,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.Newpress.Left||Pad.Held.Left))
+				if ((Pad.Left.Newpress||Pad.Left.Held))
 				{
 					if (s->scrollPageUp())
 					{
@@ -574,7 +587,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.Newpress.Right||Pad.Held.Right))
+				if ((Pad.Right.Newpress||Pad.Right.Held))
 				{
 					if (s->scrollPageDown())
 					{
@@ -583,7 +596,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.Newpress.L||Pad.Held.L))
+				if ((Pad.L.Newpress||Pad.L.Held))
 				{
 					if (s->scrollLongUp())
 					{
@@ -591,7 +604,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.Newpress.R||Pad.Held.R))
+				if ((Pad.R.Newpress||Pad.R.Held))
 				{
 					if (s->scrollLongDown())
 					{
@@ -600,7 +613,7 @@ int main(int argc, char ** argv)
 				}
 
 
-				if (Pad.Newpress.X)
+				if (Pad.X.Newpress)
 				{
 					break;
 				}
@@ -616,8 +629,6 @@ int main(int argc, char ** argv)
 
 				if (updateCursor)
 				{
-					u16 cursorX = 0;
-					int i;
 					CharArea = (BLOCK) {{2,5},{0,0}};
 					iPrint(suchtitel.substr(0,cursorPosition),&Searchbar,&SearchResultsCS3,&CharArea,-1,UTF8);
 					BLOCK temp = {{CharArea.Start.x-1,2},{CharArea.Start.x-1,19}};
@@ -658,11 +669,11 @@ int main(int argc, char ** argv)
 			updateStatusbarVS = 1;
 		}
 
-		if (Pad.Newpress.Y)
+		if (Pad.Y.Newpress)
 		{
 		}
 
-		if (Pad.Newpress.L)
+		if (Pad.L.Newpress)
 		{
 			if (h->back())
 			{
@@ -673,7 +684,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.Newpress.R)
+		if (Pad.R.Newpress)
 		{
 			if (h->forward())
 			{
@@ -684,11 +695,11 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.Newpress.Start)
+		if (Pad.Start.Newpress)
 		{
 		}
 
-		if (Pad.Newpress.Select)
+		if (Pad.Select.Newpress)
 		{
 			int currentSelectedWikiBackup = currentSelectedWiki;
 			if (possibleWikis.size()>1)
@@ -699,7 +710,7 @@ int main(int argc, char ** argv)
 				u8 updateSelectedWiki = 1;
 				while(1)
 				{
-					if (Pad.Newpress.A)
+					if (Pad.A.Newpress)
 					{
 						delete t;
 						t = new TitleIndex();
@@ -719,14 +730,14 @@ int main(int argc, char ** argv)
 						loadArticle = 1;
 						break;
 					}
-					if (Pad.Newpress.B)
+					if (Pad.B.Newpress)
 					{
 						currentSelectedWiki = currentSelectedWikiBackup;
 						break;
 					}
-					if (Pad.Newpress.Up||Pad.Newpress.Down)
+					if (Pad.Up.Newpress||Pad.Down.Newpress)
 					{
-						currentSelectedWiki += Pad.Newpress.Down-Pad.Newpress.Up;
+						currentSelectedWiki += Pad.Down.Newpress-Pad.Up.Newpress;
 						if (currentSelectedWiki<0) currentSelectedWiki = 0;
 						if (currentSelectedWiki>possibleWikis.size()-1) currentSelectedWiki = possibleWikis.size()-1;
 						updateSelectedWiki = 1;
