@@ -21,29 +21,28 @@
 */
 
 const char version[] = "0.65b";
-const char dsversion[] = "1.0.1";
+const char dsversion[] = "1.0.2";
+#define INDEX_VERSION 2
 
 #ifdef _WIN32
-
 // windows defines
 #define WIN32_LEAN_AND_MEAN 	// Exclude rarely-used stuff from Windows headers
-
-// VC7/VC8 has no fseeko, you have to use _fseeki64
 #define fseeko fseek
 #define ftello ftell
 #pragma warning(disable : 4996)
-
 #endif
 
 #define _FILE_OFFSET_BITS 64   // needed on Linux
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <bzlib.h>
+#include <string>
+#include <map>
+#include <vector>
 #include "char_convert.h"
 #include "indexer.h"
 
@@ -57,10 +56,6 @@ const char dsversion[] = "1.0.1";
 #define SPLIT_SIZE 2000000000
 
 FILE*   srcFile = NULL;
-
-FILE*	titlesFile = NULL;
-
-FILE*	imageTitlesFile = NULL;
 
 unsigned char numberOfBZippedFile = 0;
 int numberOfIgnoredNamespaces = 0;
@@ -76,6 +71,7 @@ BZFILE* destBZFile      = NULL;
 
 char    articlesidx[13] = "articles.idx";
 FILE*   file_idx        = NULL;
+size_t  articlesTitlesSize;
 
 char    articlesao1[13] = "articles.ao1";
 FILE*   file_ao1        = NULL;
@@ -83,9 +79,8 @@ FILE*   file_ao1        = NULL;
 char    articlesao2[13] = "articles.ao2";
 FILE*   file_ao2        = NULL;
 
-
-const char* articlesTitlesTempFileName = "titles.tmp";
 char  imageTitlesFileName[20] = "images.txt";
+FILE*	imageTitlesFile = NULL;
 
 char* imagesPrefix = NULL;
 
@@ -93,10 +88,12 @@ size_t currentDestSize = 0;
 offset_t currentBlockPos = 0;
 offset_t previousBlockPos = 0;
 
-size_t articlesTitlesSize;
 char* articlesTitles;
-
 int* articlesIndex;
+
+vector<string> aTitles;
+vector<string> aTitlesOriginal;
+
 
 bool internalIndexingStats = false;
 IndexStatus *indexStatus = NULL;
@@ -110,36 +107,8 @@ bool removedUnusedArticles = true;				// skip some namespaces, i.e. Image, Wikip
 bool verbose = true;							// except for the copyright and done message be silent
 bool standaloneApp = true;						// don't write anything to the console window
 bool includeTitleInImagelist = false;			// only for debugging: include a line for each scanned articel in images.txt
+bool createSecondIndexTextfile = false;			// only for debugging: print the second index to articles.txt
 
-// simply comnvert %xx to the corresponding char
-void url_decode(char* data)
-{
-	if ( !*data )
-		return;
-
-	char* src = data;
-	char* dst = data;
-
-	while ( *src )
-	{
-		unsigned char c = *src++;
-		if ( c=='%' && *src && *(src+1) )
-		{
-			unsigned char d = tolower(*src++) - '0';
-			if ( d>10 )
-				d -= ('a' - '0' - 10);
-
-			unsigned char e = tolower(*src++) - '0';
-			if ( e>10 )
-				e -= ('a' - '0' - 10);
-
-			*dst++ = d * 0x10 + e;
-		}
-		else
-			*dst++ = c;
-	}
-	*dst = 0x0;
-}
 
 // Adds an integer value as an utf8 encoded char to the destion string
 inline void AddUtf8Coding(unsigned int number, char* dst)
@@ -222,13 +191,13 @@ static void Quicksort(int left, int right)
 		int i = left;
 		int j = right - 1;
 
-		char* pivotTitle = articlesTitles + articlesIndex[right] + SIZEOF_POSITION_INFORMATION;
+		string pivotTitle = aTitles[right];
 		do
 		{
 			while ( i<right )
 			{
-				char* title = articlesTitles + articlesIndex[i] + SIZEOF_POSITION_INFORMATION;
-				if ( strcmp(title, pivotTitle)<=0 )
+				string title = aTitles[i];
+				if ( title <= pivotTitle )
 					i++;
 				else
 					break;
@@ -236,8 +205,8 @@ static void Quicksort(int left, int right)
 
 			while ( j>left )
 			{
-				char* title = articlesTitles + articlesIndex[j] + SIZEOF_POSITION_INFORMATION;
-				if ( strcmp(pivotTitle, title)<=0 )
+				string title = aTitles[j];
+				if ( pivotTitle <= title )
 					j--;
 				else
 					break;
@@ -245,6 +214,12 @@ static void Quicksort(int left, int right)
 
 			if ( i<j )
 			{
+				string h = aTitles[i];
+				aTitles[i] = aTitles[j];
+				aTitles[j] = h;
+				h = aTitlesOriginal[i];
+				aTitlesOriginal[i] = aTitlesOriginal[j];
+				aTitlesOriginal[j] = h;
 				int help = articlesIndex[i];
 				articlesIndex[i] = articlesIndex[j];
 				articlesIndex[j] = help;
@@ -253,6 +228,12 @@ static void Quicksort(int left, int right)
 		while (i < j);
 		if ( i!=right )
 		{
+			string h = aTitles[i];
+			aTitles[i] = aTitles[right];
+			aTitles[right] = h;
+			h = aTitlesOriginal[i];
+			aTitlesOriginal[i] = aTitlesOriginal[right];
+			aTitlesOriginal[right] = h;
 			int help = articlesIndex[i];
 			articlesIndex[i] = articlesIndex[right];
 			articlesIndex[right] = help;
@@ -336,10 +317,10 @@ static void WriteArticle(char* title, char* text)
 	// title in plain utf-8 coding
 	// terminating zero
 
-	fwrite(&currentBlockPos, 1, sizeof currentBlockPos, titlesFile);
-	fwrite(&currentDestSize, 1, sizeof currentDestSize, titlesFile);
-	fwrite(&length, 1, sizeof length, titlesFile);
-	fwrite(title, 1, strlen(title)+1, titlesFile);
+	fwrite(&currentBlockPos, 1, sizeof currentBlockPos, file_idx);
+	fwrite(&currentDestSize, 1, sizeof currentDestSize, file_idx);
+	fwrite(&length, 1, sizeof length, file_idx);
+	fwrite(title, 1, strlen(title)+1, file_idx);
 
 	// put the text to the articles data file
 	// the text /may/ likely span multiple blocks, but /never/ multiple files
@@ -355,8 +336,10 @@ void Help()
 	if ( !standaloneApp )
 		return;
 
-	printf("Usage:\r\n  indexer <filename> \r\n\r\n");
-	printf("   filename: articles file from wikipedia like \n\t 'enwiki-latest-pages-articles.xml.bz2'\r\n");
+	printf("Usage:\r\n  indexer [-a] <filename> \r\n\r\n");
+	printf("   filename: articles file from wikipedia like 'enwiki-latest-pages-articles.xml.bz2'\r\n");
+	printf("    -a : Add all articles (not removing namespaces \n\t like 'Help', 'Category' etc.)\r\n");
+	printf("    -t : Create the file articles.txt containing\n\t all article titles (not needed by DSwiki).\r\n");
 	printf("\r\n");
 }
 
@@ -414,13 +397,6 @@ void FreeIngoredNamespacesData()
 
 void CleanupAfterError()
 {
-	if ( titlesFile )
-	{
-		fclose(titlesFile);
-		remove(articlesTitlesTempFileName);
-		titlesFile = NULL;
-	}
-
 	if ( file_dbz )
 	{
 		fclose(file_dbz);
@@ -504,6 +480,21 @@ static int index(int argc, char* argv[])
 	{
 		if ( argv[i][0]=='-' )
 		{
+			for (size_t j=1; j<strlen(argv[i]); j++)
+			{
+				switch( argv[i][j] )
+				{
+					case 'a':
+						removedUnusedArticles = false;
+						break;
+					case 't':
+						createSecondIndexTextfile = true;
+						break;
+					default:
+						Help();
+						break;
+				}
+			}
 		}
 		else
 		{
@@ -521,6 +512,28 @@ static int index(int argc, char* argv[])
 		}
 	}
 
+	for (int i=1; i<argc; i++)
+	{
+		if ( argv[i][0]=='-' )
+		{
+		}
+		else
+		{
+			sourceFileName = argv[i];
+
+			i++;
+
+			if ( standaloneApp )
+			{
+				while ( i<argc )
+					printf("warning: additional argument '%s' ignored.\r\n", argv[i++]);
+			}
+			else
+				i = argc;
+		}
+	}
+
+
 	if ( !sourceFileName )
 	{
 		Help();
@@ -531,7 +544,6 @@ static int index(int argc, char* argv[])
 	srcFile = NULL;
 	imageTitlesFile = NULL;
 	destBZFile = NULL;
-	titlesFile = NULL;
 
 	numberOfIgnoredNamespaces = 0;
 	ignoredNamespaces = NULL;
@@ -606,20 +618,9 @@ static int index(int argc, char* argv[])
 	memset(&fileHeader, 0, sizeof fileHeader);
 	fileHeader.languageCode[0] = tolower(sourceFileName[0]);
 	fileHeader.languageCode[1] = tolower(sourceFileName[1]);
-	fileHeader.version = 1;
+	fileHeader.version = INDEX_VERSION;
 
 	bool chinesesCharacters = (fileHeader.languageCode[0]=='z' && fileHeader.languageCode[1]=='h');
-
-	titlesFile = 0;
-	if ( !extractImagesOnly )
-	{
-		titlesFile = fopen(articlesTitlesTempFileName, "wb");
-		if ( !titlesFile )
-		{
-			CleanupAfterError();
-			return 1;
-		}
-	}
 
 	imageTitlesFile = 0;
 	if ( !dontExtractImages )
@@ -779,7 +780,7 @@ static int index(int argc, char* argv[])
 
 							// this prevents that the memory is freed
 							content = NULL;
-							
+
 							contentRemain = 0;
 							contentSize = 0;
 						}
@@ -899,6 +900,8 @@ static int index(int argc, char* argv[])
 		}
 	}
 
+	fclose(file_idx); file_idx = NULL;
+
 	if ( content )
 	{
 		free(content);
@@ -941,11 +944,6 @@ static int index(int argc, char* argv[])
 		BZ2_bzWriteClose(&bzerror, destBZFile, 0, NULL, NULL);
 		destBZFile = NULL;
 	}
-	if ( titlesFile )
-	{
-		fclose(titlesFile);
-		titlesFile = NULL;
-	}
 
 	BZ2_bzReadClose(&bzerror, bzf);
 	fclose(srcFile);
@@ -965,6 +963,12 @@ static int index(int argc, char* argv[])
 		return 0;
 	}
 
+	if ( file_dbz )
+	{
+		fileHeader.titlesPos = previousBlockPos+ftello(file_dbz)+sizeof(FILEHEADER);
+		fileHeader.numberOfArticles = indexStatus->articlesWritten;
+	}
+
 	/* Indexing (one or two are created )*/
 	int index = 0;
 	int indexes = addIndexWithDiacriticsRemoved ? 2 : 1;
@@ -977,7 +981,7 @@ static int index(int argc, char* argv[])
 		}
 
 		struct stat statbuf;
-		if (stat(articlesTitlesTempFileName, &statbuf) < 0)
+		if (stat(articlesidx, &statbuf) < 0)
 		{
 			CleanupAfterError();
 			if ( standaloneApp )
@@ -997,7 +1001,7 @@ static int index(int argc, char* argv[])
 			return 1;
 		}
 
-		FILE* f = fopen(articlesTitlesTempFileName, "rb");
+		FILE* f = fopen(articlesidx, "rb");
 		if ( !f )
 		{
 			CleanupAfterError();
@@ -1018,20 +1022,15 @@ static int index(int argc, char* argv[])
 		}
 		fclose(f);
 
-		if (file_dbz &&  index==0)
-		{
-			// on the first run append the article titles at the end of the file
-			fileHeader.titlesPos=previousBlockPos+ftello(file_dbz)+sizeof(FILEHEADER);
-			fwrite(articlesTitles, 1, articlesTitlesSize, file_idx); // IDX: OK
-
-			fileHeader.numberOfArticles = indexStatus->articlesWritten;
-		}
 
 		if ( verbose )
 			printf("lowering and indexing articles titles\r\n");
 
 		articlesIndex = (int*) malloc(indexStatus->articlesWritten * sizeof(int));
 		int no = 0;
+
+		aTitles.clear();
+		aTitlesOriginal.clear();
 
 		char* help = articlesTitles;
 		while ( (help-articlesTitles) < (int) read )
@@ -1041,20 +1040,22 @@ static int index(int argc, char* argv[])
 			// skip the binary position information (8+4+4 bytes)
 			help += SIZEOF_POSITION_INFORMATION;
 
-			size_t length = strlen(help);
+			string titleTest = help;
+			int length = titleTest.length();
 
-			// lower the title (it is utf8 encoded so take that into account)
-			tolower_utf8(help);
-
+			aTitlesOriginal.push_back(titleTest);
 			// remove the diacritics (only for index number 1)
 			// attention this may change the length so length calculation has to be done before
 			if ( index==1 )
 			{
-				if ( !chinesesCharacters )
-					exchange_diacritic_chars_utf8(help);
-				else
-					tc2sc_utf8(help);
+				titleTest = lowerPhrase(exchangeDiacriticChars(lowerPhrase(titleTest,INDEX_VERSION),INDEX_VERSION),INDEX_VERSION);
 			}
+			else
+			{
+				titleTest = lowerPhrase(titleTest,INDEX_VERSION);
+			}
+
+			aTitles.push_back(titleTest);
 
 			// go to the start of the next title
 			help += (length + 1);
@@ -1062,17 +1063,27 @@ static int index(int argc, char* argv[])
 
 		if ( verbose )
 			printf("sorting index\r\n");
+
 		Quicksort(0, indexStatus->articlesWritten-1);
+
+		if (createSecondIndexTextfile && (index==1))
+		{
+			FILE* f_titles = fopen("articles.txt","w");
+			for (int i=0;i<indexStatus->articlesWritten; i++)
+				fprintf(f_titles,"%s\n",aTitlesOriginal[i].c_str());
+			fclose(f_titles);
+		}
 
 		if ( verbose )
 			printf("checking index: ");
 
 		bool failed = false;
-		char* title = articlesTitles + articlesIndex[0] + SIZEOF_POSITION_INFORMATION;
+		string title = aTitles[0];
+
 		for (int i=1; i<indexStatus->articlesWritten; i++)
 		{
-			char* next = articlesTitles + articlesIndex[i] + SIZEOF_POSITION_INFORMATION;
-			if ( strcmp(title, next)>0 )
+			string next = aTitles[i];
+			if ( title > next )
 			{
 				failed = true;
 				break;
@@ -1094,13 +1105,15 @@ static int index(int argc, char* argv[])
 			if ( index==0 )
 			{
 				fwrite(articlesIndex, 1, indexStatus->articlesWritten * sizeof(int), file_ao1);
-				fileHeader.indexPos_0 = sizeof(FILEHEADER)+previousBlockPos+ftello(file_dbz)+ftello(file_idx);
+				fileHeader.indexPos_0 = sizeof(FILEHEADER)+previousBlockPos+ftello(file_dbz)+articlesTitlesSize;
 			}
 			else
 			{
 				fwrite(articlesIndex, 1, indexStatus->articlesWritten * sizeof(int), file_ao2);
-				fileHeader.indexPos_1 = sizeof(FILEHEADER)+previousBlockPos+ftello(file_dbz)+ftello(file_idx)+ftello(file_ao1);
+				fileHeader.indexPos_1 = sizeof(FILEHEADER)+previousBlockPos+ftello(file_dbz)+articlesTitlesSize+ftello(file_ao1);
 			}
+			if ( verbose )
+				printf("written\r\n");
 		}
 		else
 		{
@@ -1115,9 +1128,6 @@ static int index(int argc, char* argv[])
 		free(articlesTitles);
 	}
 
-	// remove the temp file
-	remove(articlesTitlesTempFileName);
-
 	if ( imagesPrefix )
 		free(imagesPrefix);
 
@@ -1130,13 +1140,13 @@ static int index(int argc, char* argv[])
 		internalIndexingStats = false;
 	}
 
-	fwrite(&fileHeader, sizeof fileHeader, 1, file_ifo); // IDX: OK
+	fwrite(&fileHeader, sizeof fileHeader, 1, file_ifo);
+
 	fclose(file_ifo); file_ifo = NULL;
 	fclose(file_dbz); file_dbz = NULL;
-	fclose(file_idx); file_idx = NULL;
 	fclose(file_ao1); file_ao1 = NULL;
 	fclose(file_ao2); file_ao2 = NULL;
-	
+
 	if ( standaloneApp )
 		printf("Done.\r\n\r\n");
 
