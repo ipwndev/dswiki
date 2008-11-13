@@ -1,6 +1,6 @@
 #include "api.h"
 
-u8 IsInArea(BLOCK Area, POINT Point)
+unsigned char IsInArea(BLOCK Area, POINT Point)
 {
 	if((Point.x>Area.Start.x)&&(Point.x<Area.End.x))
 	{
@@ -12,7 +12,7 @@ u8 IsInArea(BLOCK Area, POINT Point)
 	return 0;
 }
 
-BLOCK CreateBlock(s32 xoff, s32 yoff, s32 w, s32 h)
+BLOCK CreateBlock(int xoff, int yoff, int w, int h)
 {
 	BLOCK result;
 	result.Start.x = xoff;
@@ -32,7 +32,7 @@ BLOCK Intersection(BLOCK Area1,BLOCK Area2)
 	return Result;
 }
 
-void DrawPoint(const VirScreen* VScreen, s32 X, s32 Y, u16 Color)
+void DrawPoint(const VirScreen* VScreen, int X, int Y, unsigned short int Color)
 {
 	if((X>=0)&&(Y>=0)&&(X<VScreen->Width)&&(Y<VScreen->Height))
 	{
@@ -43,22 +43,22 @@ void DrawPoint(const VirScreen* VScreen, s32 X, s32 Y, u16 Color)
 	}
 }
 
-void DrawBlock(const VirScreen* VScreen, BLOCK Area, u16 Color, u8 Fill)
+void DrawBlock(const VirScreen* VScreen, BLOCK Area, unsigned short int Color, unsigned char Fill)
 {
-	s32 ASx = Area.Start.x;
-	s32 AEx = Area.End.x;
-	s32 ASy = Area.Start.y;
-	s32 AEy = Area.End.y;
+	int ASx = Area.Start.x;
+	int AEx = Area.End.x;
+	int ASy = Area.Start.y;
+	int AEy = Area.End.y;
 
 	if ((ASx<=AEx)&&(ASy<=AEy)) // Regular Block
 	{
-		s32 W = 0;
-		s32 H = 0;
+		int W = 0;
+		int H = 0;
 
 		if(Fill)
 		{
-			s32 Gw    = VScreen->Width;
-			s32 Gh    = VScreen->Height;
+			int Gw    = VScreen->Width;
+			int Gh    = VScreen->Height;
 			if (Area.Start.x                 < 0)                        Area.Start.x = 0;
 			if (Area.Start.y                 < 0)                        Area.Start.y = 0;
 			if (Area.End.x                   >= Gw)                      Area.End.x   = VScreen->Width-1;
@@ -68,8 +68,8 @@ void DrawBlock(const VirScreen* VScreen, BLOCK Area, u16 Color, u8 Fill)
 			if (Area.End.x   + VScreen->Left >= VScreen->Screen->Width)  Area.End.x   = VScreen->Screen->Width-VScreen->Left-1;
 			if (Area.End.y   + VScreen->Top  >= VScreen->Screen->Height) Area.End.y   = VScreen->Screen->Height-VScreen->Top-1;
 
-			u16* DISPLAY=(u16*)VScreen->Screen->Ptr;
-			u8 First=1;
+			unsigned short int* DISPLAY=(unsigned short int*)VScreen->Screen->Ptr;
+			unsigned char First=1;
 
 			for(H=Area.Start.y;H<=Area.End.y;H++)
 			{
@@ -106,21 +106,21 @@ void DrawBlock(const VirScreen* VScreen, BLOCK Area, u16 Color, u8 Fill)
 	}
 }
 
-void DrawBlock(const Device* Dev, BLOCK Area, u16 Color, u8 Fill)
+void DrawBlock(const Device* Dev, BLOCK Area, unsigned short int Color, unsigned char Fill)
 {
 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
 	DrawBlock(&VScreen, Area, Color, Fill);
 }
 
-void DrawEmboss(const VirScreen* VScreen, BLOCK Area, u16 Color)
+void DrawEmboss(const VirScreen* VScreen, BLOCK Area, unsigned short int Color)
 {
 	if ((Area.Start.x<=Area.End.x)&&(Area.Start.y<=Area.End.y)) // Regular Block
 	{
-		u8 R=(Color>>10)&0x1F;
-		u8 G=(Color>>5 )&0x1F;
-		u8 B=(Color    )&0x1F;
-		u16 TempColor;
-		s32 W=0,H=0;
+		unsigned char R=(Color>>10)&0x1F;
+		unsigned char G=(Color>>5 )&0x1F;
+		unsigned char B=(Color    )&0x1F;
+		unsigned short int TempColor;
+		int W=0,H=0;
 
 		R=R*7/10;
 		G=G*7/10;
@@ -149,15 +149,15 @@ void DrawEmboss(const VirScreen* VScreen, BLOCK Area, u16 Color)
 	}
 }
 
-void DrawGroove(const VirScreen* VScreen, BLOCK Area, u16 Color)
+void DrawGroove(const VirScreen* VScreen, BLOCK Area, unsigned short int Color)
 {
 	if ((Area.Start.x<=Area.End.x)&&(Area.Start.y<=Area.End.y)) // Regular Block
 	{
-		u8 R=(Color>>10)&0x1F;
-		u8 G=(Color>>5 )&0x1F;
-		u8 B=(Color    )&0x1F;
-		u16 TempColor;
-		s32 W=0,H=0;
+		unsigned char R=(Color>>10)&0x1F;
+		unsigned char G=(Color>>5 )&0x1F;
+		unsigned char B=(Color    )&0x1F;
+		unsigned short int TempColor;
+		int W=0,H=0;
 
 		R>>=1;
 		G>>=1;
@@ -186,7 +186,7 @@ void DrawGroove(const VirScreen* VScreen, BLOCK Area, u16 Color)
 	}
 }
 
-void FillVS(VirScreen* VScreen, u16 Color)
+void FillVS(VirScreen* VScreen, unsigned short int Color)
 {
 	BLOCK fullVS = {{0,0},{VScreen->Width-1,VScreen->Height-1}};
 	DrawBlock(VScreen,fullVS,Color,1);

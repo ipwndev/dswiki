@@ -1,5 +1,7 @@
 #include <PA9.h>
 #include <fat.h>
+#include "efs_lib.h"
+#include "KT_lib.h"
 #include <sys/dir.h>
 #include <vector>
 #include <string>
@@ -9,6 +11,7 @@
 #include "api.h"
 #include "struct.h"
 #include "chrlib.h"
+#include "char_convert.h"
 #include "Cache.h"
 #include "History.h"
 #include "Markup.h"
@@ -24,6 +27,8 @@
 Device UpScreen;
 Device DnScreen;
 CharStat NormalCS;
+CharStat ContentCS;
+CharStat ErrorCS;
 CharStat StatusbarCS;
 CharStat StatErrorCS;
 VirScreen PercentArea;
@@ -32,62 +37,108 @@ VirScreen ContentWin1;
 VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
+#define DEBUG 0
+
 int main(int argc, char ** argv)
 {
 	// PAlib initialization
 	PA_Init();
 	PA_InitVBL();
+	KT_Init();
+	KT_UseEFS();
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
 
-	PA_InitText   (1, 2);
+	PA_SetBrightness(0,-31);
+	PA_SetBrightness(1,-31);
 
-	PA_InitKeyboard(2);
-	PA_KeyboardOut();
+	if (!PA_InitFat())
+	{
+		PA_OutputText(1,24,0,"Failed initializing FAT");
+		return 0;
+	}
 
+	if(!EFS_Init(EFS_ONLY | EFS_DEFAULT_DEVICE, NULL))
+	{
+		PA_OutputText(1,24,0,"Failed initializing EFS");
+		return 0;
+	}
+
+#if !DEBUG
+	// intro screens from EFS
+	unsigned char breakIntro = 0;
+	KT_LoadGif(0, "dswiki/splash/dswiki", 0, 0);
+	KT_LoadGif(1, "dswiki/splash/splash1", 0, 0);
+	for (int i=-31;i<=0;i++)
+	{
+		PA_SetBrightness(0,i);
+		PA_SetBrightness(1,i);
+		if (Pad.Newpress.Anykey || Stylus.Newpress)
+			breakIntro = 1;
+		PA_WaitForVBL();
+		PA_WaitForVBL();
+	}
+
+	for (int i=0;i<90;i++)
+	{
+		if (Pad.Newpress.Anykey || Stylus.Newpress)
+			breakIntro = 1;
+		if ((i>30) && breakIntro)
+			break;
+		PA_WaitForVBL();
+	}
+	for (int i=0;i<32;i++)
+	{
+		PA_SetBrightness(1,i);
+		PA_WaitForVBL();
+	}
+	KT_LoadGif(1, "dswiki/splash/splash2_l",   0, 0);
+	KT_LoadGif(1, "dswiki/splash/splash2_r", 128, 0);
+	for (int i=31;i>=0;i--)
+	{
+		PA_SetBrightness(1,i);
+		PA_WaitForVBL();
+	}
+	breakIntro = 0;
+	for (int i=0;i<90;i++)
+	{
+		if (Pad.Newpress.Anykey || Stylus.Newpress)
+			breakIntro = 1;
+		if ((i>30) && breakIntro)
+			break;
+		PA_WaitForVBL();
+	}
+	for (int i=0;i<32;i++)
+	{
+		PA_SetBrightness(0,i);
+		PA_SetBrightness(1,i);
+		PA_WaitForVBL();
+		PA_WaitForVBL();
+	}
+#endif
+
+	// initializing things while not visible
 	PA_SetBgPalCol(0, 0, PA_RGB(31,31,31));
 	PA_SetBgPalCol(1, 0, PA_RGB(31,31,31));
 
+	PA_Clear16bitBg(1);
+	PA_Clear16bitBg(0);
+
+	PA_InitText   (1, 2);
 	PA_SetTextCol (0, 0, 0, 0);
 	PA_SetTextCol (1, 0, 0, 0);
+	PA_InitKeyboard(2);
+	PA_KeyboardOut();
 
-	// start of main program
-
-	Globals* g = new Globals();
-
-	Statusbar* sb = new Statusbar();
-	g->setStatusbar(sb);
-
-	PA_ClearTextBg(1);
-	PA_OutputText(1,0,0,"Initializing FAT...");
-	if (!PA_InitFat())
-	{
-		PA_OutputText(1,24,0,"%c1[Failed]");
-		return 0;
-	}
-	else
-	{
-		PA_OutputText(1,28,0,"%c2[OK]");
-	}
+	// visible again
+	PA_SetBrightness(0,0);
+	PA_SetBrightness(1,0);
 
 	// check for DSwiki's home directory
-	PA_OutputText(1,0,1,"Checking \"/dswiki/\"...");
+	PA_OutputText(1,0,2,"Checking \"/dswiki/\"...");
 	DIR_ITER* dswikiDir = diropen ("fat:/dswiki/");
 	if (dswikiDir == NULL)
-	{
-		PA_OutputText(1,24,1,"%c1[Failed]");
-		return 0;
-	}
-	else
-	{
-		PA_OutputText(1,28,1,"%c2[OK]");
-		dirclose(dswikiDir);
-	}
-
-	PA_OutputText(1,0,2,"Checking \"/dswiki/fonts/\"...");
-	DIR_ITER* dswikiFontDir = diropen ("fat:/dswiki/fonts/");
-	if (dswikiFontDir == NULL)
 	{
 		PA_OutputText(1,24,2,"%c1[Failed]");
 		return 0;
@@ -95,121 +146,132 @@ int main(int argc, char ** argv)
 	else
 	{
 		PA_OutputText(1,28,2,"%c2[OK]");
-		dirclose(dswikiFontDir);
+		dirclose(dswikiDir);
 	}
 
-	PA_OutputText(1,0,3,"Initializing fonts...");
-
-	Font CompleteFont;
-
-	if (CompleteFont.initOK())
+	PA_OutputText(1,0,3,"Checking \"/dswiki/fonts/\"...");
+	DIR_ITER* dswikiFontDir = diropen ("efs:/dswiki/fonts/");
+	if (dswikiFontDir == NULL)
 	{
-		PA_OutputText(1,28,3,"%c2[OK]");
+		PA_OutputText(1,24,3,"%c1[Failed]");
+		return 0;
 	}
 	else
 	{
-		PA_OutputText(1,24,3,"%c1[Failed]");
+		PA_OutputText(1,28,3,"%c2[OK]");
+		dirclose(dswikiFontDir);
 	}
 
-	PA_OutputText(1,0,4,"Gathering installed wikis...");
+	PA_OutputText(1,0,4,"Initializing fonts...");
+
+	Font* CompleteFont = new Font();
+
+	if (CompleteFont->initOK())
+	{
+		PA_OutputText(1,28,4,"%c2[OK]");
+	}
+	else
+	{
+		PA_OutputText(1,24,4,"%c1[Failed]");
+		return 0;
+	}
+
+	PA_OutputText(1,0,5,"Gathering installed wikis...");
 
 	Dumps* d = new Dumps();
-	g->setDumps(d);
-
-	vector<string> possibleWikis = g->getDumps()->getPossibleWikis();
+	vector<string> possibleWikis = d->getPossibleWikis();
 
 	if (possibleWikis.size()==0)
 	{
-		PA_OutputText(1,26,4,"%c1[None]");
+		PA_OutputText(1,26,5,"%c1[None]");
 		return 0;
 	}
 	else
 	{
 		if (possibleWikis.size()<10)
-			PA_OutputText(1,29,4,"%c2[%d]",possibleWikis.size());
+			PA_OutputText(1,29,5,"%c2[%d]",possibleWikis.size());
 		else
-			PA_OutputText(1,28,4,"%c2[%d]",possibleWikis.size());
+			PA_OutputText(1,28,5,"%c2[%d]",possibleWikis.size());
 		PA_Sleep(60);
 	}
 
-// 	for (int i=0;i<possibleWikis.size();i++)
-// 	{
-// 		PA_ClearTextBg(0);
-// 		PA_OutputText(0,0,0,"%s",possibleWikis[i].c_str());
-// 		PA_OutputText(0,0,1,"%s",d.get_ifo(possibleWikis[i]).c_str());
-// 		PA_OutputText(0,0,2,"%s",d.get_idx(possibleWikis[i]).c_str());
-// 		PA_OutputText(0,0,3,"%s",d.get_ao1(possibleWikis[i]).c_str());
-// 		PA_OutputText(0,0,4,"%s",d.get_ao2(possibleWikis[i]).c_str());
-// 		vector<string> dbs = d.get_dbs(possibleWikis[i]);
-// 		for (int j=0;j<dbs.size();j++)
-// 		{
-// 			PA_OutputText(0,1,5+j,"%s",dbs[j].c_str());
-// 		}
-// 		PA_WaitFor(Pad.Anykey.Newpress);
-// 		PA_Sleep(120);
-// 	}
-// 	PA_OutputText(1,0,23,"Press any key...");
-// 	PA_WaitFor(Pad.Anykey.Newpress);
-
-// 	PA_ClearTextBg(0);
 	PA_ClearTextBg(1);
 
 	//  TODO: Use graphical interface from now on
 
-
 	int currentSelectedWiki = 0;
 
-// 	if ( possibleWikis.size() > 1 )
-// 	{
-// 		int loopi = 0;
-// 		PA_OutputText(1,1,0,"Choose Wiki\n-----------");
-// 		u8 updateSelectedWiki = 1;
-// 		while(1)
-// 		{
-// 			if (Pad.A.Newpress)
-// 			{
-// 				break;
-// 			}
-// 			if (Pad.Up.Newpress||Pad.Down.Newpress)
-// 			{
-// 				currentSelectedWiki += Pad.Down.Newpress-Pad.Up.Newpress;
-// 				if (currentSelectedWiki<0) currentSelectedWiki = 0;
-// 				if (currentSelectedWiki>possibleWikis.size()-1) currentSelectedWiki = possibleWikis.size()-1;
-// 				updateSelectedWiki = 1;
-// 				PA_Sleep(10);
-// 			}
-// 			if (updateSelectedWiki)
-// 			{
-// 				for (loopi=0;loopi<possibleWikis.size();loopi++) {
-// 					if (loopi==currentSelectedWiki)
-// 					{
-// 						PA_OutputText(1,2,2+loopi,"%c1%s",possibleWikis[loopi].c_str());
-// 					}
-// 					else
-// 					{
-// 						PA_OutputText(1,2,2+loopi,"%s",possibleWikis[loopi].c_str());
-// 					}
-// 				}
-// 				updateSelectedWiki = 0;
-// 			}
-// 			PA_WaitForVBL();
-// 		}
-// 		PA_ClearTextBg(1);
-// 	}
-
+#if !DEBUG
+	if ( possibleWikis.size() > 1 )
+	{
+		int loopi = 0;
+		PA_OutputText(1,1,0,"Choose Wiki\n-----------");
+		unsigned char updateSelectedWiki = 1;
+		while(1)
+		{
+			if (Pad.Newpress.A)
+			{
+				break;
+			}
+			if (Pad.Newpress.Up||Pad.Newpress.Down)
+			{
+				currentSelectedWiki += Pad.Newpress.Down-Pad.Newpress.Up;
+				if (currentSelectedWiki<0) currentSelectedWiki = 0;
+				if (currentSelectedWiki>possibleWikis.size()-1) currentSelectedWiki = possibleWikis.size()-1;
+				updateSelectedWiki = 1;
+				PA_Sleep(10);
+			}
+			if (updateSelectedWiki)
+			{
+				for (loopi=0;loopi<possibleWikis.size();loopi++) {
+					if (loopi==currentSelectedWiki)
+					{
+						PA_OutputText(1,2,2+loopi,"%c1%s",possibleWikis[loopi].c_str());
+					}
+					else
+					{
+						PA_OutputText(1,2,2+loopi,"%s",possibleWikis[loopi].c_str());
+					}
+				}
+				updateSelectedWiki = 0;
+			}
+			PA_WaitForVBL();
+		}
+		PA_ClearTextBg(1);
+	}
+#endif
 
 	// important variables
+	KT_CreateSprite(0,0,"dswiki/icons/history",OBJ_SIZE_16X16,1,0,1,-16,-16);
+	KT_CreateSprite(0,1,"dswiki/icons/history_clear",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0,2,"dswiki/icons/reload",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0,3,"dswiki/icons/cancel",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0,4,"dswiki/icons/ok",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0,5,"dswiki/icons/2uparrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0,6,"dswiki/icons/1uparrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0,7,"dswiki/icons/1downarrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0,8,"dswiki/icons/2downarrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0,9,"dswiki/icons/1leftarrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0,10,"dswiki/icons/1rightarrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0,11,"dswiki/icons/clear_left",OBJ_SIZE_16X16,1,0,0,-16,-16);
 
+	Globals* g = new Globals();
+
+	Statusbar* sb = new Statusbar();
 	PercentIndicator* p = new PercentIndicator();
+	g->setDumps(d);
+	g->setFont(CompleteFont);
+	g->setStatusbar(sb);
 	g->setPercentIndicator(p);
 
-
 	// Initialization of global variables
-	UpScreen    = (Device)    { "U", 1, (u16*)PA_DrawBg[1], 256, 192};
-	DnScreen    = (Device)    { "D", 0, (u16*)PA_DrawBg[0], 256, 192};
-	NormalCS    = (CharStat)  { &CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
-	StatusbarCS = (CharStat)  { &CompleteFont, REGULAR, 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
-	StatErrorCS = (CharStat)  { &CompleteFont, REGULAR, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+	UpScreen    = (Device)    { "U", 1, (unsigned short int*)PA_DrawBg[1], 256, 192};
+	DnScreen    = (Device)    { "D", 0, (unsigned short int*)PA_DrawBg[0], 256, 192};
+	NormalCS    = (CharStat)  { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+	ContentCS   = (CharStat)  { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP,     NONE, 0 };
+	ErrorCS     = (CharStat)  { CompleteFont, REGULAR, 0, 0, PA_RGB(27, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP,     NONE, 0 };
+	StatusbarCS = (CharStat)  { CompleteFont, REGULAR, 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+	StatErrorCS = (CharStat)  { CompleteFont, REGULAR, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
 	PercentArea = (VirScreen) { 229, 176,  27,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&PercentArea);
 	Titlebar    = (VirScreen) {   0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
 	ContentWin1 = (VirScreen) {   2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
@@ -219,11 +281,10 @@ int main(int argc, char ** argv)
 
 	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-	CharStat       TitlebarCS = { &CompleteFont, REGULAR, 1, 1, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
-	CharStat        ContentCS = { &CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP,     NONE, 0 };
-	CharStat SearchResultsCS1 = { &CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP,     NONE, 0 };
-	CharStat SearchResultsCS2 = { &CompleteFont, REGULAR, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP,     NONE, 0 };
-	CharStat SearchResultsCS3 = { &CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
+	CharStat       TitlebarCS = { CompleteFont, BOLD,    0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+	CharStat SearchResultsCS1 = { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP,     NONE, 0 };
+	CharStat SearchResultsCS2 = { CompleteFont, REGULAR, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP,     NONE, 0 };
+	CharStat SearchResultsCS3 = { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
 
 	BLOCK Btn_ToggleReal  = {{  3,  3},{ 18, 18}}; VirScreen Scr_ToogleReal = {0,0,0,0,Btn_ToggleReal,&DnScreen}; InitVS2(&Scr_ToogleReal);
 	BLOCK Btn_Cancel      = {{ 67,  9},{ 88, 30}};
@@ -237,17 +298,7 @@ int main(int argc, char ** argv)
 	BLOCK Btn_LineDown    = {{234,122},{255,143}};
 	BLOCK Btn_PageDown    = {{234,147},{255,168}};
 
-	BLOCK CharArea = {{  0, 0},{  0, 0}};
-
-	const u32 ollipolli[] = {0x0398,0x03B8,0x0399,0x03B9,0x039A,0x03BA,0x039B,0x03BB,0x039C,0x03BC};
-
-	string olli = "STRAẞE ABCÄÖ\u1e9eßẞ Ŧ¥ØĦŊJÐ ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫ";
-	string olli2 = lowerPhraseNeu(olli);
-	string olli3 = "ABCDEFGHIJKL";
-	char olli4[50] = "123456789";
-	olli3.replace(4,2,olli4,6);
-	iPrint(olli+"\n"+olli2,&ContentWin1,&NormalCS,&CharArea,PA_RGB(0,0,0),UTF8);
-// 	while(1);
+	BLOCK CharArea = {{  -20, 0},{ -20, 0}};
 
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
@@ -258,15 +309,46 @@ int main(int argc, char ** argv)
 
 	Markup* markup = NULL;
 
-	u8  updateTitle       = 0;
-	u8  updateContent     = 0;
-	u8  updateStatusbarVS   = 0;
-	u8  updatePercent     = 0;
-	u8  updateInRealTime  = 1;
+// 	string olli = "A_aÄÆÐØÞßæĀĐĲŴǢǻȀΑαϒϔВвӨӪḀẞ⁴З";
+// 	iPrint(olli+"\n" + preparePhrase(olli,0,0) + "\n"+preparePhrase(olli,0,1) + "\n"+preparePhrase(olli,0,2) + "\n\n"+preparePhrase(olli,1,0) + "\n"+preparePhrase(olli,1,1) + "\n"+preparePhrase(olli,1,2),&ContentWin1,&NormalCS,&CharArea,-1,UTF8);
+// 	vector<int> olli;
+// 	vector<int>::iterator it;
+// 	olli.push_back(0);
+// 	olli.push_back(10);
+// 	olli.push_back(20);
+// 	olli.push_back(30);
+// 	olli.push_back(40);
+// 	for (int i=0;i<olli.size();i++)
+// 	{
+// 		PA_OutputText(1,0,i,"%d",olli[i]);
+// 	}
+// 	it = olli.begin();
+// 	it++;
+// 	olli.insert(it,1);
+// 	it = olli.end();
+// 	it--;
+// 	olli.insert(it++,2);
+// 	olli.insert(it,3);
+// 	for (int i=0;i<olli.size();i++)
+// 	{
+// 		PA_OutputText(1,10,i,"%d",olli[i]);
+// 	}
+// 	olli.erase(--it);
+// 	for (int i=0;i<olli.size();i++)
+// 	{
+// 		PA_OutputText(1,20,i,"%d",olli[i]);
+// 	}
+// 	while(1);
 
-	s32 forcedLine        = 0;
-	u8  setNewHistoryItem = 1;
-	u8  loadArticle       = 1;
+	unsigned char  updateTitle       = 0;
+	unsigned char  updateContent     = 0;
+	unsigned char  updateStatusbarVS = 0;
+	unsigned char  updatePercent     = 0;
+	unsigned char  updateInRealTime  = 1;
+
+	int forcedLine                   = 0;
+	unsigned char  setNewHistoryItem = 1;
+	unsigned char  loadArticle       = 1;
 
 	FillVS(&Titlebar, PA_RGB( 9,16,28));
 
@@ -310,7 +392,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if ((Pad.Left.Newpress||Pad.Left.Held))
+		if ((Pad.Newpress.Left||Pad.Held.Left))
 		{
 			if (markup->scrollPageUp())
 			{
@@ -320,7 +402,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.Right.Newpress||Pad.Right.Held)
+		if (Pad.Newpress.Right||Pad.Held.Right)
 		{
 			if (markup->scrollPageDown())
 			{
@@ -330,7 +412,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.Up.Newpress||Pad.Up.Held)
+		if (Pad.Newpress.Up||Pad.Held.Up)
 		{
 			if (markup->scrollLineUp())
 			{
@@ -340,7 +422,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if ((Pad.Down.Newpress||Pad.Down.Held))
+		if ((Pad.Newpress.Down||Pad.Held.Down))
 		{
 			if (markup->scrollLineDown())
 			{
@@ -350,7 +432,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.A.Newpress)
+		if (Pad.Newpress.A)
 		{
 			suchtitel.clear();
 			forcedLine = 0;
@@ -358,60 +440,87 @@ int main(int argc, char ** argv)
 			loadArticle = 1;
 		}
 
-		if (Pad.B.Newpress)
+		if (Pad.Newpress.B)
 		{
 		}
 
-		if (Pad.X.Newpress)
+		if (Pad.Newpress.X)
 		{
 			PA_Clear16bitBg(1);
 			PA_Clear16bitBg(0);
-			PA_KeyboardIn(24,72);
-
-			DrawBlock(&DnScreen,Btn_ToggleReal,	PA_RGB(24,24,24),0);
-
-			DrawBlock(&DnScreen,Btn_Cancel,		PA_RGB(31, 0, 0),1);
-			DrawBlock(&DnScreen,Btn_OK,			PA_RGB( 0,31, 0),1);
-
-			DrawBlock(&DnScreen,Btn_CursorLeft,	PA_RGB(24,24,24),1);
-			DrawBlock(&DnScreen,Btn_CursorRight,PA_RGB(24,24,24),1);
-			DrawBlock(&DnScreen,Btn_Clear,		PA_RGB(31,15,15),1);
-
-			DrawBlock(&DnScreen,Btn_PageUp,		PA_RGB(24,24,24),1);
-			DrawBlock(&DnScreen,Btn_LineUp,		PA_RGB(24,24,24),1);
-			DrawBlock(&DnScreen,Btn_LineDown,	PA_RGB(24,24,24),1);
-			DrawBlock(&DnScreen,Btn_PageDown,	PA_RGB(24,24,24),1);
+			PA_ScrollKeyboardXY(24,72);
 
 			FillVS(&StatusbarVS, PA_RGB(18,22,28));
 			CharArea = (BLOCK) {{5,2},{0,0}};
-			iPrint(currentTitle,&StatusbarVS,&TitlebarCS,&CharArea,-1,UTF8);
+			iPrint(currentTitle,&StatusbarVS,&NormalCS,&CharArea,-1,UTF8);
 
 			char letter = 0;
-			u8 updateSearchbar   = 1;
-			u8 updateSuggestions = 1;
-			u8 searchSuggestions = 1;
-			u8 updateCursor      = 1;
-			s16 cursorPosition = suchtitel.length();
-			s32 countdown = 0;
+			unsigned char updateSearchbar   = 1;
+			unsigned char updateSuggestions = 1;
+			unsigned char searchSuggestions = 1;
+			unsigned char updateCursor      = 1;
+			int cursorPosition = 0;
+			unsigned char* Str;
+			unsigned int Skip;
+			unsigned int Uni;
+			vector<int> offsetsUTF;
 
-			if (updateInRealTime)
+			offsetsUTF.push_back(0);
+			if (!suchtitel.empty())
 			{
-				CharArea = (BLOCK) {{5,2},{0,0}};
-				iPrint("✓",&Scr_ToogleReal,&ContentCS,&CharArea,-1,UTF8);
+				Str = (unsigned char*) &suchtitel.at(0);
+				Skip = 0;
+				while(Str[Skip])
+				{
+					cursorPosition++;
+					Skip += ToUTF(&Str[Skip],&Uni);
+					offsetsUTF.push_back(Skip);
+				}
 			}
-			else
+
+			int countdown = 0;
+
+			PA_SetSpriteXY(0, 1,  3,  3);
+			PA_SetSpriteXY(0, 3, 67,  9);
+			PA_SetSpriteXY(0, 4,167,  9);
+			PA_SetSpriteXY(0, 5,234, 72);
+			PA_SetSpriteXY(0, 6,234, 97);
+			PA_SetSpriteXY(0, 7,234,122);
+			PA_SetSpriteXY(0, 8,234,147);
+			PA_SetSpriteXY(0, 9, 31, 39);
+			PA_SetSpriteXY(0,10,209, 39);
+			PA_SetSpriteXY(0,11,234, 40);
+
+
+			if (!updateInRealTime)
 			{
-				DrawBlock(&DnScreen,Btn_Reload,	PA_RGB(15,15,31),1);
+				PA_SetSpriteXY(0,0,3,3);
+				PA_SetSpriteXY(0,2,117,9);
 			}
+
+			PA_WaitForVBL();
 
 			while(1)
 			{
 				letter = PA_CheckKeyboard();
-				if (letter > 0) PA_OutputText(1,29,23,"%d  ",letter);
 
 				if (letter > 31) { // there is a new letter
-					suchtitel.insert(suchtitel.begin()+cursorPosition,letter);
+					suchtitel.insert(suchtitel.begin()+offsetsUTF[cursorPosition],letter);
 					cursorPosition++;
+
+					offsetsUTF.clear();
+					offsetsUTF.push_back(0);
+					if (!suchtitel.empty())
+					{
+						Str = (unsigned char*) &suchtitel.at(0);
+						Skip = 0;
+						while(Str[Skip])
+						{
+							Skip += ToUTF(&Str[Skip],&Uni);
+							offsetsUTF.push_back(Skip);
+						}
+					}
+
 					updateSearchbar = 1;
 					if (updateInRealTime)
 					{
@@ -425,8 +534,20 @@ int main(int argc, char ** argv)
 
 				if ((letter == PA_BACKSPACE) && (cursorPosition>0))
 				{
-					suchtitel.erase(cursorPosition-1,1); // Erase the last letter
+					suchtitel.erase(offsetsUTF[cursorPosition-1],offsetsUTF[cursorPosition]-offsetsUTF[cursorPosition-1]); // Erase the last letter
 					cursorPosition--;
+					offsetsUTF.clear();
+					offsetsUTF.push_back(0);
+					if (!suchtitel.empty())
+					{
+						Str = (unsigned char*) &suchtitel.at(0);
+						Skip = 0;
+						while(Str[Skip])
+						{
+							Skip += ToUTF(&Str[Skip],&Uni);
+							offsetsUTF.push_back(Skip);
+						}
+					}
 					updateSearchbar = 1;
 					if (updateInRealTime)
 					{
@@ -438,7 +559,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ( (letter == '\n') || (Pad.A.Newpress) )
+				if ( (letter == '\n') || (Pad.Newpress.A) )
 				{
 					suchtitel = s->currentHighlightedItem();
 					forcedLine = 0;
@@ -453,6 +574,8 @@ int main(int argc, char ** argv)
 					if (IsInArea(Btn_Clear,S) && (!suchtitel.empty()) )
 					{
 						suchtitel.clear();
+						offsetsUTF.clear();
+						offsetsUTF.push_back(0);
 						cursorPosition = 0;
 						updateSearchbar = 1;
 						if (updateInRealTime)
@@ -475,7 +598,20 @@ int main(int argc, char ** argv)
 					else if (IsInArea(StatusbarVS.Bound,S))
 					{
 						suchtitel = currentTitle;
-						cursorPosition = suchtitel.length();
+						offsetsUTF.clear();
+						offsetsUTF.push_back(0);
+						cursorPosition = 0;
+						if (!suchtitel.empty())
+						{
+							Str = (unsigned char*) &suchtitel.at(0);
+							Skip = 0;
+							while(Str[Skip])
+							{
+								cursorPosition++;
+								Skip += ToUTF(&Str[Skip],&Uni);
+								offsetsUTF.push_back(Skip);
+							}
+						}
 						updateSearchbar = 1;
 						if (updateInRealTime)
 						{
@@ -525,16 +661,15 @@ int main(int argc, char ** argv)
 					else if (IsInArea(Btn_ToggleReal,S))
 					{
 						updateInRealTime = 1 - updateInRealTime;
-						CharArea = (BLOCK) {{5,2},{0,0}};
 						if (updateInRealTime)
 						{
-							iPrint("✓",&Scr_ToogleReal,&ContentCS,&CharArea,-1,UTF8);
-							DrawBlock(&DnScreen,Btn_Reload,	PA_RGB(31,31,31),1);
+							PA_SetSpriteXY(0,0,-16,-16);
+							PA_SetSpriteXY(0,2,-16,-16);
 						}
 						else
 						{
-							iPrint("✓",&Scr_ToogleReal,&TitlebarCS,&CharArea,-1,UTF8);
-							DrawBlock(&DnScreen,Btn_Reload,	PA_RGB(15,15,31),1);
+							PA_SetSpriteXY(0,0,3,3);
+							PA_SetSpriteXY(0,2,117,9);
 						}
 					}
 					else if ((!updateInRealTime) && IsInArea(Btn_Reload,S))
@@ -552,7 +687,7 @@ int main(int argc, char ** argv)
 					}
 					else if (IsInArea(Btn_CursorRight,S))
 					{
-						if (cursorPosition<suchtitel.length())
+						if (offsetsUTF[cursorPosition]<suchtitel.length())
 						{
 							cursorPosition++;
 							updateSearchbar = 1;
@@ -560,7 +695,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.Up.Newpress||Pad.Up.Held))
+				if ((Pad.Newpress.Up||Pad.Held.Up))
 				{
 					if (s->scrollLineUp())
 					{
@@ -569,7 +704,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.Down.Newpress||Pad.Down.Held))
+				if ((Pad.Newpress.Down||Pad.Held.Down))
 				{
 					if (s->scrollLineDown())
 					{
@@ -578,7 +713,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.Left.Newpress||Pad.Left.Held))
+				if ((Pad.Newpress.Left||Pad.Held.Left))
 				{
 					if (s->scrollPageUp())
 					{
@@ -587,7 +722,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.Right.Newpress||Pad.Right.Held))
+				if ((Pad.Newpress.Right||Pad.Held.Right))
 				{
 					if (s->scrollPageDown())
 					{
@@ -596,7 +731,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.L.Newpress||Pad.L.Held))
+				if ((Pad.Newpress.L||Pad.Held.L))
 				{
 					if (s->scrollLongUp())
 					{
@@ -604,7 +739,7 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				if ((Pad.R.Newpress||Pad.R.Held))
+				if ((Pad.Newpress.R||Pad.Held.R))
 				{
 					if (s->scrollLongDown())
 					{
@@ -613,7 +748,7 @@ int main(int argc, char ** argv)
 				}
 
 
-				if (Pad.X.Newpress)
+				if (Pad.Newpress.X)
 				{
 					break;
 				}
@@ -627,12 +762,12 @@ int main(int argc, char ** argv)
 					updateSearchbar = 0;
 				}
 
-				if (updateCursor)
+				if (updateCursor) // TODO
 				{
 					CharArea = (BLOCK) {{2,5},{0,0}};
-					iPrint(suchtitel.substr(0,cursorPosition),&Searchbar,&SearchResultsCS3,&CharArea,-1,UTF8);
+					iPrint(suchtitel.substr(0,offsetsUTF[cursorPosition]),&Searchbar,&SearchResultsCS3,&CharArea,-1,UTF8);
 					BLOCK temp = {{CharArea.Start.x-1,2},{CharArea.Start.x-1,19}};
-					DrawBlock(&Searchbar,temp,PA_RGB(20,20,20),1);
+					DrawBlock(&Searchbar,temp,PA_RGB(20,20,20),0);
 				}
 
 				if (searchSuggestions) // load current searchstring, this is the bottleneck
@@ -660,20 +795,24 @@ int main(int argc, char ** argv)
 				PA_WaitForVBL();
 			}
 
-			PA_KeyboardOut();
+			offsetsUTF.clear();
+
+			PA_ScrollKeyboardXY(24,200);
 			PA_Clear16bitBg(1);
 			PA_Clear16bitBg(0);
+			for (int i=0;i<12;i++)
+				PA_SetSpriteXY(0,i,-16,-16);
 
 			updateTitle = 1;
 			updateContent = 1;
 			updateStatusbarVS = 1;
 		}
 
-		if (Pad.Y.Newpress)
+		if (Pad.Newpress.Y)
 		{
 		}
 
-		if (Pad.L.Newpress)
+		if (Pad.Newpress.L)
 		{
 			if (h->back())
 			{
@@ -684,7 +823,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.R.Newpress)
+		if (Pad.Newpress.R)
 		{
 			if (h->forward())
 			{
@@ -695,11 +834,11 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.Start.Newpress)
+		if (Pad.Newpress.Start)
 		{
 		}
 
-		if (Pad.Select.Newpress)
+		if (Pad.Newpress.Select)
 		{
 			int currentSelectedWikiBackup = currentSelectedWiki;
 			if (possibleWikis.size()>1)
@@ -707,10 +846,10 @@ int main(int argc, char ** argv)
 				PA_Clear16bitBg(1);
 				PA_OutputText(1,1,0,"Choose Wiki\n-----------");
 				int i;
-				u8 updateSelectedWiki = 1;
+				unsigned char updateSelectedWiki = 1;
 				while(1)
 				{
-					if (Pad.A.Newpress)
+					if (Pad.Newpress.A)
 					{
 						delete t;
 						t = new TitleIndex();
@@ -730,14 +869,14 @@ int main(int argc, char ** argv)
 						loadArticle = 1;
 						break;
 					}
-					if (Pad.B.Newpress)
+					if (Pad.Newpress.B)
 					{
 						currentSelectedWiki = currentSelectedWikiBackup;
 						break;
 					}
-					if (Pad.Up.Newpress||Pad.Down.Newpress)
+					if (Pad.Newpress.Up||Pad.Newpress.Down)
 					{
-						currentSelectedWiki += Pad.Down.Newpress-Pad.Up.Newpress;
+						currentSelectedWiki += Pad.Newpress.Down-Pad.Newpress.Up;
 						if (currentSelectedWiki<0) currentSelectedWiki = 0;
 						if (currentSelectedWiki>possibleWikis.size()-1) currentSelectedWiki = possibleWikis.size()-1;
 						updateSelectedWiki = 1;
@@ -745,7 +884,8 @@ int main(int argc, char ** argv)
 					}
 					if (updateSelectedWiki)
 					{
-						for (i=0;i<possibleWikis.size();i++) {
+						for (i=0;i<possibleWikis.size();i++)
+						{
 							if (i==currentSelectedWiki)
 								PA_OutputText(1,2,2+i,"%c1%s",possibleWikis[i].c_str());
 							else
@@ -771,7 +911,7 @@ int main(int argc, char ** argv)
 			else
 			{
 				g->getStatusbar()->display("Suche "+suchtitel+"...");
-				suchergebnis = t->findArticle(suchtitel);
+				suchergebnis = t->findArticle(suchtitel,currentTitle);
 			}
 
 			if (suchergebnis!=NULL)
@@ -788,11 +928,11 @@ int main(int argc, char ** argv)
 				{
 					g->getStatusbar()->display("Hole Markup von Disk...");
 					markupstr = g->getWikiMarkupGetter()->getMarkup(suchergebnis->TitleInArchive());
-					c->insert(suchergebnis->TitleInArchive(),markupstr);
+// 					c->insert(suchergebnis->TitleInArchive(),markupstr);
 				}
 
 				string redirectMessage = "";
-				u8 numberOfRedirections = 0;
+				unsigned char numberOfRedirections = 0;
 				while ((numberOfRedirections<MAX_NUMBER_OF_REDIRECTIONS) && (redirection = t->isRedirect(markupstr)))
 				{
 					numberOfRedirections++;
@@ -808,7 +948,7 @@ int main(int argc, char ** argv)
 					{
 						g->getStatusbar()->display("Folge Umleitung von Disk...");
 						markupstr = g->getWikiMarkupGetter()->getMarkup(suchergebnis->TitleInArchive());
-						c->insert(suchergebnis->TitleInArchive(),markupstr);
+// 						c->insert(suchergebnis->TitleInArchive(),markupstr);
 					}
 				}
 				currentTitle = suchergebnis->TitleInArchive();
@@ -816,10 +956,11 @@ int main(int argc, char ** argv)
 
 				g->getStatusbar()->display("Formatiere Markup...");
 				delete markup;
-				markup = new Markup(markupstr, &ContentCS, t);
+				markup = new Markup();
 				g->setMarkup(markup);
 				markup->setGlobals(g);
 
+				markup->parse(markupstr);
 				g->getStatusbar()->displayClearAfter("Formatierung abgeschlossen",30);
 
 				markupstr.clear();
@@ -828,7 +969,7 @@ int main(int argc, char ** argv)
 
 				if (setNewHistoryItem)
 				{
-					h->insert(suchergebnis->TitleInArchive(),0);
+					h->insert(currentTitle,0);
 				}
 
 				updateTitle = 1;
@@ -836,7 +977,7 @@ int main(int argc, char ** argv)
 			}
 			else
 			{
-				g->getStatusbar()->displayErrorClearAfter("\""+suchtitel+"\" nicht gefunden...",60);
+				g->getStatusbar()->displayErrorClearAfter("\""+suchtitel+"\" nicht gefunden...",90);
 				updatePercent = 1;
 			}
 

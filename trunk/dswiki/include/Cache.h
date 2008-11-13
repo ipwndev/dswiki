@@ -31,13 +31,13 @@ class Cache
 		Cache();
 		void clear();
 		void insert(string title, string markup);
-		u8   isInCache(string title);
+		unsigned char   isInCache(string title);
 		void display();
 		string getMarkup(string title);
 	private:
 		deque<CacheEntry> _list;
-		u32               _size;
-		u32               _lastFoundPosition;
+		unsigned int               _size;
+		unsigned int               _lastFoundPosition;
 };
 
 #endif

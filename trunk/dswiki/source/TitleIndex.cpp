@@ -1,3 +1,4 @@
+#include <PA9.h>
 #include "TitleIndex.h"
 
 #include <sys/dir.h>
@@ -6,13 +7,14 @@
 #include "Markup.h"
 #include "main.h"
 #include "chrlib.h"
+#include "char_convert.h"
 #include "Globals.h"
 #include "Dumps.h"
 
 typedef struct
 {
 	char languageCode[2];
-	u32 numberOfArticles;
+	unsigned int numberOfArticles;
 	u64	titlesPos;
 	u64	indexPos_0;
 	u64	indexPos_1;
@@ -50,6 +52,15 @@ void TitleIndex::load(string basename)
 		_imageNamespace    = fileheader.imageNamespace;
 		_templateNamespace = fileheader.templateNamespace;
 		_indexVersion      = fileheader.version;
+
+		if (_indexVersion > MAX_INDEX_VERSION)
+		{
+			PA_Clear16bitBg(0);
+			BLOCK CharArea = {{0,0},{0,0}};
+			iPrint("'''Warning:''' The index version of this dump is higher than the maximal supported version. Loading/searching ''may'' fail. Please upgrade to the latest release of DSwiki, to get the best browsing experience.", &ContentWin2, &ErrorCS, &CharArea, -1, UTF8);
+			PA_WaitFor(Pad.Newpress.Anykey || Stylus.Newpress);
+			PA_Clear16bitBg(0);
+		}
 
 		if (fileheader.indexPos_1)
 		{
@@ -92,7 +103,7 @@ TitleIndex::~TitleIndex()
 	}
 }
 
-string TitleIndex::getTitle(int articleNumber, u8 indexNo, u8 setPosition)
+string TitleIndex::getTitle(int articleNumber, unsigned char indexNo, unsigned char setPosition)
 {
 	if ( _numberOfArticles<=0  )
 		return "";
@@ -148,98 +159,172 @@ string TitleIndex::getTitle(int articleNumber, u8 indexNo, u8 setPosition)
 }
 
 
-ArticleSearchResult* TitleIndex::findArticle(string title, u8 setPosition)
+ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle, unsigned char setPosition)
 {
 	if ( _numberOfArticles<=0  )
 		return NULL;
 
-	string lowercaseTitle = lowerPhrase(title);
-
-	int foundAt = -1;
-	int lBound = 0;
-	int uBound = _numberOfArticles - 1;
-	int index = 0;
-	string titleAtIndex;
-
-	while ( lBound<=uBound )
+	if ( previousTitle.empty() ) // we have to find the exact title in the index
 	{
-		index = (lBound + uBound) >> 1;
+		string lowercaseTitle = preparePhrase(title,0,_indexVersion);
+
+		string titleAtIndex;
+
+		int foundAt = -1;
+		int lBound = 0;
+		int uBound = _numberOfArticles - 1;
+		int index = 0;
+
+		while ( lBound<=uBound )
+		{
+			index = (lBound + uBound) >> 1;
 
 		// get the title at the specific index
-		titleAtIndex = getTitle(index, 0, setPosition);
+			titleAtIndex = getTitle(index, 0, setPosition);
 
 		// make it lowercase and skip the prefix
-		titleAtIndex = lowerPhrase(titleAtIndex);
+			titleAtIndex = preparePhrase(titleAtIndex,0,_indexVersion);
 
-		if ( lowercaseTitle<titleAtIndex )
-			uBound = --index;
-		else if ( lowercaseTitle>titleAtIndex )
-			lBound = ++index;
-		else
-		{
-			foundAt = index;
-			break;
-		}
-	}
-
-	if ( foundAt<0 )
-	{
-		return NULL;
-	}
-
-	// check if there are more than one articles with the same lowercase name
-	int startIndex = foundAt;
-	while ( startIndex>0 )
-	{
-		titleAtIndex = getTitle(startIndex-1, 0, setPosition);
-		titleAtIndex = lowerPhrase(titleAtIndex);
-
-		if ( lowercaseTitle != titleAtIndex )
-			break;
-
-		startIndex--;
-	}
-
-	int endIndex = foundAt;
-	while ( endIndex<(_numberOfArticles-1) )
-	{
-		titleAtIndex = getTitle(endIndex+1, 0, setPosition);
-		titleAtIndex = lowerPhrase(titleAtIndex);
-
-		if ( lowercaseTitle != titleAtIndex )
-			break;
-
-		endIndex++;
-	}
-
-	// return a result only if we have a direct hit (case is taken into account)
-
-	if ( startIndex!=endIndex )
-	{
-		// check if one matches 100%
-		for(int i=startIndex; i<=endIndex; i++)
-		{
-			string titleInArchive = getTitle(i, 0, setPosition);
-			if ( title==titleInArchive )
+			if ( lowercaseTitle<titleAtIndex )
+				uBound = index-1;
+			else if ( lowercaseTitle>titleAtIndex )
+				lBound = index+1;
+			else
 			{
-				return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
+				foundAt = index;
+				break;
 			}
 		}
 
+		if ( foundAt<0 )
+		{
+			return NULL;
+		}
+
+	// check if there are more than one articles with the same lowercase name
+		int startIndex = foundAt;
+		while ( startIndex>0 )
+		{
+			titleAtIndex = getTitle(startIndex-1, 0, setPosition);
+			titleAtIndex = preparePhrase(titleAtIndex,0,_indexVersion);
+
+			if ( lowercaseTitle != titleAtIndex )
+				break;
+
+			startIndex--;
+		}
+
+		int endIndex = foundAt;
+		while ( endIndex<(_numberOfArticles-1) )
+		{
+			titleAtIndex = getTitle(endIndex+1, 0, setPosition);
+			titleAtIndex = preparePhrase(titleAtIndex,0,_indexVersion);
+
+			if ( lowercaseTitle != titleAtIndex )
+				break;
+
+			endIndex++;
+		}
+
+	// return a result only if we have a direct hit (case is taken into account)
+
+		if ( startIndex!=endIndex )
+		{
+		// check if one matches 100%
+			for(int i=startIndex; i<=endIndex; i++)
+			{
+				string titleInArchive = getTitle(i, 0, setPosition);
+				if ( title==titleInArchive )
+				{
+					return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
+				}
+			}
+
 		// nope, multiple matches
+		// check if one matches 100%, except for the first character
+			string lowerFirstTitle = lowerPhrase(title.substr(0,1),255)+title.substr(1);
+			for(int i=startIndex; i<=endIndex; i++)
+			{
+				string titleInArchive = getTitle(i, 0, setPosition);
+				if ( lowerFirstTitle==lowerPhrase(titleInArchive.substr(0,1),255)+titleInArchive.substr(1) )
+				{
+					return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
+				}
+			}
+		// no match at all
+			return NULL;
+		}
+		else
+		{
+		// return the one and only result
+			string titleInArchive = getTitle(foundAt, 0, setPosition);
+
+			return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
+		}
 		return NULL;
 	}
-	else
+	else // we try combinations of previousTitle and title (subpage feature)
 	{
-		// return the one and only result
-		string titleInArchive = getTitle(foundAt, 0, setPosition);
+// 		PA_ClearTextBg(1);
+// 		PA_OutputText(1,0,4,"%s",previousTitle.c_str());
+// 		PA_OutputText(1,0,10,"%s",title.c_str());
+// 		PA_Sleep(120);
 
-		return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
+		ArticleSearchResult* ret;
+
+		// try the article name itself
+		ret = findArticle(title,"",setPosition);
+		if (ret)
+			return ret;
+
+		// is it a direct child?
+		if ( title.substr(0,1) == "/" )
+		{
+			ret = findArticle(previousTitle+title,"",setPosition);
+			if (ret)
+				return ret;
+		}
+
+		// or is it a child of an ancestor?
+		if ( title.substr(0,3) == "../" )
+		{
+			string titleCopy = title;
+			string previousTitleCopy = previousTitle;
+			int slashPos;
+
+			while ( (titleCopy.substr(0,3) == "../") && ( ( slashPos = previousTitleCopy.rfind("/") ) != string::npos ) )
+			{
+				previousTitleCopy.erase(slashPos);
+				titleCopy.erase(0,3);
+			}
+
+			if ( titleCopy.empty() )
+				ret = findArticle(previousTitleCopy,"",setPosition);
+			else
+				ret = findArticle(previousTitleCopy+"/"+titleCopy,"",setPosition);
+
+			if (ret)
+				return ret;
+		}
+
+		// try subpage
+		ret = findArticle(previousTitle+"/"+title,"",setPosition);
+		if (ret)
+			return ret;
+
+		// or has it unnecessary slashes at the end
+		if ( title.substr(title.length()-1) == "/" )
+		{
+			ret = findArticle(title.substr(0,title.length()-1),previousTitle,setPosition);
+			if (ret)
+				return ret;
+		}
+
+		return NULL;
 	}
-	return NULL;
 }
 
-int TitleIndex::getSuggestedArticleNumber(string title, u8 indexNo, u8 setPosition)
+int TitleIndex::getSuggestedArticleNumber(string title, unsigned char indexNo, unsigned char setPosition)
 {
 	if ( _numberOfArticles<=0 )
 		return 0;
@@ -251,14 +336,14 @@ int TitleIndex::getSuggestedArticleNumber(string title, u8 indexNo, u8 setPositi
 		indexNo = 0;
 
 	string lowercaseTitle = preparePhrase(title, indexNo, _indexVersion);
+	int titleLength = lowercaseTitle.length();
 
-	int titleLength = title.length();
+	string titleAtIndex;
 
 	int foundAt = -1;
 	int lBound = 0;
 	int uBound = _numberOfArticles - 1;
 	int index = 0;
-	string titleAtIndex;
 
 	while ( lBound<=uBound )
 	{
@@ -269,10 +354,10 @@ int TitleIndex::getSuggestedArticleNumber(string title, u8 indexNo, u8 setPositi
 		titleAtIndex = preparePhrase(titleAtIndex, indexNo, _indexVersion);
 
 		if ( lowercaseTitle < titleAtIndex)
-			uBound = --index;
+			uBound = index-1;
 		else if ( lowercaseTitle > titleAtIndex )
-			lBound = ++index;
-		else
+			lBound = index+1;
+		else // lowercaseTitle == titleAtIndex
 		{
 			foundAt = index;
 			break;
@@ -281,7 +366,7 @@ int TitleIndex::getSuggestedArticleNumber(string title, u8 indexNo, u8 setPositi
 
 	if ( foundAt<0 ) // not found
 	{
-		if ( lowercaseTitle > titleAtIndex )
+		if ( (lowercaseTitle > titleAtIndex) && (index < _numberOfArticles - 1) )
 		{
 			index++;
 		}
@@ -305,8 +390,6 @@ int TitleIndex::getSuggestedArticleNumber(string title, u8 indexNo, u8 setPositi
 		startIndex--;
 	}
 
-	if (startIndex >= _numberOfArticles)
-		startIndex = _numberOfArticles - 1;
 	return startIndex;
 }
 
@@ -322,7 +405,7 @@ ArticleSearchResult* TitleIndex::isRedirect(string markup)
 		l = createLink(markup,9,0);
 		if (l)
 		{
-			return findArticle(l->target);
+			return findArticle(l->target, "");
 		}
 		else
 		{
@@ -362,6 +445,11 @@ string TitleIndex::TemplateNamespace()
 	return _templateNamespace;
 }
 
+void TitleIndex::setGlobals(Globals* globals)
+{
+	_globals = globals;
+}
+
 
 ArticleSearchResult::ArticleSearchResult(string title, string titleInArchive, u64 blockPos, int articlePos, int articleLength)
 {
@@ -397,9 +485,4 @@ int ArticleSearchResult::ArticlePos()
 int ArticleSearchResult::ArticleLength()
 {
 	return _articleLength;
-}
-
-void TitleIndex::setGlobals(Globals* globals)
-{
-	_globals = globals;
 }

@@ -30,14 +30,14 @@ class Search
 	public:
 		Search(CharStat* CStat1, CharStat* CStat2);
 		void load(string phrase);
-		void load(s32 articleNumber);
+		void load(int articleNumber);
 		string currentHighlightedItem();
-		u8	scrollLineDown();
-		u8	scrollLineUp();
-		u8	scrollPageDown();
-		u8	scrollPageUp();
-		u8	scrollLongDown();
-		u8	scrollLongUp();
+		unsigned char	scrollLineDown();
+		unsigned char	scrollLineUp();
+		unsigned char	scrollPageDown();
+		unsigned char	scrollPageUp();
+		unsigned char	scrollLongDown();
+		unsigned char	scrollLongUp();
 		void display();
 		void setGlobals(Globals* globals);
 	private:
@@ -48,18 +48,18 @@ class Search
 		void enlarge_back();
 		deque<string>	_list;
 
-		s32 _list_FirstArticleNumber;
-		s32 _list_FirstDisplayNumber;
-		s32 _list_CurrentArticleNumber;
-		s32 _list_LastDisplayNumber;
-		s32 _list_LastArticleNumber;
-		s32 _absolute_FirstArticleNumber;
-		s32 _absolute_FirstDisplayNumber;
-		s32 _absolute_CurrentArticleNumber;
-		s32 _absolute_LastDisplayNumber;
-		s32 _absolute_LastArticleNumber;
+		int _list_FirstArticleNumber;
+		int _list_FirstDisplayNumber;
+		int _list_CurrentArticleNumber;
+		int _list_LastDisplayNumber;
+		int _list_LastArticleNumber;
+		int _absolute_FirstArticleNumber;
+		int _absolute_FirstDisplayNumber;
+		int _absolute_CurrentArticleNumber;
+		int _absolute_LastDisplayNumber;
+		int _absolute_LastArticleNumber;
 
-		u8	_wasScrolled;
+		unsigned char	_wasScrolled;
 
 		Globals* _globals;
 };

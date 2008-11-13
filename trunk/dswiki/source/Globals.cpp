@@ -18,6 +18,7 @@ void Globals::setMarkup(Markup* markup) { _markup = markup; }
 void Globals::setSearch(Search* search) { _search = search; }
 void Globals::setPercentIndicator(PercentIndicator* percentIndicator) { _percentIndicator = percentIndicator; }
 void Globals::setStatusbar(Statusbar* statusbar) { _statusbar = statusbar; }
+void Globals::setFont(Font* font) { _font = font; }
 
 Dumps*            Globals::getDumps() {	return _dumps; }
 TitleIndex*       Globals::getTitleIndex() { return _titleIndex; }
@@ -26,3 +27,4 @@ Markup*           Globals::getMarkup() { return _markup; }
 Search*           Globals::getSearch() { return _search; }
 PercentIndicator* Globals::getPercentIndicator() { return _percentIndicator; }
 Statusbar*        Globals::getStatusbar() { return _statusbar; }
+Font*             Globals::getFont() { return _font; }

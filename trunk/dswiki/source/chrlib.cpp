@@ -1,5 +1,7 @@
 #include "main.h"
 #include "chrlib.h"
+#include "char_convert.h"
+
 
 string trimPhrase(string Str)
 {
@@ -16,78 +18,6 @@ string trimPhrase(string Str)
 	return Str;
 }
 
-
-
-string lowerPhrase(string phrase, u8 indexVersion)
-{
-	if (phrase.empty())
-		return "";
-	string dest = phrase;
-	tolower_utf8(&dest.at(0),indexVersion);
-	return dest;
-}
-
-string lowerPhraseNeu(string phrase)
-{
-	if (phrase.empty())
-		return "";
-	string dest = phrase;
-	char* Str = &dest.at(0);
-	u32 Uni;
-	u32 Skip = 0;
-	u32 l;
-	while(Str[Skip])
-	{
-		l = ToUTF(&Str[Skip],&Uni,UTF8);
-		for (int i=0;i<983;i++)
-		{
-			if (toLowerTable[i].UTF32_from == Uni)
-			{
-				char temp[5];
-				u32 codepoint[] = {toLowerTable[i].UTF32_to,0};
-				UTF2UTF8(codepoint,temp);
-				dest.replace(Skip,l,temp);
-				l = strlen(temp);
-			}
-		}
-		Skip+=l;
-	}
-	return dest;
-}
-
-
-u32 tolower_utf32(u32 UTF32Char)
-{
-	int i;
-	for (i=0;i<983;i++)
-	{
-		if (UTF32Char == toLowerTable[i].UTF32_from)
-			return toLowerTable[i].UTF32_to;
-	}
-	return UTF32Char;
-}
-
-void tolower_utf8(char* data, u8 indexVersion)
-{
-	if ( !data )
-		return;
-
-	while ( *data )
-	{
-		unsigned char c = *data;
-		if ( c<0x80 )
-			*data = tolower(c);
-		else if ( c==0xc3 && *(data+1) )
-		{
-			data++;
-
-			c = *data;
-			if ( c>=0x80 && c<=0x9e )
-				*data = c | 0x20;
-		}
-		data++;
-	}
-}
 
 string exchangeSGMLEntities(string phrase)
 {
@@ -130,7 +60,7 @@ string exchangeSGMLEntities(string phrase)
 			if (number.empty())
 				continue;
 
-			u32 codepoint[] = {0,0};
+			unsigned int codepoint[] = {0,0};
 			char replaced[32];
 
 			if (number.substr(0,1)=="x")
@@ -188,7 +118,7 @@ string exchangeSGMLEntities(string phrase)
 			if (entity==entities[i].entity)
 			{
 				char replaced[32];
-				u32 codepoint[] = {entities[i].codepoint,0};
+				unsigned int codepoint[] = {entities[i].codepoint,0};
 				UTF2UTF8(codepoint,replaced);
 				string neu = replaced;
 				phrase.replace(entityStart,entity.length(),neu);
@@ -201,138 +131,17 @@ string exchangeSGMLEntities(string phrase)
 }
 
 
-string exchangeDiacriticCharsUTF8Phrase(string phrase, u8 indexVersion)
+string preparePhrase(string phrase, unsigned char indexNo, unsigned char indexVersion)
 {
-	if ( phrase.empty() )
-		return phrase;
-
-	string dst = phrase;
-
-	int i = 0;
-
-	while ( i < dst.length() )
-	{
-		unsigned char c = dst[i++];
-		if ( (c&0xe0)==0xc0 ) // Start-Byte of a two byte sequence
-		{
-			int d = ((c&0x1f)<<6) + (((unsigned char) dst[i]) & 0x3f);
-			if ( (d>=0x80) && (d<=0x17f) )
-			{
-				string ex = diacriticExchangeTable[d-0x80];
-				if ( ex!="" )
-				{
-					dst.replace(i-1,2,ex);
-				}
-			}
-			else
-			{
-				i++;
-			}
-		}
-	}
-
-	return dst;
-}
-
-
-string preparePhrase(string phrase, u8 indexNo, u8 indexVersion)
-{
-	phrase = trimPhrase(phrase);
+// 	phrase = trimPhrase(phrase);
 	if (indexNo==1)
-		return lowerPhrase(exchangeDiacriticCharsUTF8Phrase(lowerPhrase(phrase,indexVersion),indexVersion), indexVersion);
+		return lowerPhrase(exchangeDiacriticChars(lowerPhrase(phrase,indexVersion),indexVersion), indexVersion);
 	else
 		return lowerPhrase(phrase,indexVersion);
 }
 
 
-u8 ToUTF(const char* Chr, u32* UTF32, Lid Lang)
-{
-	u8   Length = 2;
-
-	switch(Lang)
-	{
-		case UTF:
-			UTF32[0]=Chr[1];
-			UTF32[0]=(UTF32[0]<<8)+Chr[0];
-			break;
-		case UTF8:
-			if(Chr[0]<0x80)
-			{
-				UTF32[0]=Chr[0];
-				Length=1;
-			}
-			else if ((Chr[0]&0xE0)==0xC0)
-			{
-				UTF32[0]=((Chr[0]&0x1C)>>2);
-				UTF32[0]=(UTF32[0]<<8)|((Chr[0]&0x3)<<6)|(Chr[1]&0x3F);
-			}
-			else if ((Chr[0]&0xF0)==0xE0)
-			{
-				UTF32[0]=((Chr[0]&0xF)<<4)|((Chr[1]&0x3C)>>2);
-				UTF32[0]=(UTF32[0]<<8)|((Chr[1]&0x3)<<6)|(Chr[2]&0x3F);
-				Length=3;
-			}
-			else
-			{	// Correct encoding with more than three bytes, or a bad byte
-				UTF32[0]=0xFFFD;
-				if ((Chr[0]&0xF8)==0xF0)
-					Length=4;
-				else if ((Chr[0]&0xFC)==0xF8)
-					Length=5;
-				else if ((Chr[0]&0xFE)==0xFC)
-					Length=6;
-				else if ((Chr[0]&0xFF)==0xFE)
-					Length=7;
-				else if (Chr[0]==0xFF)
-					Length=8;
-				else Length=1;
-			}
-			break;
-	}
-
-	return Length;
-}
-
-u32 UTF2UTF8(u32* Uni, char* U8) // TODO
-{
-	u32 Length=0;
-	u32 i=0;
-
-	while(Uni[Length])
-	{
-		if((Uni[Length]>0)&&(Uni[Length]<=0x7F))
-		{
-			U8[i++]=  Uni[Length++];
-		}
-		else if((Uni[Length]>0x7F)&&(Uni[Length]<=0x7FF))
-		{
-			U8[i++]= (Uni[Length  ] >>6 ) | 0xC0;
-			U8[i++]= (Uni[Length++]&0x3F) | 0x80;
-		}
-		else
-		{
-			U8[i++]= (Uni[Length  ] >>12) | 0xE0;
-			U8[i++]=((Uni[Length  ] >>6 ) & 0x3F) | 0x80 ;
-			U8[i++]= (Uni[Length++]       & 0x3F) | 0x80 ;
-		}
-	}
-	U8[i]=0;
-	return Length;
-}
-
-u32 UTF82UTF(char* U8, u32* Uni) //TODO
-{
-	u32 i=0;
-	u32 Length=0;
-	while(U8[i])
-	{
-		i+=ToUTF(&U8[i],&Uni[Length++],UTF8);
-	}
-	Uni[Length]=0;
-	return Length;
-}
-
-void SwitchNewLine(const CharStat* CStat, BLOCK* CharArea, s16 Origin, u8 Height)
+void SwitchNewLine(const CharStat* CStat, BLOCK* CharArea, s16 Origin, unsigned char Height)
 {
 	switch(CStat->Rotate)
 	{
@@ -355,9 +164,9 @@ void SwitchNewLine(const CharStat* CStat, BLOCK* CharArea, s16 Origin, u8 Height
 	}
 }
 
-u8 CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, u8 Height)
+unsigned char CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, unsigned char Height)
 {
-	u8 OutScreen=0;
+	unsigned char OutScreen=0;
 
 	switch(CStat->Rotate)
 	{
@@ -413,9 +222,9 @@ u8 CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, u8 
 	return OutScreen;
 }
 
-u8 CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, u8 Width, u8 Height, u8 doWrap)
+unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, unsigned char Width, unsigned char Height, unsigned char doWrap)
 {
-	u8 wrap = 0;
+	unsigned char wrap = 0;
 	switch(CStat->Rotate)
 	{
 		case DEG0:
@@ -454,17 +263,17 @@ u8 CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origi
 	return wrap;
 }
 
-void iDrawChar(u32* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK CharArea)
+void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK CharArea)
 {
-	u8*  DATA;
-	u8   idx;
-	u8   ptr;
-	u8   msk;
+	unsigned char*  DATA;
+	unsigned char   idx;
+	unsigned char   ptr;
+	unsigned char   msk;
 	s8   xoff=0;
 	s8   yoff=0;
-	u8   h,w;
-	u8   bbx_w, bbx_h;
-	u16  X=0,Y=0;
+	unsigned char   h,w;
+	unsigned char   bbx_w, bbx_h;
+	unsigned short int  X=0,Y=0;
 	CharStat CopyCStat=*CStat;
 	DATA = CStat->FONT->getCharacterData(*Uni,CStat->FontCut);
 
@@ -563,22 +372,23 @@ void iDrawChar(u32* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK 
 }
 
 // TODO: auch ein geprintetes '\n' außerhalb des Screens soll Abbruch verursachen
-u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang)
+unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang)
 {
+	unsigned char* Str = (unsigned char*) St;
 	// global
-	u8    Height             = CStat->FONT->Regular.Height;
+	unsigned char    Height             = CStat->FONT->Regular.Height;
 	s16   Origin             = 0;
 	// per character
-	u8*   DATA;
-	u32   Uni                = 0;
-	u8    Width              = 0;
+	unsigned char*   DATA;
+	unsigned int Uni         = 0;
+	unsigned char    Width              = 0;
 	// local variables
-	u32   Skip               = 0;
-	u32   SaveSkipWord       = 0;
-	u32   SaveSkipLetter     = 0;
-	s32   GlyphsPrinted      = 0;
-	u8    ForceInnerWordWrap = 0;
-	u8    HardWrap           = 0;
+	unsigned int   Skip               = 0;
+	unsigned int   SaveSkipWord       = 0;
+	unsigned int   SaveSkipLetter     = 0;
+	int   GlyphsPrinted      = 0;
+	unsigned char    ForceInnerWordWrap = 0;
+	unsigned char    HardWrap           = 0;
 
 	if ((CStat->Wrap==HARDWRAP)||(CStat->Wrap==NOWRAP))
 		HardWrap = 1;
@@ -626,7 +436,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 			break;
 	}
 
-	Skip+=ToUTF(&Str[Skip],&Uni,Lang);
+	Skip+=ToUTF(&Str[Skip],&Uni);
 
 	while((Limit==-1)||(GlyphsPrinted < Limit)){
 		if (ForceInnerWordWrap||HardWrap) // Writing
@@ -639,12 +449,12 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 			{
 				GlyphsPrinted++;
 				SaveSkipLetter = Skip;
-				Skip+=ToUTF(&Str[Skip],&Uni,Lang);
+				Skip+=ToUTF(&Str[Skip],&Uni);
 				if(Uni==0x0A)
 				{
 					GlyphsPrinted++;
 					SaveSkipLetter = Skip;
-					Skip+=ToUTF(&Str[Skip],&Uni,Lang);
+					Skip+=ToUTF(&Str[Skip],&Uni);
 				}
 				SwitchNewLine(CStat,CharArea,Origin,Height);
 				continue;
@@ -654,7 +464,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 				GlyphsPrinted++;
 				SwitchNewLine(CStat,CharArea,Origin,Height);
 				SaveSkipLetter = Skip;
-				Skip+=ToUTF(&Str[Skip],&Uni,Lang);
+				Skip+=ToUTF(&Str[Skip],&Uni);
 				continue;
 			}
 			if(Uni==0x20)
@@ -684,7 +494,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 				SaveCharArea.Start.y = CharArea->Start.y;
 				SaveCharArea.End.x   = CharArea->End.x;
 				SaveCharArea.End.y   = CharArea->End.y;
-				Skip+=ToUTF(&Str[Skip],&Uni,Lang);
+				Skip+=ToUTF(&Str[Skip],&Uni);
 				continue;
 			}
 
@@ -729,7 +539,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 					break;
 			}
 			SaveSkipLetter = Skip;
-			Skip+=ToUTF(&Str[Skip],&Uni,Lang);
+			Skip+=ToUTF(&Str[Skip],&Uni);
 		}
 		else // Collecting
 		{
@@ -740,7 +550,7 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 				CharArea->Start.y = SaveCharArea.Start.y;
 				CharArea->End.x   = SaveCharArea.End.x;
 				CharArea->End.y   = SaveCharArea.End.y;
-				Skip+=ToUTF(&Str[Skip],&Uni,Lang);
+				Skip+=ToUTF(&Str[Skip],&Uni);
 				ForceInnerWordWrap = 1;
 				continue;
 			}
@@ -772,14 +582,14 @@ u32 iPrint(const char* Str, const VirScreen* VScreen, const CharStat* CStat, BLO
 						break;
 				}
 			}
-			Skip+=ToUTF(&Str[Skip],&Uni,Lang);
+			Skip+=ToUTF(&Str[Skip],&Uni);
 		}
 	}
 
 	return SaveSkipLetter;
 }
 
-u32 SimPrint(const char* Str, Device* Dev, u16 Color, Lid Lang)
+unsigned int SimPrint(const char* Str, Device* Dev, unsigned short int Color, Lid Lang)
 {
 	Font stdFont;
 // 	InitFont(&stdFont,frankenstein);
@@ -789,7 +599,7 @@ u32 SimPrint(const char* Str, Device* Dev, u16 Color, Lid Lang)
 	return iPrint(Str, &VScreen, &CharStat, &CharArea, -1, Lang);
 }
 
-u32 iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, s32 Limit, Lid Lang)
+unsigned int iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang)
 {
 	if (!Str.empty())
 		return iPrint(&Str.at(0), VScreen, CStat, CharArea, Limit, Lang);
@@ -797,7 +607,7 @@ u32 iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BL
 		return 0;
 }
 
-u32 SimPrint(const string Str, Device* Dev, u16 Color, Lid Lang)
+unsigned int SimPrint(const string Str, Device* Dev, unsigned short int Color, Lid Lang)
 {
 	if (!Str.empty())
 		return SimPrint(&Str.at(0), Dev, Color, Lang);
@@ -805,13 +615,13 @@ u32 SimPrint(const string Str, Device* Dev, u16 Color, Lid Lang)
 		return 0;
 }
 
-void Font::InitFont(SingleCut* FONT, const u8* ptr)
+void Font::InitFont(SingleCut* FONT, const unsigned char* ptr)
 {
-	FONT->Name       = (u16*)ptr;
+	FONT->Name       = (unsigned short int*)ptr;
 	FONT->Height     = ptr[32];
-	FONT->Index      = (u32*)(ptr+64);
-	FONT->Data       = (u8*)ptr+0x40040;
-	FONT->Ptr        = (u8*)ptr;
+	FONT->Index      = (unsigned int*)(ptr+64);
+	FONT->Data       = (unsigned char*)ptr+0x40040;
+	FONT->Ptr        = (unsigned char*)ptr;
 }
 
 Font::Font()
@@ -821,13 +631,13 @@ Font::Font()
 	FILE* f;
 	int size;
 
-	f = fopen("fat:dswiki/fonts/font_r.dat","rb");
+	f = fopen("efs:dswiki/fonts/font_r.dat","rb");
 	if (f != NULL)
 	{
 		fseek(f, 0, SEEK_END);
 		size = ftell(f);
 		fseek(f, 0, SEEK_SET);
-		_data_regular = (u8*)malloc(size);
+		_data_regular = (unsigned char*)malloc(size);
 		fread(_data_regular, 1, size, f);
 		InitFont(&Regular,_data_regular);
 		fclose(f);
@@ -837,13 +647,13 @@ Font::Font()
 		_initOK = 0;
 	}
 
-	f = fopen("fat:dswiki/fonts/font_b.dat","rb");
+	f = fopen("efs:dswiki/fonts/font_b.dat","rb");
 	if (f != NULL)
 	{
 		fseek(f, 0, SEEK_END);
 		size = ftell(f);
 		fseek(f, 0, SEEK_SET);
-		_data_bold = (u8*)malloc(size);
+		_data_bold = (unsigned char*)malloc(size);
 		fread(_data_bold, 1, size, f);
 		InitFont(&Bold,_data_bold);
 		fclose(f);
@@ -853,13 +663,13 @@ Font::Font()
 		_initOK = 0;
 	}
 
-	f = fopen("fat:dswiki/fonts/font_o.dat","rb");
+	f = fopen("efs:dswiki/fonts/font_o.dat","rb");
 	if (f != NULL)
 	{
 		fseek(f, 0, SEEK_END);
 		size = ftell(f);
 		fseek(f, 0, SEEK_SET);
-		_data_italic = (u8*)malloc(size);
+		_data_italic = (unsigned char*)malloc(size);
 		fread(_data_italic, 1, size, f);
 		InitFont(&Italic,_data_italic);
 		fclose(f);
@@ -869,13 +679,13 @@ Font::Font()
 		_initOK = 0;
 	}
 
-	f = fopen("fat:dswiki/fonts/font_bo.dat","rb");
+	f = fopen("efs:dswiki/fonts/font_bo.dat","rb");
 	if (f != NULL)
 	{
 		fseek(f, 0, SEEK_END);
 		size = ftell(f);
 		fseek(f, 0, SEEK_SET);
-		_data_bolditalic = (u8*)malloc(size);
+		_data_bolditalic = (unsigned char*)malloc(size);
 		fread(_data_bolditalic, 1, size, f);
 		InitFont(&BoldItalic,_data_bolditalic);
 		fclose(f);
@@ -886,9 +696,9 @@ Font::Font()
 	}
 }
 
-u8 * Font::getCharacterData(u32 Uni, Cut FontCut)
+unsigned char * Font::getCharacterData(unsigned int Uni, Cut FontCut)
 {
-	u8* DATA = NULL;
+	unsigned char* DATA = NULL;
 	switch (FontCut)
 	{
 		case REGULAR:
@@ -907,7 +717,7 @@ u8 * Font::getCharacterData(u32 Uni, Cut FontCut)
 	return DATA;
 }
 
-u8 Font::initOK()
+unsigned char Font::initOK()
 {
 	return _initOK;
 }

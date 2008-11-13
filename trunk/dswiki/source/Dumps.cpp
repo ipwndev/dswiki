@@ -17,6 +17,7 @@
 #include <string>
 
 #include "chrlib.h"
+#include "char_convert.h"
 #include "main.h"
 
 Dumps::Dumps()
@@ -135,10 +136,10 @@ void Dumps::_setPossibleWikis()
 // 					PA_Sleep(30);
 // 					PA_OutputText(1,0,10,"%c2[ifo]");
 // 					PA_Sleep(30);
-					u8 foundidx = 0;
-					u8 foundao1 = 0;
-					u8 foundao2 = 0;
-					u8 founddb  = 0;
+					unsigned char foundidx = 0;
+					unsigned char foundao1 = 0;
+					unsigned char foundao2 = 0;
+					unsigned char founddb  = 0;
 					for (int j=0;j<filenames.size();j++)
 					{
 						int compareLastDot = filenames[j].rfind(".");

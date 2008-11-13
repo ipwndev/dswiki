@@ -1,5 +1,5 @@
- DSwiki (v0.1)
-====================
+ DSwiki (v0.2alpha1)
+=====================
 
 DSwiki is an offline viewer for Wiki markup, for example for the
 Wikipedia, Wikibooks, Wiktionaries, ...
@@ -40,11 +40,10 @@ most homebrew programs can't handle UTF-8.
    edition fits on a 4GB storage device, the German edition is just 1.1GB.
 -- Quite good handling of internal links. Alternative display text
    and appended letters are supported to create the same look as
-   in the online version.
+   in the online version. Subpage links are supported.
 -- Very good Unicode/UTF8-Support (as much - or as little - as the
    underlying font covers).
 -- Fast and easy searchable index.
--- A cache to navigate quickly the history of visited pages.
 
  Planned Features
 ==================
@@ -84,14 +83,12 @@ A random article will be loaded at the start.
                Articles names (no unicode yet) can be entered
                on the keyboard.
 
-               Touching the red button clears the input field.
-
                The D-Pad navigates through the index.
                The L/R-buttons do bigger steps.
 
                The current highlighted article name can be loaded
                either by
-                * touching the green button
+                * touching the green checkmark symbol
                 * pressing A
                 * touching Enter on the virtual keyboard
 

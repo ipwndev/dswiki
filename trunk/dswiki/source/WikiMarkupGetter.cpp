@@ -12,7 +12,8 @@
 #include "PercentIndicator.h"
 #include "Dumps.h"
 
-#define BUFFER_SIZE 8192
+// #define BUFFER_SIZE 8192
+#define BUFFER_SIZE 1024
 #define BZ_DECOMPRESS_SMALL 1
 
 
@@ -54,7 +55,7 @@ WikiMarkupGetter::~WikiMarkupGetter()
 
 string WikiMarkupGetter::getMarkup(string title)
 {
-	ArticleSearchResult* articleSearchResult = _globals->getTitleIndex()->findArticle(title, 1); // The only situation when we need the physical position of the article afterwards
+	ArticleSearchResult* articleSearchResult = _globals->getTitleIndex()->findArticle(title, "", 1); // The only situation when we need the physical position of the article afterwards
 	if ( !articleSearchResult )
 	{
 		return NULL;
@@ -64,6 +65,10 @@ string WikiMarkupGetter::getMarkup(string title)
 	int articlePos	= articleSearchResult->ArticlePos();
 	int articleLength	= articleSearchResult->ArticleLength();
 	_lastArticleTitle	= articleSearchResult->TitleInArchive();
+
+	const int bytesToRead = articlePos + articleLength;
+	int bytesRead = 0;
+	int percent = 0;
 
 // 	PA_OutputText(1,5,6,"0x%x        ",blockPos);
 // 	PA_OutputText(1,5,7,"%d        ",articlePos);
@@ -101,7 +106,11 @@ string WikiMarkupGetter::getMarkup(string title)
 
 	while ( read = BZ2_bzRead(&bzerror, bzf, buffer, BUFFER_SIZE) )
 	{
-		_globals->getPercentIndicator()->update(read);
+		bytesRead += read;
+		percent = bytesRead*100/bytesToRead;
+		if (percent>100) percent = 100;
+		_globals->getPercentIndicator()->update(percent);
+
 // 		PA_OutputText(1,5,12,"Read %d       ",read);
 // 		PA_Sleep(10);
 // 		PA_OutputText(1,5,12,"              ",read);
@@ -120,6 +129,11 @@ string WikiMarkupGetter::getMarkup(string title)
 
 			while ( articleLength && (read = BZ2_bzRead(&bzerror, bzf, buffer, BUFFER_SIZE)) )
 			{
+				bytesRead += read;
+				percent = bytesRead*100/bytesToRead;
+				if (percent>100) percent = 100;
+				_globals->getPercentIndicator()->update(percent);
+
 				if ( articleLength>read )
 					len = read;
 				else
