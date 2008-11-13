@@ -26,7 +26,7 @@ void History::clear()
 	_currentPosition = -1;
 }
 
-u8 History::back()
+unsigned char History::back()
 {
 	if ((_list.size()<2)||(_currentPosition==0))
 		return 0;
@@ -34,7 +34,7 @@ u8 History::back()
 	return 1;
 }
 
-u8 History::forward()
+unsigned char History::forward()
 {
 	if ((_list.size()<2)||(_currentPosition==_list.size()-1))
 		return 0;
@@ -42,7 +42,7 @@ u8 History::forward()
 	return 1;
 }
 
-void History::insert(string ins_str, s32 ins_line)
+void History::insert(string ins_str, int ins_line)
 {
 	while (_list.size()>_currentPosition+1)
 		_list.pop_back();
@@ -51,7 +51,7 @@ void History::insert(string ins_str, s32 ins_line)
 	_currentPosition++;
 }
 
-void History::updateCurrentLine(s32 line) {
+void History::updateCurrentLine(int line) {
 	_list[_currentPosition].line = line;
 }
 
@@ -60,14 +60,14 @@ string History::currentTitle()
 	return _list[_currentPosition].title;
 }
 
-s32 History::currentLine()
+int History::currentLine()
 {
 	return _list[_currentPosition].line;
 }
 
 void History::display()
 {
-	s32 i;
+	int i;
 	for (i=0;i<_list.size();i++)
 	{
 		if (i==_currentPosition)

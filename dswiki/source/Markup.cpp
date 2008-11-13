@@ -20,7 +20,7 @@ Element::Element(string text)
 }
 
 
-Element::Element(string str_namesp, string str_targ, string str_anch, string str_disp, u32 start, u32 length, u32 link_id)
+Element::Element(string str_namesp, string str_targ, string str_anch, string str_disp, unsigned int start, unsigned int length, unsigned int link_id)
 {
 	Type = LINK_EL;
 
@@ -40,7 +40,7 @@ Element::Element(string str_namesp, string str_targ, string str_anch, string str
 }
 
 
-Element* createLink(string Str, u32 startPos, u32 link_id)
+Element* createLink(string Str, unsigned int startPos, unsigned int link_id)
 {
 	while (1)
 	{
@@ -161,7 +161,7 @@ Markupline::~Markupline()
 	children.clear();
 }
 
-void Markupline::drawToVScreen(VirScreen* VScreen, CharStat* CStat, s32 line)
+void Markupline::drawToVScreen(VirScreen* VScreen, CharStat* CStat, int line)
 {
 	BLOCK CharArea = {{0,line*(CStat->FONT->Regular.Height+CStat->H_Space)},{0,0}}; // TODO: switch(Rotate)
 	int i;
@@ -186,7 +186,7 @@ void Markupline::drawToVScreen(VirScreen* VScreen, CharStat* CStat, s32 line)
 		children[i].BoundingBox.End.y = CharArea.Start.y+CStat->FONT->Regular.Height; // TODO: Rotate
 	}
 }
-u8 Markupline::containsCertainLink(u32 id)
+unsigned char Markupline::containsCertainLink(unsigned int id)
 {
 	int i;
 	for (i=0;i<children.size();i++)
@@ -204,7 +204,7 @@ u8 Markupline::containsCertainLink(u32 id)
 string Markup::evaluateClick(s16 x,s16 y)
 {
 	POINT p = {x,y};
-	u16 zeile = y / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space );
+	unsigned short int zeile = y / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space );
 	Markupline ClickedLine;
 	Element* l;
 	int i;
@@ -228,27 +228,30 @@ string Markup::evaluateClick(s16 x,s16 y)
 }
 
 
-Markup::Markup(string Str, CharStat* CStat, TitleIndex* titleindex)
+Markup::Markup()
 {
-	_markupCStat    = CStat;
-	_titleindex     = titleindex;
+}
+
+void Markup::parse(string Str)
+{
+	_markupCStat    = &ContentCS;
 	_linesOnVScreen1 = 1 + ( ( ContentWin1.Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
 	_linesOnVScreen2 = 1 + ( ( ContentWin2.Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
 	_currentLine = 0;
 
-	u32 pos = 0;
-	u32 link_id = 0;
+	unsigned int pos = 0;
+	unsigned int link_id = 0;
 	Element* l;
 
 	Str = exchangeSGMLEntities(Str);
 
-	vector<string> zeilen;
-	explode('\n',Str,zeilen);
+// 	vector<string> zeilen;
+// 	explode('\n',Str,zeilen);
 // 	zeilen.push_back(Str);
-	WIKI2XML w2x(zeilen);
-	w2x.parse();
+// 	WIKI2XML w2x(zeilen);
+// 	w2x.parse();
 
-	Str = w2x.get_xml();
+// 	Str = w2x.get_xml();
 
 	pos = 0;
 
@@ -270,7 +273,7 @@ Markup::Markup(string Str, CharStat* CStat, TitleIndex* titleindex)
 	Element t(Str.substr(pos));
 	visibleChildren.push_back(t);
 
-	createLines(&ContentWin1, CStat);
+	createLines(&ContentWin1, _markupCStat);
 }
 
 Markup::~Markup()
@@ -296,13 +299,18 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 	}
 	InitVS(&FakeVS);
 
-	u32 elementNumber = 0;
-	u32 numOut;
-	u8 update = 1;
+	unsigned int elementNumber = 0;
+	unsigned int numOut;
+	unsigned char update = 1;
 	Element CurrentElement("");
+	int percent = 0;
 
 	while (elementNumber<visibleChildren.size()) // Loop until every token is put on some line
 	{
+		percent = elementNumber*100/visibleChildren.size();
+		if (percent>100) percent = 100;
+		_globals->getPercentIndicator()->update(percent);
+
 		BLOCK FakeCA = {{0,0},{0,0}};
 		Markupline CurrentLine;
 
@@ -349,17 +357,17 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 
 }
 
-u32 Markup::numberOfLines()
+unsigned int Markup::numberOfLines()
 {
 	return lines.size();
 }
 
-s32 Markup::currentLine()
+int Markup::currentLine()
 {
 	return _currentLine;
 }
 
-u8 Markup::currentPercent()
+unsigned char Markup::currentPercent()
 {
 	if (lines.size()==0)
 		return 0;
@@ -368,9 +376,9 @@ u8 Markup::currentPercent()
 	return (_currentLine*100)/(lines.size()-1);
 }
 
-u8 Markup::setCurrentLine(s32 line)
+unsigned char Markup::setCurrentLine(int line)
 {
-	s32 before = _currentLine;
+	int before = _currentLine;
 	_currentLine = line;
 	if (_currentLine < 0)
 		_currentLine = 0;
@@ -379,29 +387,29 @@ u8 Markup::setCurrentLine(s32 line)
 	return (before!=_currentLine)?1:0;
 }
 
-u8 Markup::scrollLineDown()
+unsigned char Markup::scrollLineDown()
 {
 	return setCurrentLine(_currentLine+1);
 }
 
-u8 Markup::scrollLineUp()
+unsigned char Markup::scrollLineUp()
 {
 	return setCurrentLine(_currentLine-1);
 }
 
-u8 Markup::scrollPageDown()
+unsigned char Markup::scrollPageDown()
 {
 	return setCurrentLine(_currentLine+_linesOnVScreen2);
 }
 
-u8 Markup::scrollPageUp()
+unsigned char Markup::scrollPageUp()
 {
 	return setCurrentLine(_currentLine-_linesOnVScreen2);
 }
 
 void Markup::draw()
 {
-	s32 i;
+	int i;
 	FillVS(&ContentWin1,PA_RGB(31,31,31));
 	FillVS(&ContentWin2,PA_RGB(31,31,31));
 	for (i=0;i<_linesOnVScreen1;i++)

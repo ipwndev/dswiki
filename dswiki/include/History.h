@@ -22,7 +22,7 @@ using namespace std;
 typedef struct
 {
 	string title;
-	s32    line;
+	int    line;
 } HistoryPosition;
 
 class History
@@ -31,15 +31,15 @@ class History
 		History();
 		void clear();
 		string currentTitle();
-		s32    currentLine();
-		void   updateCurrentLine(s32 line);
-		void   insert(string ins_str, s32 ins_line);
+		int    currentLine();
+		void   updateCurrentLine(int line);
+		void   insert(string ins_str, int ins_line);
 		void   display();
-		u8     back();
-		u8     forward();
+		unsigned char     back();
+		unsigned char     forward();
 	private:
 		vector<HistoryPosition> _list;
-		u32                     _currentPosition;
+		unsigned int                     _currentPosition;
 };
 
 #endif

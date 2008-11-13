@@ -29,7 +29,7 @@ Search::Search(CharStat* CStat1, CharStat* CStat2)
 	_cstat2 = CStat2;
 }
 
-void Search::load(s32 articleNumber)
+void Search::load(int articleNumber)
 {
 	int i;
 
@@ -104,7 +104,7 @@ void Search::display()
 	}
 }
 
-u8 Search::scrollLineUp()
+unsigned char Search::scrollLineUp()
 {
 	if (_absolute_CurrentArticleNumber <= 0)
 		return 0;
@@ -157,7 +157,7 @@ u8 Search::scrollLineUp()
 	return 1;
 }
 
-u8 Search::scrollLineDown()
+unsigned char Search::scrollLineDown()
 {
 	if (_absolute_CurrentArticleNumber >= _globals->getTitleIndex()->NumberOfArticles() - 1)
 		return 0;
@@ -208,10 +208,10 @@ u8 Search::scrollLineDown()
 	return 1;
 }
 
-u8 Search::scrollPageUp()
+unsigned char Search::scrollPageUp()
 {
-	u8 any = 0;
-	u8 i;
+	unsigned char any = 0;
+	unsigned char i;
 	for (i=0;i<SEARCHRESULT_LINES-1;i++)
 	{
 		if (scrollLineUp())
@@ -222,10 +222,10 @@ u8 Search::scrollPageUp()
 	return any;
 }
 
-u8 Search::scrollPageDown()
+unsigned char Search::scrollPageDown()
 {
-	u8 any = 0;
-	u8 i;
+	unsigned char any = 0;
+	unsigned char i;
 	for (i=0;i<SEARCHRESULT_LINES-1;i++)
 	{
 		if (scrollLineDown())
@@ -236,16 +236,16 @@ u8 Search::scrollPageDown()
 	return any;
 }
 
-u8 Search::scrollLongUp()
+unsigned char Search::scrollLongUp()
 {
-	u8 change = _absolute_CurrentArticleNumber==0?0:1;
+	unsigned char change = _absolute_CurrentArticleNumber==0?0:1;
 	load(_absolute_CurrentArticleNumber-25*(SEARCHRESULT_LINES-1));
 	return change;
 }
 
-u8 Search::scrollLongDown()
+unsigned char Search::scrollLongDown()
 {
-	u8 change = _absolute_CurrentArticleNumber==_globals->getTitleIndex()->NumberOfArticles()-1?0:1;
+	unsigned char change = _absolute_CurrentArticleNumber==_globals->getTitleIndex()->NumberOfArticles()-1?0:1;
 	load(_absolute_CurrentArticleNumber+25*(SEARCHRESULT_LINES-1));
 	return change;
 }

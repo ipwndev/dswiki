@@ -22,6 +22,7 @@ class Markup;
 class Search;
 class PercentIndicator;
 class Statusbar;
+class Font;
 
 class Globals
 {
@@ -33,6 +34,7 @@ class Globals
 		void setSearch(Search* search);
 		void setPercentIndicator(PercentIndicator* percentIndicator);
 		void setStatusbar(Statusbar* statusbar);
+		void setFont(Font* font);
 		Dumps*            getDumps();
 		TitleIndex*       getTitleIndex();
 		WikiMarkupGetter* getWikiMarkupGetter();
@@ -40,6 +42,7 @@ class Globals
 		Search*           getSearch();
 		PercentIndicator* getPercentIndicator();
 		Statusbar*        getStatusbar();
+		Font*             getFont();
 	private:
 		Dumps*            _dumps;
 		TitleIndex*       _titleIndex;
@@ -48,6 +51,7 @@ class Globals
 		Search*           _search;
 		PercentIndicator* _percentIndicator;
 		Statusbar*        _statusbar;
+		Font*             _font;
 };
 
 

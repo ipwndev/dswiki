@@ -7,8 +7,8 @@ using namespace std;
 
 typedef struct
 {
-   s32 x;
-   s32 y;
+   int x;
+   int y;
 } POINT;
 
 typedef struct
@@ -19,19 +19,19 @@ typedef struct
 
 typedef struct
 {
-	u8   Name[16];
-	u8   DID;
-	u16* Ptr;
-	u16  Width;
-	u16  Height;
+	unsigned char   Name[16];
+	unsigned char   DID;
+	unsigned short int* Ptr;
+	unsigned short int  Width;
+	unsigned short int  Height;
 } Device;
 
 typedef struct
 {
-	s32     Left;
-	s32     Top;
-	u32     Width;
-	u32     Height;
+	int     Left;
+	int     Top;
+	unsigned int     Width;
+	unsigned int     Height;
 	BLOCK   Bound;
 	const Device* Screen;
 } VirScreen;

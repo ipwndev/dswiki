@@ -19,16 +19,16 @@ class Element
 	public:
 		~Element();
 		Element(string text);
-		Element(string str_namesp, string str_targ, string str_anch, string str_disp, u32 start, u32 length, u32 link_id);
+		Element(string str_namesp, string str_targ, string str_anch, string str_disp, unsigned int start, unsigned int length, unsigned int link_id);
 		ELEMENTTYPE Type;
 		BLOCK BoundingBox;
 		string wikiNamespace;
 		string displayText;
 		string target;
 		string anchor;
-		u32 sourcePositionStart;
-		u32 sourceLength;
-		u32 id;
+		unsigned int sourcePositionStart;
+		unsigned int sourceLength;
+		unsigned int id;
 	private:
 };
 
@@ -36,8 +36,8 @@ class Markupline
 {
 	public:
 		~Markupline();
-		void drawToVScreen(VirScreen* VScreen, CharStat* CStat, s32 line);
-		u8 containsCertainLink(u32 id);
+		void drawToVScreen(VirScreen* VScreen, CharStat* CStat, int line);
+		unsigned char containsCertainLink(unsigned int id);
 		vector<Element> children;
 	private:
 };
@@ -45,32 +45,32 @@ class Markupline
 class Markup
 {
 	public:
-		Markup(string Str, CharStat* CStat, TitleIndex* titleindex);
+		Markup();
 		~Markup();
 
-		void	createLines(VirScreen* VScreen, CharStat* CStat);
-		u32	numberOfLines();
-		s32	currentLine();
-		u8	currentPercent();
-		u8	setCurrentLine(s32 line);
-		void	draw();
-		u8	scrollLineDown();
-		u8	scrollLineUp();
-		u8	scrollPageDown();
-		u8	scrollPageUp();
-		string	evaluateClick(s16 x,s16 y);
-		void setGlobals(Globals* globals);
+		void 			parse(string Str);
+		void			createLines(VirScreen* VScreen, CharStat* CStat);
+		unsigned int	numberOfLines();
+		int				currentLine();
+		unsigned char	currentPercent();
+		unsigned char	setCurrentLine(int line);
+		void			draw();
+		unsigned char	scrollLineDown();
+		unsigned char	scrollLineUp();
+		unsigned char	scrollPageDown();
+		unsigned char	scrollPageUp();
+		string			evaluateClick(s16 x,s16 y);
+		void 			setGlobals(Globals* globals);
 	private:
-		s32	_currentLine;
+		int				_currentLine;
 		vector<Markupline>	lines;
 		vector<Element>	visibleChildren;
-		CharStat*	_markupCStat;
-		u8	_linesOnVScreen1;
-		u8	_linesOnVScreen2;
-		TitleIndex* _titleindex;
-		Globals* _globals;
+		CharStat*		_markupCStat;
+		unsigned char	_linesOnVScreen1;
+		unsigned char	_linesOnVScreen2;
+		Globals*		_globals;
 };
 
-Element* createLink(string Str, u32 startPos, u32 link_id);
+Element* createLink(string Str, unsigned int startPos, unsigned int link_id);
 
 #endif

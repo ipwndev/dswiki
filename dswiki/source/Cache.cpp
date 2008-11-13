@@ -36,7 +36,7 @@ void Cache::clear()
 void Cache::insert(string title, string markup)
 {
 	CacheEntry newEntry = {title,markup};
-	u32 newEntrySize = markup.length();
+	unsigned int newEntrySize = markup.length();
 	while ((_size + newEntrySize > MAX_CACHE_SIZE) && (_list.size()>0) )
 	{
 		CacheEntry oldEntry = _list.front();
@@ -47,9 +47,9 @@ void Cache::insert(string title, string markup)
 	_size += newEntrySize;
 }
 
-u8 Cache::isInCache(string title)
+unsigned char Cache::isInCache(string title)
 {
-	u32 i;
+	unsigned int i;
 	for (i=0;i<_list.size();i++)
 	{
 		if (_list[i].title == title)
@@ -69,7 +69,7 @@ string Cache::getMarkup(string title)
 
 void Cache::display()
 {
-	s32 i;
+	int i;
 	PA_OutputText(1,0,23,"SIZE = %d, CAPACITY = %d",_size,MAX_CACHE_SIZE-_size);
 	for (i=0;i<_list.size();i++)
 	{
