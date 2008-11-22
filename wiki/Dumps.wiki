@@ -9,11 +9,11 @@ If you just want to test DSwiki, download one of the smaller dumps first.
 
 == Wikipedia ==
 
-||The complete English Wikipedia (2008/07/24)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/en/enwiki-20080724.tar.gz (3.4 GB)||
-||The complete German Wikipedia (2008/07/12)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/de/dewiki-20080712.tar.gz (1.1 GB)||
-||The complete French Wikipedia (2008/07/24)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/fr/frwiki-20080724.tar.gz (873 MB)||
+||The complete English Wikipedia (2008/10/08)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/en/enwiki-20081008.tar.gz (3.6 GB)||
+||The complete German Wikipedia (2008/10/11)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/de/dewiki-20081011.tar.gz (1.2 GB)||
+||The complete French Wikipedia (2008/10/17)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/fr/frwiki-20081017.tar.gz (931 MB)||
 ||The complete Polish Wikipedia (2008/06/12)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/pl/plwiki-20080612.tar.gz (411 MB)||
-||The complete Japanese Wikipedia (2008/07/24)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/ja/jawiki-20080724.tar.gz (780 MB)||
+||The complete Japanese Wikipedia (2008/10/19)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/ja/jawiki-20081019.tar.gz (832 MB)||
 
 == Other ==
 
