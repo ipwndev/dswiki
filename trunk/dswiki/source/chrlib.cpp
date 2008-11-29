@@ -3,144 +3,6 @@
 #include "char_convert.h"
 
 
-string trimPhrase(string Str)
-{
-	if (Str.empty())
-		return "";
-
-	int first = Str.find_first_not_of(" ");
-	int last = Str.find_last_not_of(" ");
-
-	if ((first==string::npos) || (last==string::npos))
-		return "";
-
-	Str = Str.substr(first,last-first+1);
-	return Str;
-}
-
-
-string exchangeSGMLEntities(string phrase)
-{
-	if ( phrase.empty() )
-		return phrase;
-
-	int posStart = 0;
-	int entityStart, entityLength;
-	int posEnd;
-	string entity;
-
-	int i;
-	while (posStart<phrase.length())
-	{
-		posStart = phrase.find("&",posStart);
-		if (posStart==string::npos)
-			return phrase;
-		posEnd = phrase.find(";",posStart);
-		if (posEnd==string::npos)
-			return phrase;
-
-		entity       = phrase.substr(posStart,posEnd-posStart+1);
-		entityStart  = posStart;
-		entityLength = entity.length();
-
-		// Skip the found "&"
-		// Note: this also prevents double interpretations as in &amp;theta;
-		posStart++;
-
-		// each named entity has at least the form "&..;"
-		// each number has at least the form "&#.;"
-		// so we discard any shorter string
-		if (entityLength<4)
-			continue;
-
-		// test for numeric entities
-		if (entity.substr(1,1)=="#")
-		{
-			string number = entity.substr(2,entity.length()-3);
-			if (number.empty())
-				continue;
-
-			unsigned int codepoint[] = {0,0};
-			char replaced[32];
-
-			if (number.substr(0,1)=="x")
-			{
-				// hexadecimal format found
-				number.erase(0,1);
-				int temp;
-				if ((temp=number.find_first_not_of("0123456789aAbBcCdDeEfF"))!=string::npos)
-					continue;
-
-				// conversion is possible
-				for (i=0;i<number.length();i++)
-				{
-					unsigned char c = number.at(i);
-					if ((0x30<=c) && (c<=0x39))
-						codepoint[0] = codepoint[0] * 16 + (c-0x30); // 0-9
-					else if ((0x41<=c) && (c<=0x46))
-						codepoint[0] = codepoint[0] * 16 + (c-0x37); // A-F
-					else if ((0x61<=c) && (c<=0x66))
-						codepoint[0] = codepoint[0] * 16 + (c-0x57); // a-f
-				}
-			}
-			else
-			{
-				// decimal format found
-				int temp;
-				if ((temp=number.find_first_not_of("0123456789"))!=string::npos)
-					continue;
-
-				// conversion is possible
-				for (i=0;i<number.length();i++)
-				{
-					unsigned char c = number.at(i);
-					codepoint[0] = codepoint[0] * 10 + (c-0x30);
-				}
-			}
-
-			// Don't interprete control characters
-			if ( ((codepoint[0]<32) && ((codepoint[0]!=0x0A)||(codepoint[0]!=0x0D))) || (codepoint[0]==0xFFFE) || (codepoint[0]==0xFFFF) )
-				continue;
-
-			UTF2UTF8(codepoint,replaced);
-			phrase.replace(entityStart,entityLength,replaced);
-
-			// we can go to the next entity, because no named entity will start with "&#"
-			continue;
-		}
-
-		// lastly, test for named entities, but at this point, we can check the length first
-		if (entityLength>10)
-			continue;
-
-		for (i=0;i<MAX_NAMED_ENTITIES;i++)
-		{
-			if (entity==entities[i].entity)
-			{
-				char replaced[32];
-				unsigned int codepoint[] = {entities[i].codepoint,0};
-				UTF2UTF8(codepoint,replaced);
-				string neu = replaced;
-				phrase.replace(entityStart,entity.length(),neu);
-				break;
-			}
-		}
-
-	}
-	return phrase;
-}
-
-
-string preparePhrase(string phrase, unsigned char indexNo, unsigned char indexVersion)
-{
-// 	phrase = trimPhrase(phrase);
-	if (indexNo==1)
-		return lowerPhrase(exchangeDiacriticChars(lowerPhrase(phrase,indexVersion),indexVersion), indexVersion);
-	else
-		return lowerPhrase(phrase,indexVersion);
-}
-
-
 void SwitchNewLine(const CharStat* CStat, BLOCK* CharArea, s16 Origin, unsigned char Height)
 {
 	switch(CStat->Rotate)
@@ -273,9 +135,10 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 	s8   yoff=0;
 	unsigned char   h,w;
 	unsigned char   bbx_w, bbx_h;
-	unsigned short int  X=0,Y=0;
+	short int  X=0, Y=0;
 	CharStat CopyCStat=*CStat;
 	DATA = CStat->FONT->getCharacterData(*Uni,CStat->FontCut);
+	unsigned char  Width = DATA[0];
 
 	idx=0;
 
@@ -283,6 +146,8 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 	yoff = (DATA[2]&0xF);
 	bbx_w = (DATA[1]>>4)+1;
 	bbx_h = (DATA[1]&0xF)+1;
+	CharArea.End.x = CharArea.Start.x + Width-1;
+	CharArea.End.y = CharArea.Start.y + CStat->FONT->Regular.Height;
 
 	switch(CStat->Fx)
 	{
@@ -300,25 +165,28 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 						switch(CStat->Rotate)
 						{
 							case DEG0:
-								X=CharArea.Start.x + w + xoff;
-								Y=CharArea.Start.y + h + yoff;
+								X = CharArea.Start.x + w + xoff;
+								Y = CharArea.Start.y + h + yoff;
 								break;
 							case DEG90:
-								X=CharArea.Start.x + h + yoff;
-								Y=CharArea.End.y   -(w + xoff);
+								X = CharArea.Start.x + h + yoff;
+								Y = CharArea.End.y   -(w + xoff);
 								break;
 							case DEG180:
-								X=CharArea.End.x   -(w + xoff);
-								Y=CharArea.End.y   -(h + yoff);
+								X = CharArea.End.x   -(w + xoff);
+								Y = CharArea.End.y   -(h + yoff);
 								break;
 							case DEG270:
-								X=CharArea.End.x   -(h + yoff);
-								Y=CharArea.Start.y +(w + xoff);
+								X = CharArea.End.x   -(h + yoff);
+								Y = CharArea.Start.y +(w + xoff);
 						}
 						switch(CStat->Fx)
 						{
 							case NONE:
-								DrawPoint(VScreen ,X , Y, CStat->Color);
+								if ((*Uni==0x3c)||(*Uni==0x3e)||(*Uni==0x22)||(*Uni==0x26)||(*Uni==0x27))
+									DrawPoint(VScreen ,X , Y, PA_RGB(31,0,0));
+								else
+									DrawPoint(VScreen ,X , Y, CStat->Color);
 								break;
 							case HOLLOW:
 								DrawPoint(VScreen ,X-1 , Y,   CStat->BgColor);
@@ -374,21 +242,21 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 // TODO: auch ein geprintetes '\n' außerhalb des Screens soll Abbruch verursachen
 unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang)
 {
-	unsigned char* Str = (unsigned char*) St;
+	unsigned char* Str                = (unsigned char*) St;
 	// global
-	unsigned char    Height             = CStat->FONT->Regular.Height;
-	s16   Origin             = 0;
+	unsigned char  Height             = CStat->FONT->Regular.Height;
+	s16            Origin             = 0;
 	// per character
-	unsigned char*   DATA;
-	unsigned int Uni         = 0;
-	unsigned char    Width              = 0;
+	unsigned char* DATA;
+	unsigned int   Uni                = 0;
+	unsigned char  Width              = 0;
 	// local variables
 	unsigned int   Skip               = 0;
 	unsigned int   SaveSkipWord       = 0;
 	unsigned int   SaveSkipLetter     = 0;
-	int   GlyphsPrinted      = 0;
-	unsigned char    ForceInnerWordWrap = 0;
-	unsigned char    HardWrap           = 0;
+	int            GlyphsPrinted      = 0;
+	unsigned char  ForceInnerWordWrap = 0;
+	unsigned char  HardWrap           = 0;
 
 	if ((CStat->Wrap==HARDWRAP)||(CStat->Wrap==NOWRAP))
 		HardWrap = 1;
@@ -472,6 +340,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 				GlyphsPrinted++;
 				DATA = CStat->FONT->getCharacterData(Uni,CStat->FontCut);
 				Width = DATA[0];
+				iDrawChar(&Uni,VScreen,CStat,*CharArea);
 				switch(CStat->Rotate)
 				{
 					case DEG0:
@@ -546,10 +415,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			if((Uni==0x00)||(Uni==0x0D)||(Uni==0x0A)||(Uni==0x20)) // Rewind
 			{
 				Skip = SaveSkipWord;
-				CharArea->Start.x = SaveCharArea.Start.x;
-				CharArea->Start.y = SaveCharArea.Start.y;
-				CharArea->End.x   = SaveCharArea.End.x;
-				CharArea->End.y   = SaveCharArea.End.y;
+				*CharArea = SaveCharArea;
 				Skip+=ToUTF(&Str[Skip],&Uni);
 				ForceInnerWordWrap = 1;
 				continue;

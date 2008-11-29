@@ -19,14 +19,13 @@
 #include "chrlib.h"
 #include "TitleIndex.h"
 #include "Globals.h"
+#include "main.h"
 
 #define MAX_SEARCH_RESULTS 128
 #define SEARCHRESULT_LINES 13
 
-Search::Search(CharStat* CStat1, CharStat* CStat2)
+Search::Search()
 {
-	_cstat1 = CStat1;
-	_cstat2 = CStat2;
 }
 
 void Search::load(int articleNumber)
@@ -95,11 +94,11 @@ void Search::display()
 	{
 		if (i!=_list_CurrentArticleNumber)
 		{
-			iPrint(_list[i]+"\n",&ContentWin1,_cstat1,&CharArea,-1,UTF8);
+			iPrint(_list[i]+"\n",&ContentWin1,&SearchResultsCS1,&CharArea,-1,UTF8);
 		}
 		else
 		{
-			iPrint(_list[i]+"\n",&ContentWin1,_cstat2,&CharArea,-1,UTF8);
+			iPrint(_list[i]+"\n",&ContentWin1,&SearchResultsCS2,&CharArea,-1,UTF8);
 		}
 	}
 }

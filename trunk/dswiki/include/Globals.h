@@ -27,6 +27,7 @@ class Font;
 class Globals
 {
 	public:
+		void setOptions();
 		void setDumps(Dumps* dumps);
 		void setTitleIndex(TitleIndex* titleIndex);
 		void setWikiMarkupGetter(WikiMarkupGetter* wikiMarkupGetter);
@@ -35,6 +36,7 @@ class Globals
 		void setPercentIndicator(PercentIndicator* percentIndicator);
 		void setStatusbar(Statusbar* statusbar);
 		void setFont(Font* font);
+		void setLanguage(int language);
 		Dumps*            getDumps();
 		TitleIndex*       getTitleIndex();
 		WikiMarkupGetter* getWikiMarkupGetter();
@@ -43,6 +45,7 @@ class Globals
 		PercentIndicator* getPercentIndicator();
 		Statusbar*        getStatusbar();
 		Font*             getFont();
+		int               getLanguage();
 	private:
 		Dumps*            _dumps;
 		TitleIndex*       _titleIndex;
@@ -52,6 +55,7 @@ class Globals
 		PercentIndicator* _percentIndicator;
 		Statusbar*        _statusbar;
 		Font*             _font;
+		int               _language; //0 Japanese, 1 English, 2 Français, 3 Deutsch, 4 Italian, 5 Spanish
 };
 
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include "api.h"
 #include "chrlib.h"
+#include "tinyxml.h"
 
 class TitleIndex;
 class Globals;
@@ -69,6 +70,7 @@ class Markup
 		unsigned char	_linesOnVScreen1;
 		unsigned char	_linesOnVScreen2;
 		Globals*		_globals;
+		TiXmlDocument*  _td;
 };
 
 Element* createLink(string Str, unsigned int startPos, unsigned int link_id);

@@ -106,11 +106,11 @@ void DrawBlock(const VirScreen* VScreen, BLOCK Area, unsigned short int Color, u
 	}
 }
 
-void DrawBlock(const Device* Dev, BLOCK Area, unsigned short int Color, unsigned char Fill)
-{
-	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
-	DrawBlock(&VScreen, Area, Color, Fill);
-}
+// void DrawBlock(const Device* Dev, BLOCK Area, unsigned short int Color, unsigned char Fill)
+// {
+// 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
+// 	DrawBlock(&VScreen, Area, Color, Fill);
+// }
 
 void DrawEmboss(const VirScreen* VScreen, BLOCK Area, unsigned short int Color)
 {
@@ -194,16 +194,16 @@ void FillVS(VirScreen* VScreen, unsigned short int Color)
 
 void InitVS(VirScreen* VScreen)
 {
-	VScreen->Bound.Start.x = VScreen->Left;
-	VScreen->Bound.Start.y = VScreen->Top;
-	VScreen->Bound.  End.x = VScreen->Left + VScreen->Width - 1;
-	VScreen->Bound.  End.y = VScreen->Top  + VScreen->Height - 1;
+	VScreen->AbsoluteBound.Start.x = VScreen->Left;
+	VScreen->AbsoluteBound.Start.y = VScreen->Top;
+	VScreen->AbsoluteBound.  End.x = VScreen->Left + VScreen->Width - 1;
+	VScreen->AbsoluteBound.  End.y = VScreen->Top  + VScreen->Height - 1;
 }
 
 void InitVS2(VirScreen* VScreen)
 {
-	VScreen->Left   = VScreen->Bound.Start.x;
-	VScreen->Top    = VScreen->Bound.Start.y;
-	VScreen->Width  = VScreen->Bound.End.x - VScreen->Left + 1;
-	VScreen->Height = VScreen->Bound.End.y - VScreen->Top + 1;
+	VScreen->Left   = VScreen->AbsoluteBound.Start.x;
+	VScreen->Top    = VScreen->AbsoluteBound.Start.y;
+	VScreen->Width  = VScreen->AbsoluteBound.End.x - VScreen->Left + 1;
+	VScreen->Height = VScreen->AbsoluteBound.End.y - VScreen->Top + 1;
 }

@@ -16,13 +16,12 @@
 #include <vector>
 #include <string>
 
-#include "chrlib.h"
 #include "char_convert.h"
 #include "main.h"
 
 Dumps::Dumps()
 {
-	_setPossibleWikis();
+	_gatherPossibleWikis();
 }
 
 vector<string> Dumps::getPossibleWikis()
@@ -30,7 +29,10 @@ vector<string> Dumps::getPossibleWikis()
 	vector<string> possibleWikis;
 	for (int i=0;i<_possibleWikis.size();i++)
 	{
-		possibleWikis.push_back(_possibleWikis[i].wikibase);
+		if (_possibleWikis[i].basename.substr(0,8)!="_dswiki_")
+		{
+			possibleWikis.push_back(_possibleWikis[i].basename);
+		}
 	}
 	sort(possibleWikis.begin(),possibleWikis.end());
 	return possibleWikis;
@@ -40,8 +42,8 @@ string Dumps::get_ifo(string basename)
 {
 	for (int i=0;i<_possibleWikis.size();i++)
 	{
-		if (_possibleWikis[i].wikibase == basename)
-			return _possibleWikis[i].wikiifo;
+		if (_possibleWikis[i].basename == basename)
+			return _possibleWikis[i].ifofile;
 	}
 	return "";
 }
@@ -50,8 +52,8 @@ string Dumps::get_idx(string basename)
 {
 	for (int i=0;i<_possibleWikis.size();i++)
 	{
-		if (_possibleWikis[i].wikibase == basename)
-			return _possibleWikis[i].wikiidx;
+		if (_possibleWikis[i].basename == basename)
+			return _possibleWikis[i].idxfile;
 	}
 	return "";
 }
@@ -60,8 +62,8 @@ string Dumps::get_ao1(string basename)
 {
 	for (int i=0;i<_possibleWikis.size();i++)
 	{
-		if (_possibleWikis[i].wikibase == basename)
-			return _possibleWikis[i].wikiao1;
+		if (_possibleWikis[i].basename == basename)
+			return _possibleWikis[i].ao1file;
 	}
 	return "";
 }
@@ -70,8 +72,8 @@ string Dumps::get_ao2(string basename)
 {
 	for (int i=0;i<_possibleWikis.size();i++)
 	{
-		if (_possibleWikis[i].wikibase == basename)
-			return _possibleWikis[i].wikiao2;
+		if (_possibleWikis[i].basename == basename)
+			return _possibleWikis[i].ao2file;
 	}
 	return "";
 }
@@ -80,40 +82,35 @@ vector<string> Dumps::get_dbs(string basename)
 {
 	for (int i=0;i<_possibleWikis.size();i++)
 	{
-		if (_possibleWikis[i].wikibase == basename)
-			return _possibleWikis[i].wikidbs;
+		if (_possibleWikis[i].basename == basename)
+			return _possibleWikis[i].dbsfiles;
 	}
 	vector<string> dummy;
 	return dummy;
 }
 
-void Dumps::_setPossibleWikis()
+void Dumps::_gatherPossibleWikis()
 {
 	_possibleWikis.clear();
-// 	int line = 2;
+
 	vector<string> filenames;
 	struct stat st;
 	char filename[256]; // to hold a full filename and string terminator
 
-	DIR_ITER* dir = diropen("fat:/dswiki/");
+	string pathname = "fat:/dswiki/";
+
+	DIR_ITER* dir = diropen(pathname.c_str());
 	if (dir != NULL)
 	{
-// 		PA_OutputText(0,0,0,"Contents of \"/dswiki/\":");
-// 		PA_OutputText(0,0,1,"-----------------------");
 		while (dirnext(dir, filename, &st) == 0)
 		{
 			if (!(st.st_mode & S_IFDIR)) // regular file
 			{
-// 				PA_OutputText(0,0,line++,"%s",filename);
 				string filenamestr(filename);
-				filenames.push_back(filenamestr);
+				if (filenamestr.substr(0,8)!="_dswiki_")
+					filenames.push_back(filenamestr);
 			}
 		}
-// 		for (int i=0;i<filenames.size();i++)
-// 		{
-// 			PA_OutputText(0,0,i,"%s",filenames[i].c_str());
-// 		}
-// 		PA_WaitFor(Pad.Newpress.Anykey);
 
 		for (int i=0;i<filenames.size();i++)
 		{
@@ -123,76 +120,61 @@ void Dumps::_setPossibleWikis()
 				if (lowerPhrase(filenames[i].substr(lastDot+1))=="ifo")
 				{
 					WikiDump currentWiki;
-					currentWiki.wikiifo = "";
-					currentWiki.wikiidx = "";
-					currentWiki.wikiao1 = "";
-					currentWiki.wikiao2 = "";
-					string wikiname = filenames[i].substr(0,lastDot);
-					currentWiki.wikibase = wikiname;
-					currentWiki.wikiifo = filenames[i];
-// 					PA_OutputText(0,0,line++,"Found: %s",wikiname.c_str());
-// 					PA_OutputText(1,0,8,"Found: %s                        ",wikiname.c_str());
-// 					PA_OutputText(1,0,10,"%c1[ifo][idx][ao1][ao2][db?]");
-// 					PA_Sleep(30);
-// 					PA_OutputText(1,0,10,"%c2[ifo]");
-// 					PA_Sleep(30);
-					unsigned char foundidx = 0;
-					unsigned char foundao1 = 0;
-					unsigned char foundao2 = 0;
-					unsigned char founddb  = 0;
-					for (int j=0;j<filenames.size();j++)
+					currentWiki.basename = filenames[i].substr(0,lastDot);
+					currentWiki.ifofile  = pathname + filenames[i];
+					for (int j = 0; j < filenames.size(); j++)
 					{
-						int compareLastDot = filenames[j].rfind(".");
-						string basename = filenames[j].substr(0,compareLastDot);
-						if (basename == wikiname)
+						int lastDot2 = filenames[j].rfind(".");
+						string basename2 = filenames[j].substr(0,lastDot2);
+						if (basename2 == currentWiki.basename)
 						{
-							string lowerExt = lowerPhrase(filenames[j].substr(compareLastDot+1));
-							if (lowerExt.length()==3)
+							string lowerExt2 = lowerPhrase(filenames[j].substr(lastDot2+1));
+							if (lowerExt2.length()==3)
 							{
-								if (lowerExt == "idx")
-								{
-									foundidx = 1;
-									currentWiki.wikiidx = filenames[j];
-// 									PA_OutputText(1,5,10,"%c2[idx]");
-// 									PA_Sleep(30);
-								}
-								if (lowerExt == "ao1")
-								{
-									foundao1 = 1;
-									currentWiki.wikiao1 = filenames[j];
-// 									PA_OutputText(1,10,10,"%c2[ao1]");
-// 									PA_Sleep(30);
-								}
-								if (lowerExt == "ao2")
-								{
-									foundao2 = 1;
-									currentWiki.wikiao2 = filenames[j];
-// 									PA_OutputText(1,15,10,"%c2[ao2]");
-// 									PA_Sleep(30);
-								}
-								if ( (lowerExt.substr(0,2) == "db") && (lowerExt.substr(2).find_first_of("abcdefghijklmnopqrstuvwxyz")!=string::npos) )
-								{
-									founddb = 1;
-									currentWiki.wikidbs.push_back(filenames[j]);
-// 									PA_OutputText(1,20,10,"%c2[%s]",lowerExt.c_str());
-// 									PA_Sleep(30);
-								}
+								if (lowerExt2 == "idx")
+									currentWiki.idxfile = pathname + filenames[j];
+								if (lowerExt2 == "ao1")
+									currentWiki.ao1file = pathname + filenames[j];
+								if (lowerExt2 == "ao2")
+									currentWiki.ao2file = pathname + filenames[j];
+								if ( (lowerExt2.substr(0,2) == "db") && (lowerExt2.substr(2).find_first_of("abcdefghijklmnopqrstuvwxyz")!=string::npos) )
+									currentWiki.dbsfiles.push_back(pathname + filenames[j]);
 							}
 						}
 					}
-// 					sort(currentWiki.wikidbs.begin(),currentWiki.wikidbs.end());
-					if (foundidx && foundao1 && foundao2 && founddb)
+					if ((!currentWiki.idxfile.empty()) && (!currentWiki.ao1file.empty()) && (!currentWiki.ao2file.empty()) && (!currentWiki.dbsfiles.empty()))
 					{
 						_possibleWikis.push_back(currentWiki);
-// 						PA_OutputText(1,0,12,"Adding %s, total: %d",wikiname.c_str(),_possibleWikis.size());
-// 						PA_Sleep(30);
 					}
 				}
 			}
 		}
+		dirclose(dir);
 	}
-	else
+
+	pathname = "efs:/dswiki/";
+
+	dir = diropen(pathname.c_str());
+	if (dir != NULL)
 	{
-		PA_OutputText(1,0,5,"%c1Error: dir");
+		while (dirnext(dir, filename, &st) == 0)
+		{
+			if (!(st.st_mode & S_IFDIR)) // regular file
+			{
+				string filenamestr(filename);
+				if (filenamestr.substr(filenamestr.length()-3)=="ifo")
+				{
+					WikiDump currentWiki;
+					currentWiki.basename = "_dswiki_" + filenamestr.substr(0,filenamestr.length()-4);
+					currentWiki.ifofile  =  pathname  + filenamestr.substr(0,filenamestr.length()-4) + ".ifo";
+					currentWiki.idxfile  =  pathname  + filenamestr.substr(0,filenamestr.length()-4) + ".idx";
+					currentWiki.ao1file  =  pathname  + filenamestr.substr(0,filenamestr.length()-4) + ".ao1";
+					currentWiki.ao2file  =  pathname  + filenamestr.substr(0,filenamestr.length()-4) + ".ao2";
+					currentWiki.dbsfiles.push_back(pathname + filenamestr.substr(0,filenamestr.length()-4) + ".dba");
+					_possibleWikis.push_back(currentWiki);
+				}
+			}
+		}
+		dirclose(dir);
 	}
 }

@@ -1,6 +1,8 @@
 #include "WikiMarkupGetter.h"
 
 #include <sys/dir.h>
+#include <unistd.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <bzlib.h>

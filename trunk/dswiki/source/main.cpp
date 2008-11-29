@@ -31,19 +31,23 @@ CharStat ContentCS;
 CharStat ErrorCS;
 CharStat StatusbarCS;
 CharStat StatErrorCS;
+CharStat SearchResultsCS1;
+CharStat SearchResultsCS2;
+
 VirScreen PercentArea;
 VirScreen Titlebar;
 VirScreen ContentWin1;
 VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
-#define DEBUG 0
+#define DEBUG 1
 
 int main(int argc, char ** argv)
 {
 	// PAlib initialization
 	PA_Init();
 	PA_InitVBL();
+	PA_UpdateUserInfo();
 	KT_Init();
 	KT_UseEFS();
 
@@ -53,16 +57,19 @@ int main(int argc, char ** argv)
 	PA_SetBrightness(0,-31);
 	PA_SetBrightness(1,-31);
 
+	Globals* g = new Globals();
+	g->setLanguage(PA_UserInfo.Language);
+
 	if (!PA_InitFat())
 	{
 		PA_OutputText(1,24,0,"Failed initializing FAT");
-		return 0;
+		return 1;
 	}
 
 	if(!EFS_Init(EFS_ONLY | EFS_DEFAULT_DEVICE, NULL))
 	{
 		PA_OutputText(1,24,0,"Failed initializing EFS");
-		return 0;
+		return 1;
 	}
 
 #if !DEBUG
@@ -80,7 +87,7 @@ int main(int argc, char ** argv)
 		PA_WaitForVBL();
 	}
 
-	for (int i=0;i<90;i++)
+	for (int i=0;i<120;i++)
 	{
 		if (Pad.Newpress.Anykey || Stylus.Newpress)
 			breakIntro = 1;
@@ -100,7 +107,6 @@ int main(int argc, char ** argv)
 		PA_SetBrightness(1,i);
 		PA_WaitForVBL();
 	}
-	breakIntro = 0;
 	for (int i=0;i<90;i++)
 	{
 		if (Pad.Newpress.Anykey || Stylus.Newpress)
@@ -141,7 +147,7 @@ int main(int argc, char ** argv)
 	if (dswikiDir == NULL)
 	{
 		PA_OutputText(1,24,2,"%c1[Failed]");
-		return 0;
+		return 1;
 	}
 	else
 	{
@@ -149,12 +155,12 @@ int main(int argc, char ** argv)
 		dirclose(dswikiDir);
 	}
 
-	PA_OutputText(1,0,3,"Checking \"/dswiki/fonts/\"...");
+	PA_OutputText(1,0,3,"Checking EFS-fonts...");
 	DIR_ITER* dswikiFontDir = diropen ("efs:/dswiki/fonts/");
 	if (dswikiFontDir == NULL)
 	{
 		PA_OutputText(1,24,3,"%c1[Failed]");
-		return 0;
+		return 1;
 	}
 	else
 	{
@@ -173,7 +179,7 @@ int main(int argc, char ** argv)
 	else
 	{
 		PA_OutputText(1,24,4,"%c1[Failed]");
-		return 0;
+		return 1;
 	}
 
 	PA_OutputText(1,0,5,"Gathering installed wikis...");
@@ -184,7 +190,7 @@ int main(int argc, char ** argv)
 	if (possibleWikis.size()==0)
 	{
 		PA_OutputText(1,26,5,"%c1[None]");
-		return 0;
+		return 1;
 	}
 	else
 	{
@@ -196,50 +202,6 @@ int main(int argc, char ** argv)
 	}
 
 	PA_ClearTextBg(1);
-
-	//  TODO: Use graphical interface from now on
-
-	int currentSelectedWiki = 0;
-
-#if !DEBUG
-	if ( possibleWikis.size() > 1 )
-	{
-		int loopi = 0;
-		PA_OutputText(1,1,0,"Choose Wiki\n-----------");
-		unsigned char updateSelectedWiki = 1;
-		while(1)
-		{
-			if (Pad.Newpress.A)
-			{
-				break;
-			}
-			if (Pad.Newpress.Up||Pad.Newpress.Down)
-			{
-				currentSelectedWiki += Pad.Newpress.Down-Pad.Newpress.Up;
-				if (currentSelectedWiki<0) currentSelectedWiki = 0;
-				if (currentSelectedWiki>possibleWikis.size()-1) currentSelectedWiki = possibleWikis.size()-1;
-				updateSelectedWiki = 1;
-				PA_Sleep(10);
-			}
-			if (updateSelectedWiki)
-			{
-				for (loopi=0;loopi<possibleWikis.size();loopi++) {
-					if (loopi==currentSelectedWiki)
-					{
-						PA_OutputText(1,2,2+loopi,"%c1%s",possibleWikis[loopi].c_str());
-					}
-					else
-					{
-						PA_OutputText(1,2,2+loopi,"%s",possibleWikis[loopi].c_str());
-					}
-				}
-				updateSelectedWiki = 0;
-			}
-			PA_WaitForVBL();
-		}
-		PA_ClearTextBg(1);
-	}
-#endif
 
 	// important variables
 	KT_CreateSprite(0,0,"dswiki/icons/history",OBJ_SIZE_16X16,1,0,1,-16,-16);
@@ -255,8 +217,6 @@ int main(int argc, char ** argv)
 	KT_CreateSprite(0,10,"dswiki/icons/1rightarrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
 	KT_CreateSprite(0,11,"dswiki/icons/clear_left",OBJ_SIZE_16X16,1,0,0,-16,-16);
 
-	Globals* g = new Globals();
-
 	Statusbar* sb = new Statusbar();
 	PercentIndicator* p = new PercentIndicator();
 	g->setDumps(d);
@@ -265,13 +225,15 @@ int main(int argc, char ** argv)
 	g->setPercentIndicator(p);
 
 	// Initialization of global variables
-	UpScreen    = (Device)    { "U", 1, (unsigned short int*)PA_DrawBg[1], 256, 192};
-	DnScreen    = (Device)    { "D", 0, (unsigned short int*)PA_DrawBg[0], 256, 192};
-	NormalCS    = (CharStat)  { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
-	ContentCS   = (CharStat)  { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP,     NONE, 0 };
-	ErrorCS     = (CharStat)  { CompleteFont, REGULAR, 0, 0, PA_RGB(27, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP,     NONE, 0 };
-	StatusbarCS = (CharStat)  { CompleteFont, REGULAR, 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
-	StatErrorCS = (CharStat)  { CompleteFont, REGULAR, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+	UpScreen         = (Device)   { "U", 1, (unsigned short int*)PA_DrawBg[1], 256, 192};
+	DnScreen         = (Device)   { "D", 0, (unsigned short int*)PA_DrawBg[0], 256, 192};
+	NormalCS         = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
+	ContentCS        = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
+	ErrorCS          = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB(27, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
+	StatusbarCS      = (CharStat) { CompleteFont, REGULAR, 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
+	StatErrorCS      = (CharStat) { CompleteFont, REGULAR, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
+	SearchResultsCS1 = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
+	SearchResultsCS2 = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
 	PercentArea = (VirScreen) { 229, 176,  27,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&PercentArea);
 	Titlebar    = (VirScreen) {   0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
 	ContentWin1 = (VirScreen) {   2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
@@ -282,11 +244,9 @@ int main(int argc, char ** argv)
 	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
 	CharStat       TitlebarCS = { CompleteFont, BOLD,    0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
-	CharStat SearchResultsCS1 = { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP,     NONE, 0 };
-	CharStat SearchResultsCS2 = { CompleteFont, REGULAR, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP,     NONE, 0 };
 	CharStat SearchResultsCS3 = { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
 
-	BLOCK Btn_ToggleReal  = {{  3,  3},{ 18, 18}}; VirScreen Scr_ToogleReal = {0,0,0,0,Btn_ToggleReal,&DnScreen}; InitVS2(&Scr_ToogleReal);
+	BLOCK Btn_ToggleReal  = {{  3,  3},{ 18, 18}};
 	BLOCK Btn_Cancel      = {{ 67,  9},{ 88, 30}};
 	BLOCK Btn_Reload      = {{117,  9},{138, 30}};
 	BLOCK Btn_OK          = {{167,  9},{188, 30}};
@@ -298,47 +258,32 @@ int main(int argc, char ** argv)
 	BLOCK Btn_LineDown    = {{234,122},{255,143}};
 	BLOCK Btn_PageDown    = {{234,147},{255,168}};
 
-	BLOCK CharArea = {{  -20, 0},{ -20, 0}};
+	BLOCK CharArea = {{ 0, 0},{ 0, 0}};
+
+	// use graphical interface from now on
 
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
 
 	string markupstr;
-	string suchtitel;
+	string suchtitel = "Medium br closing";
 	string currentTitle;
 
 	Markup* markup = NULL;
 
-// 	string olli = "A_aÄÆÐØÞßæĀĐĲŴǢǻȀΑαϒϔВвӨӪḀẞ⁴З";
-// 	iPrint(olli+"\n" + preparePhrase(olli,0,0) + "\n"+preparePhrase(olli,0,1) + "\n"+preparePhrase(olli,0,2) + "\n\n"+preparePhrase(olli,1,0) + "\n"+preparePhrase(olli,1,1) + "\n"+preparePhrase(olli,1,2),&ContentWin1,&NormalCS,&CharArea,-1,UTF8);
-// 	vector<int> olli;
-// 	vector<int>::iterator it;
-// 	olli.push_back(0);
-// 	olli.push_back(10);
-// 	olli.push_back(20);
-// 	olli.push_back(30);
-// 	olli.push_back(40);
-// 	for (int i=0;i<olli.size();i++)
-// 	{
-// 		PA_OutputText(1,0,i,"%d",olli[i]);
-// 	}
-// 	it = olli.begin();
-// 	it++;
-// 	olli.insert(it,1);
-// 	it = olli.end();
-// 	it--;
-// 	olli.insert(it++,2);
-// 	olli.insert(it,3);
-// 	for (int i=0;i<olli.size();i++)
-// 	{
-// 		PA_OutputText(1,10,i,"%d",olli[i]);
-// 	}
-// 	olli.erase(--it);
-// 	for (int i=0;i<olli.size();i++)
-// 	{
-// 		PA_OutputText(1,20,i,"%d",olli[i]);
-// 	}
-// 	while(1);
+	string currentSelectedWiki = "";
+	TextBox* WikiChooser = new TextBox(possibleWikis);
+	WikiChooser->setTitle("Choose your Wiki");
+	WikiChooser->allowCancel(0);
+
+#if !DEBUG
+	if ( possibleWikis.size() > 1 )
+	{
+		currentSelectedWiki = WikiChooser->run();
+	}
+#else
+	currentSelectedWiki = possibleWikis[0];
+#endif
 
 	unsigned char  updateTitle       = 0;
 	unsigned char  updateContent     = 0;
@@ -354,30 +299,29 @@ int main(int argc, char ** argv)
 
 	g->getStatusbar()->clear();
 	g->getPercentIndicator()->clear();
-	g->getStatusbar()->displayClearAfter("Lade "+possibleWikis[currentSelectedWiki]+"...",30);
+	g->getStatusbar()->displayClearAfter("Loading "+currentSelectedWiki+"...",60);
 
 	TitleIndex* t = new TitleIndex();
 	g->setTitleIndex(t);
 	t->setGlobals(g);
-	t->load(possibleWikis[currentSelectedWiki]);
+	t->load(currentSelectedWiki);
 
 
-	g->getStatusbar()->display("Initialisiere MarkupGetter...");
+	g->getStatusbar()->display("Initializing MarkupGetter...");
 	WikiMarkupGetter* wmg = new WikiMarkupGetter();
 	g->setWikiMarkupGetter(wmg);
 	wmg->setGlobals(g);
-	wmg->load(possibleWikis[currentSelectedWiki]);
+	wmg->load(currentSelectedWiki);
 	g->getStatusbar()->clearAfter(30);
 
 	History* h = new History();
 	Cache*   c = new Cache();
+	Search*  s = new Search();
 
-	Search*  s = new Search(&SearchResultsCS1,&SearchResultsCS2);
 	g->setSearch(s);
 	s->setGlobals(g);
 
-
-	while(1)
+	while(1) // main loop
 	{
 		PA_CheckLid();
 
@@ -500,6 +444,7 @@ int main(int argc, char ** argv)
 
 			PA_WaitForVBL();
 
+
 			while(1)
 			{
 				letter = PA_CheckKeyboard();
@@ -595,7 +540,7 @@ int main(int argc, char ** argv)
 						loadArticle = 1;
 						break;
 					}
-					else if (IsInArea(StatusbarVS.Bound,S))
+					else if (IsInArea(StatusbarVS.AbsoluteBound,S))
 					{
 						suchtitel = currentTitle;
 						offsetsUTF.clear();
@@ -810,6 +755,9 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Y)
 		{
+			unsigned short int* DISPLAY1 = UpScreen.Ptr;
+			unsigned short int* DISPLAY2 = DnScreen.Ptr;
+			DMA_Copy(&DISPLAY2[0], &DISPLAY1[0], 256*192 ,DMA_16NOW);
 		}
 
 		if (Pad.Newpress.L)
@@ -836,97 +784,69 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Start)
 		{
+			g->setOptions();
+			updateContent = 1;
 		}
 
-		if (Pad.Newpress.Select)
+		if (Pad.Newpress.Select && (possibleWikis.size()>1))
 		{
-			int currentSelectedWikiBackup = currentSelectedWiki;
-			if (possibleWikis.size()>1)
+			WikiChooser->allowCancel(1);
+			string currentSelectedWikiBackup = currentSelectedWiki;
+			currentSelectedWiki = WikiChooser->run();
+			if (!currentSelectedWiki.empty() && (currentSelectedWiki != currentSelectedWikiBackup))
 			{
-				PA_Clear16bitBg(1);
-				PA_OutputText(1,1,0,"Choose Wiki\n-----------");
-				int i;
-				unsigned char updateSelectedWiki = 1;
-				while(1)
-				{
-					if (Pad.Newpress.A)
-					{
-						delete t;
-						t = new TitleIndex();
-						g->setTitleIndex(t);
-						t->setGlobals(g);
-						t->load(possibleWikis[currentSelectedWiki]);
+				g->getStatusbar()->displayClearAfter("Loading "+currentSelectedWiki+"...",60);
+				delete t;
+				t = new TitleIndex();
+				g->setTitleIndex(t);
+				t->setGlobals(g);
+				t->load(currentSelectedWiki);
 
-						delete wmg;
-						wmg = new WikiMarkupGetter();
-						g->setWikiMarkupGetter(wmg);
-						wmg->setGlobals(g);
-						wmg->load(possibleWikis[currentSelectedWiki]);
+				delete wmg;
+				wmg = new WikiMarkupGetter();
+				g->setWikiMarkupGetter(wmg);
+				wmg->setGlobals(g);
+				wmg->load(currentSelectedWiki);
 
-						h->clear();
-						c->clear();
+				h->clear();
+				c->clear();
 
-						loadArticle = 1;
-						break;
-					}
-					if (Pad.Newpress.B)
-					{
-						currentSelectedWiki = currentSelectedWikiBackup;
-						break;
-					}
-					if (Pad.Newpress.Up||Pad.Newpress.Down)
-					{
-						currentSelectedWiki += Pad.Newpress.Down-Pad.Newpress.Up;
-						if (currentSelectedWiki<0) currentSelectedWiki = 0;
-						if (currentSelectedWiki>possibleWikis.size()-1) currentSelectedWiki = possibleWikis.size()-1;
-						updateSelectedWiki = 1;
-						PA_Sleep(10);
-					}
-					if (updateSelectedWiki)
-					{
-						for (i=0;i<possibleWikis.size();i++)
-						{
-							if (i==currentSelectedWiki)
-								PA_OutputText(1,2,2+i,"%c1%s",possibleWikis[i].c_str());
-							else
-								PA_OutputText(1,2,2+i,"%s",possibleWikis[i].c_str());
-						}
-						updateSelectedWiki = 0;
-					}
-					PA_WaitForVBL();
-				}
-				PA_ClearTextBg(1);
-				updateTitle = 1;
-				updateContent = 1;
+				loadArticle = 1;
 			}
+			else
+			{
+				currentSelectedWiki = currentSelectedWikiBackup;
+			}
+			updateTitle = 1;
+			updateContent = 1;
 		}
 
 		if (loadArticle)
 		{
 			if (suchtitel.empty())
 			{
-				g->getStatusbar()->display("Suche zufälligen Artikel...");
+				g->getStatusbar()->display("Searching random article...");
 				suchergebnis = t->getRandomArticle();
 			}
 			else
 			{
-				g->getStatusbar()->display("Suche "+suchtitel+"...");
+				g->getStatusbar()->display("Searching "+suchtitel+"...");
 				suchergebnis = t->findArticle(suchtitel,currentTitle);
 			}
 
 			if (suchergebnis!=NULL)
 			{
 				suchtitel.clear();
-				g->getStatusbar()->display("Lade \""+suchergebnis->TitleInArchive()+"\"");
+				g->getStatusbar()->display("Loading \""+suchergebnis->TitleInArchive()+"\"");
 
 				if (c->isInCache(suchergebnis->TitleInArchive()))
 				{
-					g->getStatusbar()->display("Hole Markup aus dem Cache...");
+					g->getStatusbar()->display("Getting markup from cache...");
 					markupstr = c->getMarkup(suchergebnis->TitleInArchive());
 				}
 				else
 				{
-					g->getStatusbar()->display("Hole Markup von Disk...");
+					g->getStatusbar()->display("Getting markup from disk...");
 					markupstr = g->getWikiMarkupGetter()->getMarkup(suchergebnis->TitleInArchive());
 // 					c->insert(suchergebnis->TitleInArchive(),markupstr);
 				}
@@ -941,12 +861,12 @@ int main(int argc, char ** argv)
 					suchergebnis = redirection;
 					if (c->isInCache(suchergebnis->TitleInArchive()))
 					{
-						g->getStatusbar()->display("Folge Umleitung aus dem Cache...");
+						g->getStatusbar()->display("Following redirection from cache...");
 						markupstr = c->getMarkup(suchergebnis->TitleInArchive());
 					}
 					else
 					{
-						g->getStatusbar()->display("Folge Umleitung von Disk...");
+						g->getStatusbar()->display("Following redirection from disk...");
 						markupstr = g->getWikiMarkupGetter()->getMarkup(suchergebnis->TitleInArchive());
 // 						c->insert(suchergebnis->TitleInArchive(),markupstr);
 					}
@@ -954,14 +874,14 @@ int main(int argc, char ** argv)
 				currentTitle = suchergebnis->TitleInArchive();
 				markupstr = redirectMessage + markupstr;
 
-				g->getStatusbar()->display("Formatiere Markup...");
+				g->getStatusbar()->display("Formatting \""+currentTitle+"\"...");
 				delete markup;
 				markup = new Markup();
 				g->setMarkup(markup);
 				markup->setGlobals(g);
 
 				markup->parse(markupstr);
-				g->getStatusbar()->displayClearAfter("Formatierung abgeschlossen",30);
+				g->getStatusbar()->displayClearAfter("Formatting complete",30);
 
 				markupstr.clear();
 
@@ -977,7 +897,7 @@ int main(int argc, char ** argv)
 			}
 			else
 			{
-				g->getStatusbar()->displayErrorClearAfter("\""+suchtitel+"\" nicht gefunden...",90);
+				g->getStatusbar()->displayErrorClearAfter("\""+suchtitel+"\" not found...",90);
 				updatePercent = 1;
 			}
 
@@ -1015,6 +935,8 @@ int main(int argc, char ** argv)
 
 		PA_CheckLid();
 		PA_WaitForVBL();
-	}
+
+	} // end of main loop
+
 	return 0;
 }
