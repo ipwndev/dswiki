@@ -17,18 +17,16 @@
 #include <string>
 #include <deque>
 #include "api.h"
-#include "chrlib.h"
 #include "main.h"
 
 using namespace std;
 
-// class TitleIndex;
 class Globals;
 
 class Search
 {
 	public:
-		Search(CharStat* CStat1, CharStat* CStat2);
+		Search();
 		void load(string phrase);
 		void load(int articleNumber);
 		string currentHighlightedItem();
@@ -41,9 +39,6 @@ class Search
 		void display();
 		void setGlobals(Globals* globals);
 	private:
-		CharStat*	_cstat1;
-		CharStat*	_cstat2;
-
 		void enlarge_front();
 		void enlarge_back();
 		deque<string>	_list;

@@ -42,6 +42,16 @@ void tolower_v1(unsigned char* data)
 	}
 }
 
+void replace_all(string & s, string pattern, string with)
+{
+	int a;
+	a = s.find(pattern);
+	while (a!=string::npos)
+	{
+		s.replace(a,pattern.length(),with);
+		a = s.find(pattern,a+1);
+	}
+}
 
 string lowerPhrase(string phrase, unsigned char indexVersion)
 {
@@ -91,6 +101,143 @@ string lowerPhrase(string phrase, unsigned char indexVersion)
 			break;
 	}
 	return dest;
+}
+
+string trimPhrase(string Str)
+{
+	if (Str.empty())
+		return "";
+
+	int first = Str.find_first_not_of(" ");
+	int last = Str.find_last_not_of(" ");
+
+	if ((first==string::npos) || (last==string::npos))
+		return "";
+
+	Str = Str.substr(first,last-first+1);
+	return Str;
+}
+
+
+string exchangeSGMLEntities(string phrase)
+{
+	if ( phrase.empty() )
+		return phrase;
+
+	int posStart = 0;
+	int entityStart, entityLength;
+	int posEnd;
+	string entity;
+
+	int i;
+	while (posStart<phrase.length())
+	{
+		posStart = phrase.find("&",posStart);
+		if (posStart==string::npos)
+			return phrase;
+		posEnd = phrase.find(";",posStart);
+		if (posEnd==string::npos)
+			return phrase;
+
+		entity       = phrase.substr(posStart,posEnd-posStart+1);
+		entityStart  = posStart;
+		entityLength = entity.length();
+
+		// Skip the found "&"
+		// Note: this also prevents double interpretations as in &amp;theta;
+		posStart++;
+
+		// each named entity has at least the form "&..;"
+		// each number has at least the form "&#.;"
+		// so we discard any shorter string
+		if (entityLength<4)
+			continue;
+
+		// test for numeric entities
+		if (entity.substr(1,1)=="#")
+		{
+			string number = entity.substr(2,entity.length()-3);
+			if (number.empty())
+				continue;
+
+			unsigned int codepoint[] = {0,0};
+			char replaced[32];
+
+			if (number.substr(0,1)=="x")
+			{
+				// hexadecimal format found
+				number.erase(0,1);
+				int temp;
+				if ((temp=number.find_first_not_of("0123456789aAbBcCdDeEfF"))!=string::npos)
+					continue;
+
+				// conversion is possible
+				for (i=0;i<number.length();i++)
+				{
+					unsigned char c = number.at(i);
+					if ((0x30<=c) && (c<=0x39))
+						codepoint[0] = codepoint[0] * 16 + (c-0x30); // 0-9
+					else if ((0x41<=c) && (c<=0x46))
+						codepoint[0] = codepoint[0] * 16 + (c-0x37); // A-F
+					else if ((0x61<=c) && (c<=0x66))
+						codepoint[0] = codepoint[0] * 16 + (c-0x57); // a-f
+				}
+			}
+			else
+			{
+				// decimal format found
+				int temp;
+				if ((temp=number.find_first_not_of("0123456789"))!=string::npos)
+					continue;
+
+				// conversion is possible
+				for (i=0;i<number.length();i++)
+				{
+					unsigned char c = number.at(i);
+					codepoint[0] = codepoint[0] * 10 + (c-0x30);
+				}
+			}
+
+			// Don't interprete control characters
+			if ( ((codepoint[0]<32) && ((codepoint[0]!=0x0A)||(codepoint[0]!=0x0D))) || (codepoint[0]==0xFFFE) || (codepoint[0]==0xFFFF) )
+				continue;
+
+			UTF2UTF8(codepoint,replaced);
+			phrase.replace(entityStart,entityLength,replaced);
+
+			// we can go to the next entity, because no named entity will start with "&#"
+			continue;
+		}
+
+		// lastly, test for named entities, but at this point, we can check the length first
+		if (entityLength>10)
+			continue;
+
+		for (i=0;i<MAX_NAMED_ENTITIES;i++)
+		{
+			if (entity==entities[i].entity)
+			{
+				char replaced[32];
+				unsigned int codepoint[] = {entities[i].codepoint,0};
+				UTF2UTF8(codepoint,replaced);
+				string neu = replaced;
+				phrase.replace(entityStart,entity.length(),neu);
+				break;
+			}
+		}
+
+	}
+	return phrase;
+}
+
+
+string preparePhrase(string phrase, unsigned char indexNo, unsigned char indexVersion)
+{
+// 	phrase = trimPhrase(phrase);
+	if (indexNo==1)
+		return lowerPhrase(exchangeDiacriticChars(lowerPhrase(phrase,indexVersion),indexVersion), indexVersion);
+	else
+		return lowerPhrase(phrase,indexVersion);
 }
 
 
@@ -223,4 +370,12 @@ unsigned int UTF82UTF(unsigned char* U8, unsigned int* Uni)
 	}
 	Uni[Length]=0;
 	return Length;
+}
+
+string FromUTF(unsigned int UTF32)
+{
+	char temp[16];
+	unsigned int codepoint[] = {UTF32,0};
+	UTF2UTF8(codepoint,temp);
+	return string(temp);
 }

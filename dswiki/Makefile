@@ -5,8 +5,8 @@
 # just uncomment "ARM7_SELECTED = ARM7_BASIC". ARM7_BASIC is the same as ARM7_MP3.
 #---------------------------------------------------------------------------------
 
-ARM7_SELECTED = ARM7_BASIC
-#ARM7_SELECTED = ARM7_MOD_DSWIFI
+#ARM7_SELECTED = ARM7_BASIC
+ARM7_SELECTED = ARM7_MOD_DSWIFI
 #ARM7_SELECTED = ARM7_MOD_LIBLOBBY
 #ARM7_SELECTED = ARM7_MP3
 #ARM7_SELECTED = ARM7_MP3_DSWIFI
@@ -30,7 +30,7 @@ ADD_LIBS += bz2
 # icon for your project, too!
 #---------------------------------------------------------------------------------
 
-TEXT1	:=DSwiki 0.2alpha1
+TEXT1	:=DSwiki 0.2alpha2
 TEXT2	:=Offline Wiki-Reader
 TEXT3	:=by OlliPolli
 ICON	:= -b $(CURDIR)/../logo.bmp

@@ -21,12 +21,12 @@ using namespace std;
 
 typedef struct
 {
-	string wikibase;
-	string wikiidx;
-	string wikiao1;
-	string wikiao2;
-	string wikiifo;
-	vector<string> wikidbs;
+	string basename;
+	string idxfile;
+	string ao1file;
+	string ao2file;
+	string ifofile;
+	vector<string> dbsfiles;
 } WikiDump;
 
 class Dumps
@@ -40,7 +40,7 @@ class Dumps
 		string get_ao2(string basename);
 		vector<string> get_dbs(string basename);
 	private:
-		void _setPossibleWikis();
+		void _gatherPossibleWikis();
 		vector<WikiDump> _possibleWikis;
 };
 

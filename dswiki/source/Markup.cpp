@@ -3,11 +3,13 @@
 #include <PA9.h>
 #include <string>
 #include <vector>
-#include "chrlib.h"
+#include "char_convert.h"
 #include "main.h"
 #include "Globals.h"
 #include "PercentIndicator.h"
 #include "WIKI2XML.h"
+#include "tinyxml.h"
+
 
 Element::~Element()
 {
@@ -230,7 +232,10 @@ string Markup::evaluateClick(s16 x,s16 y)
 
 Markup::Markup()
 {
+	_td = new TiXmlDocument();
+	TiXmlBase::SetCondenseWhiteSpace( false );
 }
+
 
 void Markup::parse(string Str)
 {
@@ -243,32 +248,43 @@ void Markup::parse(string Str)
 	unsigned int link_id = 0;
 	Element* l;
 
-	Str = exchangeSGMLEntities(Str);
+	WIKI2XML w2x(Str);
 
-// 	vector<string> zeilen;
-// 	explode('\n',Str,zeilen);
-// 	zeilen.push_back(Str);
-// 	WIKI2XML w2x(zeilen);
-// 	w2x.parse();
+	w2x.parse();
+	string xmlStr = w2x.get_xml();
+	Str = xmlStr;
 
-// 	Str = w2x.get_xml();
+	PA_ClearTextBg(1);
+	_td->Parse(xmlStr.c_str());
+	if (_td->Error())
+	{
+		PA_OutputText(1,0,5,"TinyXML-Error %d at (%d/%d)",_td->ErrorId(),_td->ErrorRow(),_td->ErrorCol());
+		PA_OutputText(1,0,6,"%s",_td->ErrorDesc());
+		FILE* errorXML = fopen("fat:/dswiki/error.xml","wb");
+		fwrite(xmlStr.c_str(),strlen(xmlStr.c_str()),1,errorXML);
+		fclose(errorXML);
+	}
+	else
+	{
+// 		PA_OutputText(1,0,5,"TinyXML-Parsing OK");
+	}
+
 
 	pos = 0;
-
-	l = createLink(Str,pos,link_id++);
-
-	while (l)
-	{
-		Element t(Str.substr(pos,l->sourcePositionStart-pos));
-		visibleChildren.push_back(t);
-
-		visibleChildren.push_back(*l);
-
-		pos = l->sourcePositionStart + l->sourceLength;
-		delete l;
-
-		l = createLink(Str,pos,link_id++);
-	}
+// 	l = createLink(Str,pos,link_id++);
+//
+// 	while (l)
+// 	{
+// 		Element t(Str.substr(pos,l->sourcePositionStart-pos));
+// 		visibleChildren.push_back(t);
+//
+// 		visibleChildren.push_back(*l);
+//
+// 		pos = l->sourcePositionStart + l->sourceLength;
+// 		delete l;
+//
+// 		l = createLink(Str,pos,link_id++);
+// 	}
 
 	Element t(Str.substr(pos));
 	visibleChildren.push_back(t);
@@ -280,6 +296,8 @@ Markup::~Markup()
 {
 	visibleChildren.clear();
 	lines.clear();
+	delete _td;
+	_td = NULL;
 }
 
 void Markup::createLines(VirScreen* VScreen, CharStat* CStat)

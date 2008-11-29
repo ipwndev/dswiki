@@ -27,11 +27,10 @@ typedef struct
 
 void TitleIndex::load(string basename)
 {
-	chdir("fat:/dswiki/");
-	_f_header           = fopen(_globals->getDumps()->get_ifo(basename).c_str(), "rb");
-	_f_dataindex        = fopen(_globals->getDumps()->get_idx(basename).c_str(), "rb");
-	_f_index0           = fopen(_globals->getDumps()->get_ao1(basename).c_str(), "rb");
-	_f_index1           = fopen(_globals->getDumps()->get_ao2(basename).c_str(), "rb");
+	_f_header    = fopen(_globals->getDumps()->get_ifo(basename).c_str(), "rb");
+	_f_dataindex = fopen(_globals->getDumps()->get_idx(basename).c_str(), "rb");
+	_f_index0    = fopen(_globals->getDumps()->get_ao1(basename).c_str(), "rb");
+	_f_index1    = fopen(_globals->getDumps()->get_ao2(basename).c_str(), "rb");
 
 	if ( _f_header )
 	{
@@ -154,8 +153,9 @@ string TitleIndex::getTitle(int articleNumber, unsigned char indexNo, unsigned c
 	}
 
 	char readstr[MAX_TITLE_LENGTH+1];
+	readstr[MAX_TITLE_LENGTH] = '\0';
 
-	return string(fgets(readstr,MAX_TITLE_LENGTH+1,_f_dataindex));
+	return string(fgets(readstr,MAX_TITLE_LENGTH,_f_dataindex));
 }
 
 
@@ -290,7 +290,7 @@ ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle,
 		{
 			string titleCopy = title;
 			string previousTitleCopy = previousTitle;
-			int slashPos;
+			int slashPos = string::npos;
 
 			while ( (titleCopy.substr(0,3) == "../") && ( ( slashPos = previousTitleCopy.rfind("/") ) != string::npos ) )
 			{

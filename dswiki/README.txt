@@ -1,4 +1,4 @@
- DSwiki (v0.2alpha1)
+ DSwiki (v0.2alpha2)
 =====================
 
 DSwiki is an offline viewer for Wiki markup, for example for the

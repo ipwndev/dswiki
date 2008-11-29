@@ -10,6 +10,7 @@
 //
 //
 #include "Globals.h"
+#include "TextBox.h"
 
 void Globals::setDumps(Dumps* dumps) { _dumps = dumps; }
 void Globals::setTitleIndex(TitleIndex* titleIndex) { _titleIndex = titleIndex; }
@@ -19,6 +20,7 @@ void Globals::setSearch(Search* search) { _search = search; }
 void Globals::setPercentIndicator(PercentIndicator* percentIndicator) { _percentIndicator = percentIndicator; }
 void Globals::setStatusbar(Statusbar* statusbar) { _statusbar = statusbar; }
 void Globals::setFont(Font* font) { _font = font; }
+void Globals::setLanguage(int language) { _language = language; }
 
 Dumps*            Globals::getDumps() {	return _dumps; }
 TitleIndex*       Globals::getTitleIndex() { return _titleIndex; }
@@ -28,3 +30,15 @@ Search*           Globals::getSearch() { return _search; }
 PercentIndicator* Globals::getPercentIndicator() { return _percentIndicator; }
 Statusbar*        Globals::getStatusbar() { return _statusbar; }
 Font*             Globals::getFont() { return _font; }
+int               Globals::getLanguage() { return _language; }
+
+void Globals::setOptions()
+{
+	vector<string> level1;
+	level1.push_back("Help/Manual");
+	level1.push_back("Color scheme");
+	TextBox Options(level1);
+	Options.setTitle("Configure DSwiki");
+	Options.allowCancel(1);
+	Options.run();
+}
