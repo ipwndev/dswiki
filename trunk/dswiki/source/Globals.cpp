@@ -11,6 +11,12 @@
 //
 #include "Globals.h"
 #include "TextBox.h"
+#include <string>
+#include <fat.h>
+#include "WIKI2XML_global.h"
+#include <algorithm>
+
+using namespace std;
 
 void Globals::setDumps(Dumps* dumps) { _dumps = dumps; }
 void Globals::setTitleIndex(TitleIndex* titleIndex) { _titleIndex = titleIndex; }
@@ -41,4 +47,65 @@ void Globals::setOptions()
 	Options.setTitle("Configure DSwiki");
 	Options.allowCancel(1);
 	Options.run();
+}
+
+string Globals::loadBookmark()
+{
+	FILE* bookmarkfile = fopen("fat:/dswiki/bookmarks.txt","rb");
+	if (bookmarkfile==NULL)
+	{
+		return "";
+	}
+	fseek(bookmarkfile,0,SEEK_END);
+	int size = ftell(bookmarkfile);
+	fseek(bookmarkfile,0,SEEK_SET);
+	char* buffer = (char*) malloc(size+1);
+	fread(buffer,size,1,bookmarkfile);
+	buffer[size] = '\0';
+	int i = size - 1;
+	while ((i>=0) && (buffer[i]=='\n'))
+		buffer[i--] = '\0';
+	string bookmarkStr(buffer);
+	free(buffer);
+	buffer = NULL;
+	vector<string> bookmarks;
+	explode('\n',bookmarkStr,bookmarks);
+	bookmarkStr.clear();
+
+	TextBox BookmarkChooser(bookmarks);
+	BookmarkChooser.setTitle("Load bookmark");
+	BookmarkChooser.allowCancel(1);
+	return BookmarkChooser.run();
+}
+
+void Globals::saveBookmark(string s)
+{
+	vector<string> bookmarks;
+
+	FILE* bookmarkfile = fopen("fat:/dswiki/bookmarks.txt","rb");
+	if (bookmarkfile!=NULL)
+	{
+		fseek(bookmarkfile,0,SEEK_END);
+		int size = ftell(bookmarkfile);
+		fseek(bookmarkfile,0,SEEK_SET);
+		char* buffer = (char*) malloc(size+1);
+		fread(buffer,size,1,bookmarkfile);
+		buffer[size] = '\0';
+		string bookmarkStr(buffer);
+		free(buffer);
+		buffer = NULL;
+		explode('\n',bookmarkStr,bookmarks);
+		bookmarkStr.clear();
+		fclose(bookmarkfile);
+	}
+
+	bookmarks.push_back(s);
+	sort(bookmarks.begin(),bookmarks.end());
+	string bookmarkStr = implode("\n",bookmarks);
+	bookmarkfile = fopen("fat:/dswiki/bookmarks.txt","wb");
+	if (bookmarkfile!=NULL)
+	{
+		fwrite(bookmarkStr.c_str(),strlen(bookmarkStr.c_str()),1,bookmarkfile);
+		fclose(bookmarkfile);
+	}
 }

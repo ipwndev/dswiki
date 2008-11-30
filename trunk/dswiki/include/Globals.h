@@ -14,6 +14,9 @@
 
 #include <PA9.h>
 #include "struct.h"
+#include <string>
+
+using namespace std;
 
 class Dumps;
 class TitleIndex;
@@ -28,6 +31,8 @@ class Globals
 {
 	public:
 		void setOptions();
+		string loadBookmark();
+		void saveBookmark(string s);
 		void setDumps(Dumps* dumps);
 		void setTitleIndex(TitleIndex* titleIndex);
 		void setWikiMarkupGetter(WikiMarkupGetter* wikiMarkupGetter);
