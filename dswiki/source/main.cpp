@@ -141,7 +141,7 @@ int main(int argc, char ** argv)
 	PA_SetBrightness(0,0);
 	PA_SetBrightness(1,0);
 
-	// check for DSwiki's home directory
+	// check important things
 	PA_OutputText(1,0,2,"Checking \"/dswiki/\"...");
 	DIR_ITER* dswikiDir = diropen ("fat:/dswiki/");
 	if (dswikiDir == NULL)
@@ -154,7 +154,6 @@ int main(int argc, char ** argv)
 		PA_OutputText(1,28,2,"%c2[OK]");
 		dirclose(dswikiDir);
 	}
-
 	PA_OutputText(1,0,3,"Checking EFS-fonts...");
 	DIR_ITER* dswikiFontDir = diropen ("efs:/dswiki/fonts/");
 	if (dswikiFontDir == NULL)
@@ -167,11 +166,8 @@ int main(int argc, char ** argv)
 		PA_OutputText(1,28,3,"%c2[OK]");
 		dirclose(dswikiFontDir);
 	}
-
 	PA_OutputText(1,0,4,"Initializing fonts...");
-
 	Font* CompleteFont = new Font();
-
 	if (CompleteFont->initOK())
 	{
 		PA_OutputText(1,28,4,"%c2[OK]");
@@ -181,12 +177,9 @@ int main(int argc, char ** argv)
 		PA_OutputText(1,24,4,"%c1[Failed]");
 		return 1;
 	}
-
 	PA_OutputText(1,0,5,"Gathering installed wikis...");
-
 	Dumps* d = new Dumps();
 	vector<string> possibleWikis = d->getPossibleWikis();
-
 	if (possibleWikis.size()==0)
 	{
 		PA_OutputText(1,26,5,"%c1[None]");
@@ -200,22 +193,28 @@ int main(int argc, char ** argv)
 			PA_OutputText(1,28,5,"%c2[%d]",possibleWikis.size());
 		PA_Sleep(60);
 	}
-
 	PA_ClearTextBg(1);
 
+	enum {
+		SPRITE_HISTORY, SPRITE_HISTORYX, SPRITE_RELOAD, SPRITE_CANCEL, SPRITE_OK, SPRITE_2UPARROW, SPRITE_1UPARROW, SPRITE_1DOWNARROW, SPRITE_2DOWNARROW, SPRITE_1LEFTARROW, SPRITE_1RIGHTARROW, SPRITE_CLEARLEFT, SPRITE_CONFIGURE,  SPRITE_BOOKMARKADD, SPRITE_BOOKMARK
+	};
+
 	// important variables
-	KT_CreateSprite(0,0,"dswiki/icons/history",OBJ_SIZE_16X16,1,0,1,-16,-16);
-	KT_CreateSprite(0,1,"dswiki/icons/history_clear",OBJ_SIZE_16X16,1,0,0,-16,-16);
-	KT_CreateSprite(0,2,"dswiki/icons/reload",OBJ_SIZE_16X16,1,0,0,-16,-16);
-	KT_CreateSprite(0,3,"dswiki/icons/cancel",OBJ_SIZE_16X16,1,0,0,-16,-16);
-	KT_CreateSprite(0,4,"dswiki/icons/ok",OBJ_SIZE_16X16,1,0,0,-16,-16);
-	KT_CreateSprite(0,5,"dswiki/icons/2uparrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
-	KT_CreateSprite(0,6,"dswiki/icons/1uparrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
-	KT_CreateSprite(0,7,"dswiki/icons/1downarrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
-	KT_CreateSprite(0,8,"dswiki/icons/2downarrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
-	KT_CreateSprite(0,9,"dswiki/icons/1leftarrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
-	KT_CreateSprite(0,10,"dswiki/icons/1rightarrow",OBJ_SIZE_16X16,1,0,0,-16,-16);
-	KT_CreateSprite(0,11,"dswiki/icons/clear_left",OBJ_SIZE_16X16,1,0,0,-16,-16);
+	KT_CreateSprite(0, SPRITE_HISTORY,     "dswiki/icons/history",       OBJ_SIZE_16X16, 1, 0, 1, -16, -16);
+	KT_CreateSprite(0, SPRITE_HISTORYX,    "dswiki/icons/history_clear", OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_RELOAD,      "dswiki/icons/reload",        OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_CANCEL,      "dswiki/icons/cancel",        OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_OK,          "dswiki/icons/ok",            OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_2UPARROW,    "dswiki/icons/2uparrow",      OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_1UPARROW,    "dswiki/icons/1uparrow",      OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_1DOWNARROW,  "dswiki/icons/1downarrow",    OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_2DOWNARROW,  "dswiki/icons/2downarrow",    OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_1LEFTARROW,  "dswiki/icons/1leftarrow",    OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_1RIGHTARROW, "dswiki/icons/1rightarrow",   OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_CLEARLEFT,   "dswiki/icons/clear_left",    OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_CONFIGURE,   "dswiki/icons/configure",     OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_BOOKMARKADD, "dswiki/icons/bookmark_add",  OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_BOOKMARK,    "dswiki/icons/bookmark",      OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 
 	Statusbar* sb = new Statusbar();
 	PercentIndicator* p = new PercentIndicator();
@@ -246,18 +245,6 @@ int main(int argc, char ** argv)
 	CharStat       TitlebarCS = { CompleteFont, BOLD,    0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
 	CharStat SearchResultsCS3 = { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
 
-	BLOCK Btn_ToggleReal  = {{  3,  3},{ 18, 18}};
-	BLOCK Btn_Cancel      = {{ 67,  9},{ 88, 30}};
-	BLOCK Btn_Reload      = {{117,  9},{138, 30}};
-	BLOCK Btn_OK          = {{167,  9},{188, 30}};
-	BLOCK Btn_CursorLeft  = {{ 29, 37},{ 46, 58}};
-	BLOCK Btn_CursorRight = {{209, 37},{226, 58}};
-	BLOCK Btn_Clear       = {{234, 37},{255, 58}};
-	BLOCK Btn_PageUp      = {{234, 72},{255, 93}};
-	BLOCK Btn_LineUp      = {{234, 97},{255,118}};
-	BLOCK Btn_LineDown    = {{234,122},{255,143}};
-	BLOCK Btn_PageDown    = {{234,147},{255,168}};
-
 	BLOCK CharArea = {{ 0, 0},{ 0, 0}};
 
 	// use graphical interface from now on
@@ -266,7 +253,7 @@ int main(int argc, char ** argv)
 	ArticleSearchResult* redirection  = NULL;
 
 	string markupstr;
-	string suchtitel = "Medium br closing";
+	string suchtitel = "";
 	string currentTitle;
 
 	Markup* markup = NULL;
@@ -321,18 +308,58 @@ int main(int argc, char ** argv)
 	g->setSearch(s);
 	s->setGlobals(g);
 
+	PA_SetSpriteXY(0, SPRITE_CONFIGURE,  0, 176);
+	PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, 32, 176);
+	PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
+
 	while(1) // main loop
 	{
 		PA_CheckLid();
 
-		if (Stylus.Newpress)
+		if (Stylus.Held)
 		{
-			suchtitel = markup->evaluateClick(Stylus.X,Stylus.Y);
-			if (!suchtitel.empty())
+			if (Stylus.Newpress)
 			{
-				forcedLine = 0;
-				setNewHistoryItem = 1;
-				loadArticle = 1;
+				if (PA_SpriteTouched(SPRITE_CONFIGURE))
+				{
+					g->setOptions();
+					updateContent = 1;
+				};
+
+				if (PA_SpriteTouched(SPRITE_BOOKMARK))
+				{
+					g->getStatusbar()->displayClearAfter("Loading Bookmarks",45);
+					string bookmark = g->loadBookmark();
+					updateContent = 1;
+					if (!bookmark.empty())
+					{
+						suchtitel = bookmark;
+						forcedLine = 0;
+						setNewHistoryItem = 1;
+						loadArticle = 1;
+					}
+				}
+
+				if (PA_SpriteTouched(SPRITE_BOOKMARKADD))
+				{
+					g->getStatusbar()->displayClearAfter("Adding Bookmark",45);
+					if (!currentTitle.empty())
+					{
+						g->saveBookmark(currentTitle);
+					}
+				}
+
+				string markupClick = markup->evaluateClick(Stylus.X,Stylus.Y);
+				if (!markupClick.empty())
+				{
+					suchtitel = markupClick;
+					forcedLine = 0;
+					setNewHistoryItem = 1;
+					loadArticle = 1;
+				}
+			}
+			else
+			{
 			}
 		}
 
@@ -424,22 +451,22 @@ int main(int argc, char ** argv)
 
 			int countdown = 0;
 
-			PA_SetSpriteXY(0, 1,  3,  3);
-			PA_SetSpriteXY(0, 3, 67,  9);
-			PA_SetSpriteXY(0, 4,167,  9);
-			PA_SetSpriteXY(0, 5,234, 72);
-			PA_SetSpriteXY(0, 6,234, 97);
-			PA_SetSpriteXY(0, 7,234,122);
-			PA_SetSpriteXY(0, 8,234,147);
-			PA_SetSpriteXY(0, 9, 31, 39);
-			PA_SetSpriteXY(0,10,209, 39);
-			PA_SetSpriteXY(0,11,234, 40);
+			PA_SetSpriteXY(0, SPRITE_HISTORYX,      3,  3);
+			PA_SetSpriteXY(0, SPRITE_CANCEL,       67,  9);
+			PA_SetSpriteXY(0, SPRITE_OK,          167,  9);
+			PA_SetSpriteXY(0, SPRITE_2UPARROW,    234, 72);
+			PA_SetSpriteXY(0, SPRITE_1UPARROW,    234, 97);
+			PA_SetSpriteXY(0, SPRITE_1DOWNARROW,  234,122);
+			PA_SetSpriteXY(0, SPRITE_2DOWNARROW,  234,147);
+			PA_SetSpriteXY(0, SPRITE_1LEFTARROW,   31, 39);
+			PA_SetSpriteXY(0, SPRITE_1RIGHTARROW, 209, 39);
+			PA_SetSpriteXY(0, SPRITE_CLEARLEFT,   234, 40);
 
 
 			if (!updateInRealTime)
 			{
-				PA_SetSpriteXY(0,0,3,3);
-				PA_SetSpriteXY(0,2,117,9);
+				PA_SetSpriteXY(0,SPRITE_HISTORYX,3,3);
+				PA_SetSpriteXY(0,SPRITE_RELOAD,117,9);
 			}
 
 			PA_WaitForVBL();
@@ -512,131 +539,136 @@ int main(int argc, char ** argv)
 					loadArticle = 1;
 					break;
 				}
-
-				if (Stylus.Newpress)
+				if (Stylus.Held)
 				{
-					POINT S = {Stylus.X,Stylus.Y};
-					if (IsInArea(Btn_Clear,S) && (!suchtitel.empty()) )
+					if (Stylus.Newpress)
 					{
-						suchtitel.clear();
-						offsetsUTF.clear();
-						offsetsUTF.push_back(0);
-						cursorPosition = 0;
-						updateSearchbar = 1;
-						if (updateInRealTime)
+						POINT S = {Stylus.X,Stylus.Y};
+						if (PA_SpriteTouched(SPRITE_CLEARLEFT) && (!suchtitel.empty()) )
 						{
-							searchSuggestions = 1;
-						}
-						else
-						{
-							countdown = COUNTDOWN_START;
-						}
-					}
-					else if (IsInArea(Btn_OK,S))
-					{
-						suchtitel = s->currentHighlightedItem();
-						forcedLine = 0;
-						setNewHistoryItem = 1;
-						loadArticle = 1;
-						break;
-					}
-					else if (IsInArea(StatusbarVS.AbsoluteBound,S))
-					{
-						suchtitel = currentTitle;
-						offsetsUTF.clear();
-						offsetsUTF.push_back(0);
-						cursorPosition = 0;
-						if (!suchtitel.empty())
-						{
-							Str = (unsigned char*) &suchtitel.at(0);
-							Skip = 0;
-							while(Str[Skip])
+							suchtitel.clear();
+							offsetsUTF.clear();
+							offsetsUTF.push_back(0);
+							cursorPosition = 0;
+							updateSearchbar = 1;
+							if (updateInRealTime)
 							{
-								cursorPosition++;
-								Skip += ToUTF(&Str[Skip],&Uni);
-								offsetsUTF.push_back(Skip);
+								searchSuggestions = 1;
+							}
+							else
+							{
+								countdown = COUNTDOWN_START;
 							}
 						}
-						updateSearchbar = 1;
-						if (updateInRealTime)
+						else if (PA_SpriteTouched(SPRITE_OK))
+						{
+							suchtitel = s->currentHighlightedItem();
+							forcedLine = 0;
+							setNewHistoryItem = 1;
+							loadArticle = 1;
+							break;
+						}
+						else if (IsInArea(StatusbarVS.AbsoluteBound,S))
+						{
+							suchtitel = currentTitle;
+							offsetsUTF.clear();
+							offsetsUTF.push_back(0);
+							cursorPosition = 0;
+							if (!suchtitel.empty())
+							{
+								Str = (unsigned char*) &suchtitel.at(0);
+								Skip = 0;
+								while(Str[Skip])
+								{
+									cursorPosition++;
+									Skip += ToUTF(&Str[Skip],&Uni);
+									offsetsUTF.push_back(Skip);
+								}
+							}
+							updateSearchbar = 1;
+							if (updateInRealTime)
+							{
+								searchSuggestions = 1;
+							}
+							else
+							{
+								countdown = COUNTDOWN_START;
+							}
+						}
+						else if (PA_SpriteTouched(SPRITE_CANCEL))
+						{
+							break;
+						}
+						else if (PA_SpriteTouched(SPRITE_2UPARROW))
+						{
+							if (s->scrollPageUp())
+							{
+								PA_Sleep(10);
+								updateSuggestions = 1;
+							}
+						}
+						else if (PA_SpriteTouched(SPRITE_1UPARROW))
+						{
+							if (s->scrollLineUp())
+							{
+								PA_Sleep(10);
+								updateSuggestions = 1;
+							}
+						}
+						else if (PA_SpriteTouched(SPRITE_1DOWNARROW))
+						{
+							if (s->scrollLineDown())
+							{
+								PA_Sleep(10);
+								updateSuggestions = 1;
+							}
+						}
+						else if (PA_SpriteTouched(SPRITE_2DOWNARROW))
+						{
+							if (s->scrollPageDown())
+							{
+								PA_Sleep(10);
+								updateSuggestions = 1;
+							}
+						}
+						else if (PA_SpriteTouched(SPRITE_HISTORY) || PA_SpriteTouched(SPRITE_HISTORYX))
+						{
+							updateInRealTime = 1 - updateInRealTime;
+							if (updateInRealTime)
+							{
+								PA_SetSpriteXY(0,SPRITE_HISTORY,-16,-16);
+								PA_SetSpriteXY(0,SPRITE_RELOAD,-16,-16);
+							}
+							else
+							{
+								PA_SetSpriteXY(0,SPRITE_HISTORY,3,3);
+								PA_SetSpriteXY(0,SPRITE_RELOAD,117,9);
+							}
+						}
+						else if (PA_SpriteTouched(SPRITE_RELOAD))
 						{
 							searchSuggestions = 1;
+							countdown = 0;
 						}
-						else
+						else if (PA_SpriteTouched(SPRITE_1LEFTARROW))
 						{
-							countdown = COUNTDOWN_START;
+							if (cursorPosition>0)
+							{
+								cursorPosition--;
+								updateSearchbar = 1;
+							}
+						}
+						else if (PA_SpriteTouched(SPRITE_1RIGHTARROW))
+						{
+							if (offsetsUTF[cursorPosition]<suchtitel.length())
+							{
+								cursorPosition++;
+								updateSearchbar = 1;
+							}
 						}
 					}
-					else if (IsInArea(Btn_Cancel,S))
+					else
 					{
-						break;
-					}
-					else if (IsInArea(Btn_PageUp,S))
-					{
-						if (s->scrollPageUp())
-						{
-							PA_Sleep(10);
-							updateSuggestions = 1;
-						}
-					}
-					else if (IsInArea(Btn_LineUp,S))
-					{
-						if (s->scrollLineUp())
-						{
-							PA_Sleep(10);
-							updateSuggestions = 1;
-						}
-					}
-					else if (IsInArea(Btn_LineDown,S))
-					{
-						if (s->scrollLineDown())
-						{
-							PA_Sleep(10);
-							updateSuggestions = 1;
-						}
-					}
-					else if (IsInArea(Btn_PageDown,S))
-					{
-						if (s->scrollPageDown())
-						{
-							PA_Sleep(10);
-							updateSuggestions = 1;
-						}
-					}
-					else if (IsInArea(Btn_ToggleReal,S))
-					{
-						updateInRealTime = 1 - updateInRealTime;
-						if (updateInRealTime)
-						{
-							PA_SetSpriteXY(0,0,-16,-16);
-							PA_SetSpriteXY(0,2,-16,-16);
-						}
-						else
-						{
-							PA_SetSpriteXY(0,0,3,3);
-							PA_SetSpriteXY(0,2,117,9);
-						}
-					}
-					else if ((!updateInRealTime) && IsInArea(Btn_Reload,S))
-					{
-						searchSuggestions = 1;
-						countdown = 0;
-					}
-					else if (IsInArea(Btn_CursorLeft,S))
-					{
-						if (cursorPosition>0)
-						{
-							cursorPosition--;
-							updateSearchbar = 1;
-						}
-					}
-					else if (IsInArea(Btn_CursorRight,S))
-					{
-						if (offsetsUTF[cursorPosition]<suchtitel.length())
-						{
-							cursorPosition++;
-							updateSearchbar = 1;
-						}
 					}
 				}
 
@@ -745,7 +777,7 @@ int main(int argc, char ** argv)
 			PA_ScrollKeyboardXY(24,200);
 			PA_Clear16bitBg(1);
 			PA_Clear16bitBg(0);
-			for (int i=0;i<12;i++)
+			for (int i=SPRITE_HISTORY;i<=SPRITE_CLEARLEFT;i++)
 				PA_SetSpriteXY(0,i,-16,-16);
 
 			updateTitle = 1;

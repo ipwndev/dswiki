@@ -44,10 +44,12 @@ string TextBox::run()
 	{
 		if (Pad.Newpress.A)
 		{
+			PA_WaitForVBL();
 			return _lines[_currentItem];
 		}
 		if (_allowCancel && (Pad.Newpress.B || Pad.Newpress.Start) )
 		{
+			PA_WaitForVBL();
 			return "";
 		}
 		if (Pad.Held.Up && (_currentItem>0))
@@ -102,6 +104,8 @@ string TextBox::run()
 
 		PA_WaitForVBL();
 	}
+
+	PA_WaitForVBL();
 	return "";
 }
 
