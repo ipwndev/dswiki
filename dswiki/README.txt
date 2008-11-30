@@ -31,25 +31,28 @@ most homebrew programs can't handle UTF-8.
 -- UCS fonts      <http://www.cl.cam.ac.uk/~mgk25/ucs-fonts.html>
                     Thanks to Markus Kuhn
 
--- some other fonts
+ + some other fonts
+
+ + Titlegraphic   <http://www.stefanie-gronau.de>
+                    Thanks to my beloved wife
 
  Features
 ==========
 
 -- Get the complete(!) Wikipedia on a Nintendo DS. The English language
-   edition fits on a 4GB storage device, the German edition is just 1.1GB.
+   edition fits on a 4GB storage device, the German edition is just 1.2GB.
 -- Quite good handling of internal links. Alternative display text
    and appended letters are supported to create the same look as
    in the online version. Subpage links are supported.
 -- Very good Unicode/UTF8-Support (as much - or as little - as the
    underlying font covers).
 -- Fast and easy searchable index.
+-- Bookmarks
 
  Planned Features
 ==================
 
 -- Much better markup display
--- Bookmarks
 -- Improved Search (advanced input)
 -- Navigation by document structure (jump to headlines or
    jump from link to link as in text browsers)
@@ -66,17 +69,36 @@ font make it easy readable).
 
 DSwiki works as follows:
 
-A random article will be loaded at the start.
+
+ *** Navigation ***
 
       Up/Down: Scroll one line backward/forward
 
    Left/Right: Scroll one page backward/forward
 
-       Stylus: Follow a link on the bottom screen
-
           L/R: Go one page back/forward in history
 
+       Select: Choose another available wiki
+
+ *** Loading Articles ***
+
+A random article will be loaded at the start.
+
             A: Go to another random article
+
+       Stylus: Follow a link on the bottom screen
+
+ *** Bookmarks ***
+
+The current article name can be added to the bookmarks
+by tapping the star-with-green-arrow symbol.
+
+The normal star symbol will display the bookmarks.
+
+The bookmarks can be found in a file called 'bookmarks.txt'
+in the dswiki folder.
+
+ *** Searching Articles ***
 
             X: Index-assisted search on/off
 
@@ -92,7 +114,7 @@ A random article will be loaded at the start.
                 * pressing A
                 * touching Enter on the virtual keyboard
 
-       Select: Choose another available wiki
+               Most icons should be self-explanatory
 
 
  Installation
@@ -120,6 +142,7 @@ A random article will be loaded at the start.
 -- In some cases, image captions are not parsed correctly (no caption given, links
    in the caption).
 
+-- Loading of very long articles may fail
 
 
 Have Fun!

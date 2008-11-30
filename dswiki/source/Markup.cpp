@@ -248,6 +248,7 @@ void Markup::parse(string Str)
 	unsigned int link_id = 0;
 	Element* l;
 
+	Str = exchangeSGMLEntities(Str);
 // 	WIKI2XML w2x(Str);
 //
 // 	w2x.parse();
