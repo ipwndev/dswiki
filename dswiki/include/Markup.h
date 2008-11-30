@@ -40,7 +40,9 @@ class Markupline
 		void drawToVScreen(VirScreen* VScreen, CharStat* CStat, int line);
 		unsigned char containsCertainLink(unsigned int id);
 		vector<Element> children;
+		void 			setGlobals(Globals* globals);
 	private:
+		Globals*		_globals;
 };
 
 class Markup

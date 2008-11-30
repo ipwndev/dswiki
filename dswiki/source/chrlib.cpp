@@ -183,9 +183,9 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 						switch(CStat->Fx)
 						{
 							case NONE:
-								if ((*Uni==0x3c)||(*Uni==0x3e)||(*Uni==0x22)||(*Uni==0x26)||(*Uni==0x27))
-									DrawPoint(VScreen ,X , Y, PA_RGB(31,0,0));
-								else
+// 								if ((*Uni==0x3c)||(*Uni==0x3e)||(*Uni==0x22)||(*Uni==0x26)||(*Uni==0x27))
+// 									DrawPoint(VScreen ,X , Y, PA_RGB(31,0,0));
+// 								else
 									DrawPoint(VScreen ,X , Y, CStat->Color);
 								break;
 							case HOLLOW:

@@ -40,7 +40,7 @@ VirScreen ContentWin1;
 VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
-#define DEBUG 1
+#define DEBUG 0
 
 int main(int argc, char ** argv)
 {
@@ -196,7 +196,7 @@ int main(int argc, char ** argv)
 	PA_ClearTextBg(1);
 
 	enum {
-		SPRITE_HISTORY, SPRITE_HISTORYX, SPRITE_RELOAD, SPRITE_CANCEL, SPRITE_OK, SPRITE_2UPARROW, SPRITE_1UPARROW, SPRITE_1DOWNARROW, SPRITE_2DOWNARROW, SPRITE_1LEFTARROW, SPRITE_1RIGHTARROW, SPRITE_CLEARLEFT, SPRITE_CONFIGURE,  SPRITE_BOOKMARKADD, SPRITE_BOOKMARK
+		SPRITE_HISTORY, SPRITE_HISTORYX, SPRITE_RELOAD, SPRITE_CANCEL, SPRITE_OK, SPRITE_2UPARROW, SPRITE_1UPARROW, SPRITE_1DOWNARROW, SPRITE_2DOWNARROW, SPRITE_1LEFTARROW, SPRITE_1RIGHTARROW, SPRITE_CLEARLEFT, SPRITE_CONFIGURE,  SPRITE_BOOKMARKADD, SPRITE_BOOKMARK, SPRITE_VIEWMAG
 	};
 
 	// important variables
@@ -215,6 +215,7 @@ int main(int argc, char ** argv)
 	KT_CreateSprite(0, SPRITE_CONFIGURE,   "dswiki/icons/configure",     OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 	KT_CreateSprite(0, SPRITE_BOOKMARKADD, "dswiki/icons/bookmark_add",  OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 	KT_CreateSprite(0, SPRITE_BOOKMARK,    "dswiki/icons/bookmark",      OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_VIEWMAG,     "dswiki/icons/viewmag",       OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 
 	Statusbar* sb = new Statusbar();
 	PercentIndicator* p = new PercentIndicator();
@@ -311,6 +312,7 @@ int main(int argc, char ** argv)
 	PA_SetSpriteXY(0, SPRITE_CONFIGURE,  0, 176);
 	PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, 32, 176);
 	PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
+	PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
 
 	while(1) // main loop
 	{
@@ -324,6 +326,11 @@ int main(int argc, char ** argv)
 				{
 					g->setOptions();
 					updateContent = 1;
+				};
+
+				if (PA_SpriteTouched(SPRITE_VIEWMAG))
+				{
+					Pad.Newpress.X = 1; // TODO: This is sooo ugly!!!
 				};
 
 				if (PA_SpriteTouched(SPRITE_BOOKMARK))

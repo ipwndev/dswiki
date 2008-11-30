@@ -172,10 +172,10 @@ void Markupline::drawToVScreen(VirScreen* VScreen, CharStat* CStat, int line)
 		switch (children[i].Type)
 		{
 			case TEXT_EL:
-				CStat->Color = PA_RGB(0,0,0);
+				CStat->Color = _globals->textColor();
 				break;
 			case LINK_EL:
-				CStat->Color = PA_RGB(0,5,23);
+				CStat->Color = _globals->linkColor();
 				break;
 			case IMG_EL:
 				CStat->Color = PA_RGB(24,0,24);
@@ -248,43 +248,43 @@ void Markup::parse(string Str)
 	unsigned int link_id = 0;
 	Element* l;
 
-	WIKI2XML w2x(Str);
-
-	w2x.parse();
-	string xmlStr = w2x.get_xml();
-	Str = xmlStr;
-
-	PA_ClearTextBg(1);
-	_td->Parse(xmlStr.c_str());
-	if (_td->Error())
-	{
-		PA_OutputText(1,0,5,"TinyXML-Error %d at (%d/%d)",_td->ErrorId(),_td->ErrorRow(),_td->ErrorCol());
-		PA_OutputText(1,0,6,"%s",_td->ErrorDesc());
-		FILE* errorXML = fopen("fat:/dswiki/error.xml","wb");
-		fwrite(xmlStr.c_str(),strlen(xmlStr.c_str()),1,errorXML);
-		fclose(errorXML);
-	}
-	else
-	{
-// 		PA_OutputText(1,0,5,"TinyXML-Parsing OK");
-	}
+// 	WIKI2XML w2x(Str);
+//
+// 	w2x.parse();
+// 	string xmlStr = w2x.get_xml();
+// 	Str = xmlStr;
+//
+// 	PA_ClearTextBg(1);
+// 	_td->Parse(xmlStr.c_str());
+// 	if (_td->Error())
+// 	{
+// 		PA_OutputText(1,0,5,"TinyXML-Error %d at (%d/%d)",_td->ErrorId(),_td->ErrorRow(),_td->ErrorCol());
+// 		PA_OutputText(1,0,6,"%s",_td->ErrorDesc());
+// 		FILE* errorXML = fopen("fat:/dswiki/error.xml","wb");
+// 		fwrite(xmlStr.c_str(),strlen(xmlStr.c_str()),1,errorXML);
+// 		fclose(errorXML);
+// 	}
+// 	else
+// 	{
+// // 		PA_OutputText(1,0,5,"TinyXML-Parsing OK");
+// 	}
 
 
 	pos = 0;
-// 	l = createLink(Str,pos,link_id++);
-//
-// 	while (l)
-// 	{
-// 		Element t(Str.substr(pos,l->sourcePositionStart-pos));
-// 		visibleChildren.push_back(t);
-//
-// 		visibleChildren.push_back(*l);
-//
-// 		pos = l->sourcePositionStart + l->sourceLength;
-// 		delete l;
-//
-// 		l = createLink(Str,pos,link_id++);
-// 	}
+	l = createLink(Str,pos,link_id++);
+
+	while (l)
+	{
+		Element t(Str.substr(pos,l->sourcePositionStart-pos));
+		visibleChildren.push_back(t);
+
+		visibleChildren.push_back(*l);
+
+		pos = l->sourcePositionStart + l->sourceLength;
+		delete l;
+
+		l = createLink(Str,pos,link_id++);
+	}
 
 	Element t(Str.substr(pos));
 	visibleChildren.push_back(t);
@@ -331,6 +331,7 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 
 		BLOCK FakeCA = {{0,0},{0,0}};
 		Markupline CurrentLine;
+		CurrentLine.setGlobals(_globals);
 
 		while(1) // Loop until the current line is filled
 		{
@@ -428,8 +429,8 @@ unsigned char Markup::scrollPageUp()
 void Markup::draw()
 {
 	int i;
-	FillVS(&ContentWin1,PA_RGB(31,31,31));
-	FillVS(&ContentWin2,PA_RGB(31,31,31));
+	FillVS(&ContentWin1,_globals->backgroundColor());
+	FillVS(&ContentWin2,_globals->backgroundColor());
 	for (i=0;i<_linesOnVScreen1;i++)
 	{
 		if (((i+_currentLine-_linesOnVScreen1)>=0) && ((i+_currentLine-_linesOnVScreen1)<numberOfLines()))
@@ -443,6 +444,11 @@ void Markup::draw()
 }
 
 void Markup::setGlobals(Globals* globals)
+{
+	_globals = globals;
+}
+
+void Markupline::setGlobals(Globals* globals)
 {
 	_globals = globals;
 }

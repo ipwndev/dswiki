@@ -42,6 +42,10 @@ class Globals
 		void setStatusbar(Statusbar* statusbar);
 		void setFont(Font* font);
 		void setLanguage(int language);
+		void toggleInverted();
+		int backgroundColor();
+		int textColor();
+		int linkColor();
 		Dumps*            getDumps();
 		TitleIndex*       getTitleIndex();
 		WikiMarkupGetter* getWikiMarkupGetter();
@@ -61,6 +65,7 @@ class Globals
 		Statusbar*        _statusbar;
 		Font*             _font;
 		int               _language; //0 Japanese, 1 English, 2 Français, 3 Deutsch, 4 Italian, 5 Spanish
+		unsigned char     _isInverted;
 };
 
 

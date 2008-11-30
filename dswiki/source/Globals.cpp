@@ -42,11 +42,13 @@ void Globals::setOptions()
 {
 	vector<string> level1;
 	level1.push_back("Help/Manual");
-	level1.push_back("Color scheme");
+	level1.push_back("Invert color scheme");
 	TextBox Options(level1);
 	Options.setTitle("Configure DSwiki");
 	Options.allowCancel(1);
-	Options.run();
+	string choice = Options.run();
+	if (choice == "Invert color scheme")
+		toggleInverted();
 }
 
 string Globals::loadBookmark()
@@ -107,5 +109,49 @@ void Globals::saveBookmark(string s)
 	{
 		fwrite(bookmarkStr.c_str(),strlen(bookmarkStr.c_str()),1,bookmarkfile);
 		fclose(bookmarkfile);
+	}
+}
+
+void Globals::toggleInverted()
+{
+	_isInverted = 1 - _isInverted;
+	PA_SetBgPalCol(0, 0, backgroundColor());
+	PA_SetBgPalCol(1, 0, backgroundColor());
+
+}
+
+int Globals::backgroundColor()
+{
+	if (!_isInverted)
+	{
+		return PA_RGB(31,31,31);
+	}
+	else
+	{
+		return PA_RGB(0,0,0);
+	}
+}
+
+int Globals::textColor()
+{
+	if (!_isInverted)
+	{
+		return PA_RGB(0,0,0);
+	}
+	else
+	{
+		return PA_RGB(31,31,31);
+	}
+}
+
+int Globals::linkColor()
+{
+	if (!_isInverted)
+	{
+		return PA_RGB(0,5,23);
+	}
+	else
+	{
+		return PA_RGB(7,7,31);
 	}
 }

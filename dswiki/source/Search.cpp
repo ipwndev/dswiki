@@ -85,20 +85,23 @@ void Search::display()
 {
 	if (_wasScrolled)
 	{
-		FillVS(&ContentWin1,PA_RGB(31,31,31));
+		FillVS(&ContentWin1,_globals->backgroundColor());
 		_wasScrolled = 0;
 	}
 	BLOCK CharArea = {{0,0},{0,0}};
 	int i;
+	CharStat CS = SearchResultsCS2;
 	for (i=_list_FirstDisplayNumber;i<=_list_LastDisplayNumber;i++)  // TODO: Only paint necessary lines, not all
 	{
 		if (i!=_list_CurrentArticleNumber)
 		{
-			iPrint(_list[i]+"\n",&ContentWin1,&SearchResultsCS1,&CharArea,-1,UTF8);
+			CS.Color = _globals->textColor();
+			iPrint(_list[i]+"\n",&ContentWin1,&CS,&CharArea,-1,UTF8);
 		}
 		else
 		{
-			iPrint(_list[i]+"\n",&ContentWin1,&SearchResultsCS2,&CharArea,-1,UTF8);
+			CS.Color = PA_RGB(31,0,0);
+			iPrint(_list[i]+"\n",&ContentWin1,&CS,&CharArea,-1,UTF8);
 		}
 	}
 }
