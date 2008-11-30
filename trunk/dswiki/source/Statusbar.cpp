@@ -18,6 +18,7 @@ void Statusbar::clear()
 	PA_SetSpriteXY(0, 12,  0, 176);
 	PA_SetSpriteXY(0, 13, 32, 176);
 	PA_SetSpriteXY(0, 14, 64, 176);
+	PA_SetSpriteXY(0, 15, 96, 176);
 }
 
 void Statusbar::display(string message)
@@ -27,6 +28,7 @@ void Statusbar::display(string message)
 	PA_SetSpriteXY(0, 12, -16, -16);
 	PA_SetSpriteXY(0, 13, -16, -16);
 	PA_SetSpriteXY(0, 14, -16, -16);
+	PA_SetSpriteXY(0, 15, -16, -16);
 	iPrint(message,&StatusbarVS,&StatusbarCS,&CharArea,-1,UTF8);
 }
 
@@ -37,6 +39,7 @@ void Statusbar::displayError(string message)
 	PA_SetSpriteXY(0, 12, -16, -16);
 	PA_SetSpriteXY(0, 13, -16, -16);
 	PA_SetSpriteXY(0, 14, -16, -16);
+	PA_SetSpriteXY(0, 15, -16, -16);
 	iPrint(message,&StatusbarVS,&StatErrorCS,&CharArea,-1,UTF8);
 }
 

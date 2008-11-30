@@ -21,15 +21,15 @@ string TextBox::run()
 	if (_lines.empty())
 		return "";
 
-	VirScreen TextboxOuterBorder = {2, 2, 252, 172, {{0,0},{0,0}}, &DnScreen};
+	VirScreen TextboxOuterBorder = {18, 10, 220, 156, {{0,0},{0,0}}, &DnScreen};
 	InitVS(&TextboxOuterBorder);
-	FillVS(&TextboxOuterBorder,PA_RGB(31,31,31));
+	FillVS(&TextboxOuterBorder,PA_RGB(28,28,28));
 
 	BLOCK border = TextboxOuterBorder.RelativeBound(-7);
 	DrawBlock (&TextboxOuterBorder, border, PA_RGB(0,0,0), 0);
 
 	CharStat neu = SearchResultsCS1;
-	neu.BgColor = PA_RGB(31,31,31);
+	neu.BgColor = PA_RGB(28,28,28);
 	neu.Fx = BACKGR;
 	BLOCK CharArea = {{23,0},{0,0}};
 	if (!_title.empty())
@@ -42,6 +42,37 @@ string TextBox::run()
 	unsigned char update = 1;
 	while(1)
 	{
+		if (Stylus.Held)
+		{
+			int y = Stylus.Y;
+			y -= inner.AbsoluteBound.Start.y;
+			int lineClicked = y / SearchResultsCS1.FONT->Regular.Height;
+			if (Stylus.Newpress)
+			{
+				if (_allowCancel &&
+					((Stylus.X < TextboxOuterBorder.AbsoluteBound.Start.x-5)
+								|| (Stylus.X > TextboxOuterBorder.AbsoluteBound.End.x+5)
+								|| (Stylus.Y < TextboxOuterBorder.AbsoluteBound.Start.y-5)
+								|| (Stylus.Y > TextboxOuterBorder.AbsoluteBound.End.y+5))
+				   )
+				{
+					PA_WaitForVBL();
+					return "";
+				}
+				if (_topItem + lineClicked == _currentItem)
+				{
+					PA_WaitForVBL();
+					return _lines[_currentItem];
+				}
+			}
+			if (_currentItem != _topItem + lineClicked)
+			{
+				_currentItem = _topItem + lineClicked;
+				if (_currentItem>=_lines.size()-1)
+					_currentItem =_lines.size()-1;
+				update = 1;
+			}
+		}
 		if (Pad.Newpress.A)
 		{
 			PA_WaitForVBL();
@@ -76,7 +107,7 @@ string TextBox::run()
 		}
 		if (fullupdate)
 		{
-			FillVS(&inner,PA_RGB(31,31,31));
+			FillVS(&inner,PA_RGB(28,28,28));
 			if (_topItem>0)
 			{
 				CharArea = (BLOCK) {{13,0},{0,0}};
