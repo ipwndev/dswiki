@@ -269,8 +269,12 @@ int main(int argc, char ** argv)
 	{
 		currentSelectedWiki = WikiChooser->run();
 	}
-#else
-	currentSelectedWiki = possibleWikis[0];
+	else
+	{
+#endif
+		currentSelectedWiki = possibleWikis[0];
+#if !DEBUG
+	}
 #endif
 
 	unsigned char  updateTitle       = 0;
