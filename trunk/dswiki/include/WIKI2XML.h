@@ -22,7 +22,7 @@ class WIKI2XML {
 		virtual void init(string s);
 		virtual void init(vector < string > &l) { init(implode("\n", l)); }
 		virtual void parse() { parse_lines(lines); }
-		virtual string get_xml();
+		virtual void get_xml();
 
 	private:
 		virtual void make_tag_list(string & s, vector < TXML > &list);
@@ -34,7 +34,7 @@ class WIKI2XML {
 		virtual string fix_list(string & l);
 		virtual string get_list_tag(chart c, bool open);
 		virtual bool is_list_char(chart c);
-		virtual void remove_evil_html(string & s, vector < TXML > &taglist);
+		virtual void sanitize_html(string & s, vector < TXML > &taglist);
 		virtual void replace_part(string & s, int from, int to, string with);
 		virtual void replace_part_sync(string & s, int from, int to,
 									   string with, vector < TXML > &list);

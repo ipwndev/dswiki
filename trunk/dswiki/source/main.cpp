@@ -40,7 +40,8 @@ VirScreen ContentWin1;
 VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
-#define DEBUG 0
+#define DEBUG 1
+#define DEBUG_WIKI_NR 0
 
 int main(int argc, char ** argv)
 {
@@ -243,7 +244,7 @@ int main(int argc, char ** argv)
 
 	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-	CharStat       TitlebarCS = { CompleteFont, BOLD,    0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+	CharStat       TitlebarCS = { CompleteFont, REGULAR, 0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
 	CharStat SearchResultsCS3 = { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
 
 	BLOCK CharArea = {{ 0, 0},{ 0, 0}};
@@ -254,7 +255,7 @@ int main(int argc, char ** argv)
 	ArticleSearchResult* redirection  = NULL;
 
 	string markupstr;
-	string suchtitel = "";
+	string suchtitel = "HTML-Comments";
 	string currentTitle;
 
 	Markup* markup = NULL;
@@ -271,10 +272,10 @@ int main(int argc, char ** argv)
 	}
 	else
 	{
-#endif
 		currentSelectedWiki = possibleWikis[0];
-#if !DEBUG
 	}
+#else
+	currentSelectedWiki = possibleWikis[DEBUG_WIKI_NR];
 #endif
 
 	unsigned char  updateTitle       = 0;
@@ -879,6 +880,8 @@ int main(int argc, char ** argv)
 
 			if (suchergebnis!=NULL)
 			{
+				delete markup;
+
 				suchtitel.clear();
 				g->getStatusbar()->display("Loading \""+suchergebnis->TitleInArchive()+"\"");
 
@@ -918,15 +921,29 @@ int main(int argc, char ** argv)
 				markupstr = redirectMessage + markupstr;
 
 				g->getStatusbar()->display("Formatting \""+currentTitle+"\"...");
-				delete markup;
 				markup = new Markup();
 				g->setMarkup(markup);
 				markup->setGlobals(g);
 
 				markup->parse(markupstr);
-				g->getStatusbar()->displayClearAfter("Formatting complete",30);
-
+				if (markup->LoadOK())
+				{
+					PA_OutputText(1,0,3,"%c2XML-Parsing OK");
+				}
+				else
+				{
+					PA_OutputText(1,0,3,"%c1XML-Parsing failed");
+					FILE* xmlerrorlist = fopen("fat:/dswiki/xml_parsing_errors.txt","a");
+					if (xmlerrorlist!=NULL)
+					{
+						fprintf(xmlerrorlist,"%s: %s\n",currentSelectedWiki.c_str(),currentTitle.c_str());
+						fclose(xmlerrorlist);
+					}
+				}
 				markupstr.clear();
+				markup->createLines(&ContentWin1,&ContentCS);
+
+				g->getStatusbar()->displayClearAfter("Formatting complete",30);
 
 				markup->setCurrentLine(forcedLine);
 

@@ -5,8 +5,8 @@
 # just uncomment "ARM7_SELECTED = ARM7_BASIC". ARM7_BASIC is the same as ARM7_MP3.
 #---------------------------------------------------------------------------------
 
-#ARM7_SELECTED = ARM7_BASIC
-ARM7_SELECTED = ARM7_MOD_DSWIFI
+ARM7_SELECTED = ARM7_BASIC
+# ARM7_SELECTED = ARM7_MOD_DSWIFI
 #ARM7_SELECTED = ARM7_MOD_LIBLOBBY
 #ARM7_SELECTED = ARM7_MP3
 #ARM7_SELECTED = ARM7_MP3_DSWIFI

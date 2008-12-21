@@ -47,7 +47,8 @@ string right(string & s, int num)
 string upper(string s)		// For internal purposes, will do...
 {
 	int a;
-	for (a = 0; a < s.length(); a++) {
+	for (a = 0; a < s.length(); a++)
+	{
 		if (s[a] >= 'a' && s[a] <= 'z')
 			s[a] = s[a] - 'a' + 'A';
 	}
@@ -58,7 +59,8 @@ void explode(chart ch, string & l, vector < string > &parts)
 {
 	parts.clear();
 	int a, b;
-	for (a = b = 0; a < l.length(); a++) {
+	for (a = b = 0; a < l.length(); a++)
+	{
 		if (l[a] == ch) {
 			parts.push_back(l.substr(b, a - b));
 			b = a + 1;
@@ -67,12 +69,12 @@ void explode(chart ch, string & l, vector < string > &parts)
 	parts.push_back(l.substr(b, a - b));
 
 	if (debug)
+	{
 		cout << "Explode : " << l << endl;
-	for (a = 0; a < parts.size(); a++)
-		if (debug)
+		for (a = 0; a < parts.size(); a++)
 			cout << a << " " << parts[a] << endl;
-	if (debug)
 		cout << endl;
+	}
 }
 
 string implode(string mid, vector < string > &parts)
@@ -83,15 +85,20 @@ string implode(string mid, vector < string > &parts)
 		return parts[0];
 	string ret = parts[0];
 	for (int a = 1; a < parts.size(); a++)
+	{
 		ret += mid + parts[a];
+// 		parts[a].clear();
+	}
 	return ret;
 }
 
 string unquote(chart quote, string & s)
 {
 	int a;
-	for (a = 0; a < s.length(); a++) {
-		if (s[a] == quote && (a == 0 || (a > 0 && s[a - 1] != '\\'))) {
+	for (a = 0; a < s.length(); a++)
+	{
+		if (s[a] == quote && (a == 0 || (a > 0 && s[a - 1] != '\\')))
+		{
 			s.insert(a, "\\");
 			a++;
 		}
@@ -104,7 +111,8 @@ bool submatch(string & main, string & sub, int from)
 	if (from + sub.length() > main.length())
 		return false;
 	int a;
-	for (a = 0; a < sub.length(); a++) {
+	for (a = 0; a < sub.length(); a++)
+	{
 		if (sub[a] != main[a + from])
 			return false;
 	}
@@ -123,7 +131,8 @@ int find_first(chart c, string & s)
 int find_last(chart c, string & s)
 {
 	int a, b = -1;
-	for (a = 0; a < s.length(); a++) {
+	for (a = 0; a < s.length(); a++)
+	{
 		if (s[a] == c)
 			b = a;
 	}
@@ -178,7 +187,8 @@ int find_next_unquoted(chart c, string & s, int start)
 {
 	int a;
 	chart lastquote = ' ';
-	for (a = start; a < s.length(); a++) {
+	for (a = start; a < s.length(); a++)
+	{
 		if (s[a] == c && lastquote == ' ')
 			return a;		// Success!
 		if (s[a] != SINGLE_QUOTE && s[a] != DOUBLE_QUOTE)
@@ -215,10 +225,12 @@ string xml_params(string l)	// Yes, this function is thin...
 {
 	string ret;
 	vector < string > params;
-	while (l != "") {
+	while (l != "")
+	{
 		int p = find_next_unquoted(' ', l);
 		string first;
-		if (p == -1) {
+		if (p == -1)
+		{
 			first = l;
 			l = "";
 		} else {
@@ -233,7 +245,8 @@ string xml_params(string l)	// Yes, this function is thin...
 		p = find_next_unquoted('=', first);
 		if (p == -1)
 			first = xml_embed(first, "val");
-		else {
+		else
+		{
 			first = xml_embed(left(first, p), "key") +
 					xml_embed(first.substr(p + 1, first.length() - p),
 							  "val");
