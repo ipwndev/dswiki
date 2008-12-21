@@ -8,8 +8,9 @@
 #include "Globals.h"
 #include "PercentIndicator.h"
 #include "WIKI2XML.h"
-#include "tinyxml.h"
+// #include "tinyxml.h"
 
+using namespace std;
 
 Element::~Element()
 {
@@ -232,13 +233,16 @@ string Markup::evaluateClick(s16 x,s16 y)
 
 Markup::Markup()
 {
-	_td = new TiXmlDocument();
+	_td = NULL;
 	TiXmlBase::SetCondenseWhiteSpace( false );
 }
 
 
-void Markup::parse(string Str)
+void Markup::parse(string & Str)
 {
+	PA_ClearTextBg(1);
+	_loadOK = false;
+
 	_markupCStat    = &ContentCS;
 	_linesOnVScreen1 = 1 + ( ( ContentWin1.Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
 	_linesOnVScreen2 = 1 + ( ( ContentWin2.Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
@@ -248,29 +252,66 @@ void Markup::parse(string Str)
 	unsigned int link_id = 0;
 	Element* l;
 
-	Str = exchangeSGMLEntities(Str);
-// 	WIKI2XML w2x(Str);
-//
-// 	w2x.parse();
-// 	string xmlStr = w2x.get_xml();
-// 	Str = xmlStr;
-//
-// 	PA_ClearTextBg(1);
-// 	_td->Parse(xmlStr.c_str());
-// 	if (_td->Error())
-// 	{
-// 		PA_OutputText(1,0,5,"TinyXML-Error %d at (%d/%d)",_td->ErrorId(),_td->ErrorRow(),_td->ErrorCol());
+// 	PA_OutputText(1,0,4,"wiki2xml");
+	WIKI2XML* w2x = new WIKI2XML(Str);
+// 	PA_OutputText(1,0,4,"wiki2xml [Init OK]   ");
+	w2x->parse();
+// 	PA_OutputText(1,0,4,"wiki2xml [Parsing OK]");
+	w2x->get_xml();
+// 	PA_OutputText(1,0,4,"wiki2xml [getXML OK] ");
+
+	if (w2x != NULL)
+	{
+		delete w2x;
+		w2x = NULL;
+	}
+
+	if (_td != NULL)
+	{
+		delete _td;
+		_td = NULL;
+	}
+
+// 	PA_OutputText(1,0,5,"TinyXML-FAT-Parsing: new");
+	_td = new TiXmlDocument("fat:/dswiki/article.xml");
+// 	PA_OutputText(1,0,5,"TinyXML-FAT-Parsing: LoadFile");
+	_loadOK = _td->LoadFile();
+
+	if ( _loadOK && (!_td->Error()) )
+	{
+// 		PA_OutputText(1,0,5,"%c2TinyXML-FAT-Parsing OK");
+		_td->SaveFile("fat:/dswiki/article.tiny.xml");
+		FILE* f = fopen("fat:/dswiki/article.tiny.xml","rb");
+		if (f != NULL)
+		{
+			fseek(f, 0, SEEK_END);
+			int size = ftell(f);
+			fseek(f, 0, SEEK_SET);
+			char* buffer = (char*)malloc(size+1);
+			fread(buffer, 1, size, f);
+			buffer[size] = '\0';
+			fclose(f);
+			Str = buffer;
+		}
+
+	}
+	else
+	{
+// 		PA_OutputText(1,0,5,"%c1TinyXML-FAT-Error %d at (%d/%d)",_td->ErrorId(),_td->ErrorRow(),_td->ErrorCol());
 // 		PA_OutputText(1,0,6,"%s",_td->ErrorDesc());
-// 		FILE* errorXML = fopen("fat:/dswiki/error.xml","wb");
-// 		fwrite(xmlStr.c_str(),strlen(xmlStr.c_str()),1,errorXML);
-// 		fclose(errorXML);
-// 	}
-// 	else
-// 	{
-// // 		PA_OutputText(1,0,5,"TinyXML-Parsing OK");
-// 	}
+		FILE* tinyerror = fopen("fat:/dswiki/article.tiny.xml","w");
+		if (tinyerror!=NULL)
+		{
+			fprintf(tinyerror,"TinyXML-FAT-Error %d at (%d/%d)\n",_td->ErrorId(),_td->ErrorRow(),_td->ErrorCol());
+			fprintf(tinyerror,"%s\n",_td->ErrorDesc());
+			fclose(tinyerror);
+		}
+	}
 
+// 	PA_Sleep(300);
+	PA_ClearTextBg(1);
 
+// 	Str.clear();
 	pos = 0;
 	l = createLink(Str,pos,link_id++);
 
@@ -290,15 +331,14 @@ void Markup::parse(string Str)
 	Element t(Str.substr(pos));
 	visibleChildren.push_back(t);
 
-	createLines(&ContentWin1, _markupCStat);
 }
 
 Markup::~Markup()
 {
 	visibleChildren.clear();
 	lines.clear();
-	delete _td;
-	_td = NULL;
+// 	delete _td;
+// 	_td = NULL;
 }
 
 void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
@@ -318,16 +358,15 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 	}
 	InitVS(&FakeVS);
 
-	unsigned int elementNumber = 0;
 	unsigned int numOut;
 	unsigned char update = 1;
 	Element CurrentElement("");
 	int percent = 0;
+	int insg = visibleChildren.size();
 
-	while (elementNumber<visibleChildren.size()) // Loop until every token is put on some line
+	while (!visibleChildren.empty()) // Loop until every token is put on some line
 	{
-		percent = elementNumber*100/visibleChildren.size();
-		if (percent>100) percent = 100;
+		percent = 100-visibleChildren.size()*100/insg;
 		_globals->getPercentIndicator()->update(percent);
 
 		BLOCK FakeCA = {{0,0},{0,0}};
@@ -338,7 +377,7 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 		{
 			if (update)
 			{
-				CurrentElement = visibleChildren[elementNumber];
+				CurrentElement = visibleChildren.front();
 				update = 0;
 			}
 			numOut = iPrint(CurrentElement.displayText,&FakeVS,&FakeCS,&FakeCA,-1,UTF8);
@@ -346,9 +385,9 @@ void Markup::createLines(VirScreen* VScreen, CharStat* CStat)
 			if (numOut == CurrentElement.displayText.length())
 			{
 				CurrentLine.children.push_back(CurrentElement);
-				elementNumber++;
+				visibleChildren.erase(visibleChildren.begin());
 				update = 1;
-				if (elementNumber==visibleChildren.size())
+				if (visibleChildren.empty())
 					break;
 			}
 			else
@@ -442,6 +481,11 @@ void Markup::draw()
 		if (((i+_currentLine)>=0) && ((i+_currentLine)<numberOfLines()))
 			lines[i+_currentLine].drawToVScreen(&ContentWin2,_markupCStat,i);
 	}
+}
+
+bool Markup::LoadOK()
+{
+	return _loadOK;
 }
 
 void Markup::setGlobals(Globals* globals)

@@ -516,13 +516,13 @@ Font::Font()
 	f = fopen("efs:dswiki/fonts/font_b.dat","rb");
 	if (f != NULL)
 	{
-		fseek(f, 0, SEEK_END);
+/*		fseek(f, 0, SEEK_END);
 		size = ftell(f);
 		fseek(f, 0, SEEK_SET);
 		_data_bold = (unsigned char*)malloc(size);
 		fread(_data_bold, 1, size, f);
 		InitFont(&Bold,_data_bold);
-		fclose(f);
+		fclose(f);*/
 	}
 	else
 	{
@@ -532,13 +532,13 @@ Font::Font()
 	f = fopen("efs:dswiki/fonts/font_o.dat","rb");
 	if (f != NULL)
 	{
-		fseek(f, 0, SEEK_END);
+/*		fseek(f, 0, SEEK_END);
 		size = ftell(f);
 		fseek(f, 0, SEEK_SET);
 		_data_italic = (unsigned char*)malloc(size);
 		fread(_data_italic, 1, size, f);
 		InitFont(&Italic,_data_italic);
-		fclose(f);
+		fclose(f);*/
 	}
 	else
 	{
@@ -548,13 +548,13 @@ Font::Font()
 	f = fopen("efs:dswiki/fonts/font_bo.dat","rb");
 	if (f != NULL)
 	{
-		fseek(f, 0, SEEK_END);
+/*		fseek(f, 0, SEEK_END);
 		size = ftell(f);
 		fseek(f, 0, SEEK_SET);
 		_data_bolditalic = (unsigned char*)malloc(size);
 		fread(_data_bolditalic, 1, size, f);
 		InitFont(&BoldItalic,_data_bolditalic);
-		fclose(f);
+		fclose(f);*/
 	}
 	else
 	{

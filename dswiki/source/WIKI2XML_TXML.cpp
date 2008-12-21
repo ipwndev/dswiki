@@ -18,20 +18,24 @@ TXML::TXML(int f, int t, string & s, bool fix_comments)
 
 	name = s.substr(from + 1, to - (from + 1));
 	name = trim(name);
-	if (left(name, 1) == "/") {
+	if (left(name, 1) == "/")
+	{
 		closing = true;
 		name = name.substr(1, name.length() - 1);
 	}
-	if (right(name, 1) == "/") {
+	if (right(name, 1) == "/")
+	{
 		selfclosing = true;
 		name = name.substr(0, name.length() - 1);
 	}
 	name = before_first(' ', name);
 
     // This will replace < and > within a comment with the appropriate HTML entities
-	if (fix_comments && left(name, 1) == "!") {
+	if (fix_comments && left(name, 1) == "!")
+	{
 		int a;
-		for (a = from + 1; a < to; a++) {
+		for (a = from + 1; a < to; a++)
+		{
 			if (s[a] != '>' && s[a] != '<')
 				continue;
 			to += 3;
@@ -70,8 +74,10 @@ string TXML::get_string()
 {
 	string ret;
 	ret = "<" + name;
-	for (int a = 0; a < key.size(); a++) {
-		for (int b = 0; b < key[a].length(); b++) {
+	for (int a = 0; a < key.size(); a++)
+	{
+		for (int b = 0; b < key[a].length(); b++)
+		{
 			if (key[a][b] == ' ')
 				key[a][b] = '_';
 		}

@@ -51,7 +51,7 @@ class Markup
 		Markup();
 		~Markup();
 
-		void 			parse(string Str);
+		void 			parse(string & Str);
 		void			createLines(VirScreen* VScreen, CharStat* CStat);
 		unsigned int	numberOfLines();
 		int				currentLine();
@@ -64,6 +64,7 @@ class Markup
 		unsigned char	scrollPageUp();
 		string			evaluateClick(s16 x,s16 y);
 		void 			setGlobals(Globals* globals);
+		bool			LoadOK();
 	private:
 		int				_currentLine;
 		vector<Markupline>	lines;
@@ -73,6 +74,7 @@ class Markup
 		unsigned char	_linesOnVScreen2;
 		Globals*		_globals;
 		TiXmlDocument*  _td;
+		bool			_loadOK;
 };
 
 Element* createLink(string Str, unsigned int startPos, unsigned int link_id);
