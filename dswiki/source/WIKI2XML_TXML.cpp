@@ -86,7 +86,7 @@ string TXML::get_string()
 			ret += "=\"" + unquote(SINGLE_QUOTE, value[a]) + "\"";
 	}
 	if (text == "")
-		ret += "/>";
+		ret += " />";
 	else
 		ret += ">" + text + "</" + name + ">";
 	return ret;
