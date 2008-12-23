@@ -217,7 +217,7 @@ string xml_embed(string inside, string tag, string param)
 	if (param != "")
 		ret += " " + param;
 	if (inside == "")
-		return ret + "/>";
+		return ret + " />";
 	return ret + ">" + trim(inside) + "</" + tag + ">";
 }
 

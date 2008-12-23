@@ -119,7 +119,7 @@ string trimPhrase(string Str)
 }
 
 
-string exchangeSGMLEntities(string phrase)
+string exchangeSGMLEntities(string phrase, bool exclude_XML_entities)
 {
 	if ( phrase.empty() )
 		return phrase;
@@ -213,10 +213,13 @@ string exchangeSGMLEntities(string phrase)
 		if (entityLength>10)
 			continue;
 
+
 		for (i=0;i<MAX_NAMED_ENTITIES;i++)
 		{
 			if (entity==entities[i].entity)
 			{
+				if (exclude_XML_entities && (entity == "&amp;" || entity == "&lt;" || entity == "&gt;" || entity == "&apos;" || entity == "&quot;"))
+					break;
 				char replaced[32];
 				unsigned int codepoint[] = {entities[i].codepoint,0};
 				UTF2UTF8(codepoint,replaced);

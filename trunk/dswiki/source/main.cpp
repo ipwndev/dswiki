@@ -255,7 +255,7 @@ int main(int argc, char ** argv)
 	ArticleSearchResult* redirection  = NULL;
 
 	string markupstr;
-	string suchtitel = "HTML-Comments";
+	string suchtitel = "Preformatting";
 	string currentTitle;
 
 	Markup* markup = NULL;

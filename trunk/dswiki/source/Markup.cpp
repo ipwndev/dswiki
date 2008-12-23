@@ -253,9 +253,9 @@ void Markup::parse(string & Str)
 	Element* l;
 
 // 	PA_OutputText(1,0,4,"wiki2xml");
-	WIKI2XML* w2x = new WIKI2XML(Str);
+	WIKI2XML* w2x = new WIKI2XML();
 // 	PA_OutputText(1,0,4,"wiki2xml [Init OK]   ");
-	w2x->parse();
+	w2x->parse(Str);
 // 	PA_OutputText(1,0,4,"wiki2xml [Parsing OK]");
 	w2x->get_xml();
 // 	PA_OutputText(1,0,4,"wiki2xml [getXML OK] ");
@@ -305,6 +305,18 @@ void Markup::parse(string & Str)
 			fprintf(tinyerror,"TinyXML-FAT-Error %d at (%d/%d)\n",_td->ErrorId(),_td->ErrorRow(),_td->ErrorCol());
 			fprintf(tinyerror,"%s\n",_td->ErrorDesc());
 			fclose(tinyerror);
+		}
+		FILE* f = fopen("fat:/dswiki/article.xml","rb");
+		if (f != NULL)
+		{
+			fseek(f, 0, SEEK_END);
+			int size = ftell(f);
+			fseek(f, 0, SEEK_SET);
+			char* buffer = (char*)malloc(size+1);
+			fread(buffer, 1, size, f);
+			buffer[size] = '\0';
+			fclose(f);
+			Str = buffer;
 		}
 	}
 
