@@ -8,6 +8,7 @@
 #include "Globals.h"
 #include "PercentIndicator.h"
 #include "WIKI2XML.h"
+#include "WIKI2XML_global.h"
 // #include "tinyxml.h"
 
 using namespace std;
@@ -240,8 +241,14 @@ Markup::Markup()
 
 void Markup::parse(string & Str)
 {
-	PA_ClearTextBg(1);
-	_loadOK = false;
+	FILE* f = fopen("fat:/dswiki/article.txt","w");
+	if (f != NULL)
+	{
+		fprintf(f,"%s",Str.c_str());
+		fclose(f);
+	}
+
+	_loadOK = true;
 
 	_markupCStat    = &ContentCS;
 	_linesOnVScreen1 = 1 + ( ( ContentWin1.Height - _markupCStat->FONT->Regular.Height ) / ( _markupCStat->FONT->Regular.Height + _markupCStat->H_Space ) );
@@ -252,36 +259,33 @@ void Markup::parse(string & Str)
 	unsigned int link_id = 0;
 	Element* l;
 
-// 	PA_OutputText(1,0,4,"wiki2xml");
+	PA_OutputText(1,0,4,"wiki2xml");
 	WIKI2XML* w2x = new WIKI2XML();
-// 	PA_OutputText(1,0,4,"wiki2xml [Init OK]   ");
-	w2x->parse(Str);
-// 	PA_OutputText(1,0,4,"wiki2xml [Parsing OK]");
-	w2x->get_xml();
-// 	PA_OutputText(1,0,4,"wiki2xml [getXML OK] ");
-
-	if (w2x != NULL)
+	if (w2x)
 	{
+		PA_OutputText(1,0,4,"wiki2xml [Init OK]   ");
+		w2x->parse(Str);
+		PA_OutputText(1,0,4,"wiki2xml [Parsing OK]");
 		delete w2x;
 		w2x = NULL;
 	}
 
-	if (_td != NULL)
+	if (_td)
 	{
 		delete _td;
 		_td = NULL;
 	}
 
 // 	PA_OutputText(1,0,5,"TinyXML-FAT-Parsing: new");
-	_td = new TiXmlDocument("fat:/dswiki/article.xml");
+// 	_td = new TiXmlDocument("fat:/dswiki/article.xml");
 // 	PA_OutputText(1,0,5,"TinyXML-FAT-Parsing: LoadFile");
-	_loadOK = _td->LoadFile();
+// 	_loadOK = _td->LoadFile();
 
-	if ( _loadOK && (!_td->Error()) )
-	{
+// 	if ( _loadOK && (!_td->Error()) )
+// 	{
 // 		PA_OutputText(1,0,5,"%c2TinyXML-FAT-Parsing OK");
-		_td->SaveFile("fat:/dswiki/article.tiny.xml");
-		FILE* f = fopen("fat:/dswiki/article.tiny.xml","rb");
+// 		_td->SaveFile("fat:/dswiki/article.tiny.xml");
+/*		FILE* f = fopen("fat:/dswiki/article.xml","rb");
 		if (f != NULL)
 		{
 			fseek(f, 0, SEEK_END);
@@ -292,56 +296,53 @@ void Markup::parse(string & Str)
 			buffer[size] = '\0';
 			fclose(f);
 			Str = buffer;
-		}
-
-	}
-	else
-	{
+		}*/
+//
+// 	}
+// 	else
+// 	{
 // 		PA_OutputText(1,0,5,"%c1TinyXML-FAT-Error %d at (%d/%d)",_td->ErrorId(),_td->ErrorRow(),_td->ErrorCol());
 // 		PA_OutputText(1,0,6,"%s",_td->ErrorDesc());
-		FILE* tinyerror = fopen("fat:/dswiki/article.tiny.xml","w");
-		if (tinyerror!=NULL)
-		{
-			fprintf(tinyerror,"TinyXML-FAT-Error %d at (%d/%d)\n",_td->ErrorId(),_td->ErrorRow(),_td->ErrorCol());
-			fprintf(tinyerror,"%s\n",_td->ErrorDesc());
-			fclose(tinyerror);
-		}
-		FILE* f = fopen("fat:/dswiki/article.xml","rb");
-		if (f != NULL)
-		{
-			fseek(f, 0, SEEK_END);
-			int size = ftell(f);
-			fseek(f, 0, SEEK_SET);
-			char* buffer = (char*)malloc(size+1);
-			fread(buffer, 1, size, f);
-			buffer[size] = '\0';
-			fclose(f);
-			Str = buffer;
-		}
-	}
+// 		FILE* tinyerror = fopen("fat:/dswiki/article.tiny.xml","w");
+// 		if (tinyerror!=NULL)
+// 		{
+// 			fprintf(tinyerror,"TinyXML-FAT-Error %d at (%d/%d)\n",_td->ErrorId(),_td->ErrorRow(),_td->ErrorCol());
+// 			fprintf(tinyerror,"%s\n",_td->ErrorDesc());
+// 			fclose(tinyerror);
+// 		}
+// 		FILE* f = fopen("fat:/dswiki/article.xml","rb");
+// 		if (f != NULL)
+// 		{
+// 			fseek(f, 0, SEEK_END);
+// 			int size = ftell(f);
+// 			fseek(f, 0, SEEK_SET);
+// 			char* buffer = (char*)malloc(size+1);
+// 			fread(buffer, 1, size, f);
+// 			buffer[size] = '\0';
+// 			fclose(f);
+// 			Str = buffer;
+// 		}
+// 	}
 
-// 	PA_Sleep(300);
-	PA_ClearTextBg(1);
 
-// 	Str.clear();
-	pos = 0;
-	l = createLink(Str,pos,link_id++);
+// 	pos = 0;
+// 	l = createLink(Str,pos,link_id++);
 
-	while (l)
-	{
-		Element t(Str.substr(pos,l->sourcePositionStart-pos));
-		visibleChildren.push_back(t);
+// 	while (l)
+// 	{
+// 		Element t(Str.substr(pos,l->sourcePositionStart-pos));
+// 		visibleChildren.push_back(t);
+//
+// 		visibleChildren.push_back(*l);
+//
+// 		pos = l->sourcePositionStart + l->sourceLength;
+// 		delete l;
+//
+// 		l = createLink(Str,pos,link_id++);
+// 	}
 
-		visibleChildren.push_back(*l);
-
-		pos = l->sourcePositionStart + l->sourceLength;
-		delete l;
-
-		l = createLink(Str,pos,link_id++);
-	}
-
-	Element t(Str.substr(pos));
-	visibleChildren.push_back(t);
+// 	Element t(Str.substr(pos));
+// 	visibleChildren.push_back(t);
 
 }
 
@@ -349,8 +350,11 @@ Markup::~Markup()
 {
 	visibleChildren.clear();
 	lines.clear();
-// 	delete _td;
-// 	_td = NULL;
+	if (_td)
+	{
+		delete _td;
+		_td = NULL;
+	}
 }
 
 void Markup::createLines(VirScreen* VScreen, CharStat* CStat)

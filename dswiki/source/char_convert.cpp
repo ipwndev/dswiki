@@ -119,10 +119,10 @@ string trimPhrase(string Str)
 }
 
 
-string exchangeSGMLEntities(string phrase, bool exclude_XML_entities)
+void exchangeSGMLEntities(string & phrase, bool exclude_XML_entities)
 {
 	if ( phrase.empty() )
-		return phrase;
+		return;
 
 	int posStart = 0;
 	int entityStart, entityLength;
@@ -134,10 +134,10 @@ string exchangeSGMLEntities(string phrase, bool exclude_XML_entities)
 	{
 		posStart = phrase.find("&",posStart);
 		if (posStart==string::npos)
-			return phrase;
+			return;
 		posEnd = phrase.find(";",posStart);
 		if (posEnd==string::npos)
-			return phrase;
+			return;
 
 		entity       = phrase.substr(posStart,posEnd-posStart+1);
 		entityStart  = posStart;
@@ -230,7 +230,6 @@ string exchangeSGMLEntities(string phrase, bool exclude_XML_entities)
 		}
 
 	}
-	return phrase;
 }
 
 

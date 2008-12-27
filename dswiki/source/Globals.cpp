@@ -103,7 +103,8 @@ void Globals::saveBookmark(string s)
 
 	bookmarks.push_back(s);
 	sort(bookmarks.begin(),bookmarks.end());
-	string bookmarkStr = implode("\n",bookmarks);
+	string bookmarkStr;
+	implode("\n",bookmarks,bookmarkStr);
 	bookmarkfile = fopen("fat:/dswiki/bookmarks.txt","wb");
 	if (bookmarkfile!=NULL)
 	{
