@@ -55,16 +55,18 @@ WikiMarkupGetter::~WikiMarkupGetter()
 	_lastArticleTitle.clear();
 }
 
-string WikiMarkupGetter::getMarkup(string title)
+void WikiMarkupGetter::getMarkup(string & markup, string title)
 {
+	markup.clear();
+
 	ArticleSearchResult* articleSearchResult = _globals->getTitleIndex()->findArticle(title, "", 1); // The only situation when we need the physical position of the article afterwards
 	if ( !articleSearchResult )
 	{
-		return NULL;
+		return;
 	}
 
-	u64 blockPos	= articleSearchResult->BlockPos();
-	int articlePos	= articleSearchResult->ArticlePos();
+	u64 blockPos		= articleSearchResult->BlockPos();
+	int articlePos		= articleSearchResult->ArticlePos();
 	int articleLength	= articleSearchResult->ArticleLength();
 	_lastArticleTitle	= articleSearchResult->TitleInArchive();
 
@@ -85,7 +87,7 @@ string WikiMarkupGetter::getMarkup(string title)
 
 	if ( !_f_data ) {
 // 		PA_OutputText(1,5,10,"!fdata");
-		return "";
+		return;
 	}
 	// seek to the block
 	fseek(_f_data, blockPos, SEEK_SET);
@@ -96,14 +98,13 @@ string WikiMarkupGetter::getMarkup(string title)
 	if (bzerror != BZ_OK) {
 // 		PA_OutputText(1,5,10,"BZ_ReadOpen failed");
 		BZ2_bzReadClose ( &bzerror, bzf );
-		return "";
+		return;
 	}
 
 // 	PA_OutputText(1,5,11,"Bis kurz vorm Loop");
 // 	PA_Sleep(60);
 // 	PA_OutputText(1,5,11,"                  ");
 	char buffer[BUFFER_SIZE];
-	string markup = "";
 	int read = 0;
 
 	while ( read = BZ2_bzRead(&bzerror, bzf, buffer, BUFFER_SIZE) )
@@ -156,8 +157,6 @@ string WikiMarkupGetter::getMarkup(string title)
 // 	PA_OutputText(1,5,14,"Nach dem Loop");
 // 	PA_Sleep(60);
 // 	PA_OutputText(1,5,14,"             ");
-
-	return markup;
 }
 
 string WikiMarkupGetter::GetLastArticleTitle()

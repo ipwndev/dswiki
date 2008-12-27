@@ -1,4 +1,6 @@
 #include "WIKI2XML_global.h"
+#include <PA9.h>
+#include "main.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -36,12 +38,10 @@ string right(string & s, int num)
 	if (num <= 0)
 		return "";
 	int from = s.length() - num;
-	string ret;
 	if (from <= 0)
-		ret = s;
+		return s;
 	else
-		ret = s.substr(from, s.length());
-	return ret;
+		return s.substr(from, s.length());
 }
 
 string upper(string s)		// For internal purposes, will do...
@@ -77,19 +77,23 @@ void explode(chart ch, string & l, vector < string > &parts)
 	}
 }
 
-string implode(string mid, vector < string > &parts)
+void implode(string mid, vector < string > & parts, string & s)
 {
+	s.clear();
+
 	if (parts.size() == 0)
-		return "";
+		return;
 	if (parts.size() == 1)
-		return parts[0];
-	string ret = parts[0];
+	{
+		s += parts[0];
+		return;
+	}
+
+	s += parts[0];
 	for (int a = 1; a < parts.size(); a++)
 	{
-		ret += mid + parts[a];
-// 		parts[a].clear();
+		s += mid + parts[a];
 	}
-	return ret;
 }
 
 string unquote(chart quote, string & s)
@@ -233,12 +237,14 @@ string xml_params(string l)	// Yes, this function is thin...
 		{
 			first = l;
 			l = "";
-		} else {
-			first = left(l, p);
-			l = l.substr(p, l.length() - p);
 		}
-		first = trim(first);
-		l = trim(l);
+		else
+		{
+			first = left(l, p+1);
+			l = l.substr(p+1, l.length() - p - 1);
+		}
+		trim(first);
+		trim(l);
 		if (first == "")
 			continue;
 

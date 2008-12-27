@@ -41,16 +41,38 @@ VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
 #define DEBUG 1
-#define DEBUG_WIKI_NR 0
+#define DEBUG_WIKI_NR 1
+
+int getFreeRAM()
+{
+	int size = 4*1024*1024;
+	void *ptr;
+	ptr = malloc(size);
+
+	while(!ptr)
+	{
+		size -= 1024;
+		ptr=malloc(size);
+	}
+
+	free(ptr);
+	return size;
+}
 
 int main(int argc, char ** argv)
 {
 	// PAlib initialization
 	PA_Init();
 	PA_InitVBL();
+	PA_InitGHPad();
+	PA_SetAutoUpdateGHPadTimes(1);
+	PA_SetAutoUpdatePadTimes(1);
 	PA_UpdateUserInfo();
 	KT_Init();
 	KT_UseEFS();
+
+	string markupstr;
+	markupstr.reserve(1572864); // Reserve 1.5 MiB for the markup, all transformations should made be in-place
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
@@ -254,8 +276,7 @@ int main(int argc, char ** argv)
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
 
-	string markupstr;
-	string suchtitel = "Preformatting";
+	string suchtitel = "Eisschnelllauf-Einzelstreckenweltmeisterschaften 2008";
 	string currentTitle;
 
 	Markup* markup = NULL;
@@ -319,12 +340,31 @@ int main(int argc, char ** argv)
 	PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
 	PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
 
+	struct mallinfo info = mallinfo();
+
 	while(1) // main loop
 	{
+		info = mallinfo();
+		PA_OutputText(1,0, 0,"%d      ", Pad.Uptime.Y); /* total space allocated from system */
+		PA_OutputText(1,0, 3,"info.arena   : %d b    ", info.arena   ); /* total space allocated from system */
+		PA_OutputText(1,0, 4,"info.ordblks : %d      ", info.ordblks ); /* number of non-inuse chunks */
+		PA_OutputText(1,0, 5,"info.hblks   : %d      ", info.hblks   ); /* number of mmapped regions */
+		PA_OutputText(1,0, 6,"info.hblkhd  : %d b    ", info.hblkhd  ); /* total space in mmapped regions */
+		PA_OutputText(1,0, 7,"info.uordblks: %d b    ", info.uordblks); /* total allocated space */
+		PA_OutputText(1,0, 8,"info.fordblks: %d b    ", info.fordblks); /* total non-inuse space */
+		PA_OutputText(1,0, 9,"info.keepcost: %d b    ", info.keepcost); /* top-most, releasable (via malloc_trim) space */
+
+		PA_OutputText(1,0, 19,"0x%x    ", markupstr.c_str());
+		PA_OutputText(1,0, 20,"%d    ", markupstr.size());
+		PA_OutputText(1,0, 21,"%d    ", markupstr.length());
+		PA_OutputText(1,0, 22,"%d    ", markupstr.max_size());
+		PA_OutputText(1,0, 23,"%d    ", markupstr.capacity());
+
 		PA_CheckLid();
 
 		if (Stylus.Held)
 		{
+// 			PA_OutputText(1,0,10,"  Brute-force: %d b    ", getFreeRAM());
 			if (Stylus.Newpress)
 			{
 				if (PA_SpriteTouched(SPRITE_CONFIGURE))
@@ -375,7 +415,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if ((Pad.Newpress.Left||Pad.Held.Left))
+		if (Pad.Newpress.Left || Pad.Held.Left || GHPad.Newpress.Blue || GHPad.Held.Blue)
 		{
 			if (markup->scrollPageUp())
 			{
@@ -385,7 +425,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.Newpress.Right||Pad.Held.Right)
+		if (Pad.Newpress.Right || Pad.Held.Right || GHPad.Newpress.Green || GHPad.Held.Green)
 		{
 			if (markup->scrollPageDown())
 			{
@@ -799,9 +839,9 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Y)
 		{
-			unsigned short int* DISPLAY1 = UpScreen.Ptr;
-			unsigned short int* DISPLAY2 = DnScreen.Ptr;
-			DMA_Copy(&DISPLAY2[0], &DISPLAY1[0], 256*192 ,DMA_16NOW);
+// 			unsigned short int* DISPLAY1 = UpScreen.Ptr;
+// 			unsigned short int* DISPLAY2 = DnScreen.Ptr;
+// 			DMA_Copy(&DISPLAY2[0], &DISPLAY1[0], 256*192 ,DMA_16NOW);
 		}
 
 		if (Pad.Newpress.L)
@@ -880,20 +920,25 @@ int main(int argc, char ** argv)
 
 			if (suchergebnis!=NULL)
 			{
-				delete markup;
+				if (markup)
+				{
+					delete markup;
+					markup = NULL;
+				}
 
 				suchtitel.clear();
 				g->getStatusbar()->display("Loading \""+suchergebnis->TitleInArchive()+"\"");
 
+				markupstr.clear();
 				if (c->isInCache(suchergebnis->TitleInArchive()))
 				{
 					g->getStatusbar()->display("Getting markup from cache...");
-					markupstr = c->getMarkup(suchergebnis->TitleInArchive());
+					c->getMarkup(suchergebnis->TitleInArchive());
 				}
 				else
 				{
 					g->getStatusbar()->display("Getting markup from disk...");
-					markupstr = g->getWikiMarkupGetter()->getMarkup(suchergebnis->TitleInArchive());
+					g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
 // 					c->insert(suchergebnis->TitleInArchive(),markupstr);
 				}
 
@@ -905,30 +950,39 @@ int main(int argc, char ** argv)
 					ArticleSearchResult* temp = suchergebnis;
 					redirectMessage += "(\u2192 "+temp->TitleInArchive()+")\n";
 					suchergebnis = redirection;
+
+					markupstr.clear();
 					if (c->isInCache(suchergebnis->TitleInArchive()))
 					{
 						g->getStatusbar()->display("Following redirection from cache...");
-						markupstr = c->getMarkup(suchergebnis->TitleInArchive());
+						c->getMarkup(suchergebnis->TitleInArchive());
 					}
 					else
 					{
 						g->getStatusbar()->display("Following redirection from disk...");
-						markupstr = g->getWikiMarkupGetter()->getMarkup(suchergebnis->TitleInArchive());
+						g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
 // 						c->insert(suchergebnis->TitleInArchive(),markupstr);
 					}
 				}
+
 				currentTitle = suchergebnis->TitleInArchive();
-				markupstr = redirectMessage + markupstr;
+				markupstr.insert(0,redirectMessage);
 
 				g->getStatusbar()->display("Formatting \""+currentTitle+"\"...");
+				PA_OutputText(1,0,14,"%s",currentTitle.c_str());
+
 				markup = new Markup();
 				g->setMarkup(markup);
 				markup->setGlobals(g);
 
 				markup->parse(markupstr);
+
 				if (markup->LoadOK())
 				{
 					PA_OutputText(1,0,3,"%c2XML-Parsing OK");
+					BLOCK CharArea = {{0,0},{0,0}};
+					FillVS(&ContentWin2,g->backgroundColor());
+					iPrint(markupstr,&ContentWin2,&ContentCS,&CharArea,-1,UTF8);
 				}
 				else
 				{
@@ -940,7 +994,7 @@ int main(int argc, char ** argv)
 						fclose(xmlerrorlist);
 					}
 				}
-				markupstr.clear();
+
 				markup->createLines(&ContentWin1,&ContentCS);
 
 				g->getStatusbar()->displayClearAfter("Formatting complete",30);
@@ -981,7 +1035,7 @@ int main(int argc, char ** argv)
 
 		if (updateContent)
 		{
-			g->getMarkup()->draw();
+// 			g->getMarkup()->draw();
 			updatePercent = 1;
 			updateContent = 0;
 		}

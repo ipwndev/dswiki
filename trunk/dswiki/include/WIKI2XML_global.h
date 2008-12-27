@@ -21,7 +21,7 @@ string left(string & s, int num);
 string upper(string s);
 bool is_text_char(chart ch);
 void explode(chart ch, string & l, vector < string > &parts);
-string implode(string mid, vector < string > &parts);
+void implode(string mid, vector < string > &parts, string & s);
 string unquote(chart quote, string & s);
 bool submatch(string & main, string & sub, int from);
 string before_first(chart c, string s);

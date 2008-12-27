@@ -18,7 +18,6 @@ class WIKI2XML {
 	public:
 		WIKI2XML();
 		virtual void parse(string & s);
-		virtual void get_xml();
 	private:
 		virtual void doQuotes(string & l);
 		virtual void make_tag_list(string & s, vector < TXML > &list);
@@ -38,7 +37,7 @@ class WIKI2XML {
 		virtual string table_markup(string & l);
 
     // Variables
-		vector < string > lines, allowed_html, nowiki_contents, math_contents, pre_contents, source_contents;
+		vector < string > allowed_html, nowiki_contents, math_contents, pre_contents, source_contents;
 		vector < TTableInfo > tables;
 		string list;
 };

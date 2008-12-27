@@ -19,7 +19,7 @@ public:
 
 	void load(string basename);
 
-	string getMarkup(string title);
+	void   getMarkup(string & markup, string title);
 	string GetLastArticleTitle();
 
 	void setGlobals(Globals* globals);
