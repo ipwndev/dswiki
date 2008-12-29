@@ -9,7 +9,7 @@ E.g. for the german Wikipedia, download http://dumps.wikimedia.org/dewiki/latest
 
 ==Reindexing the file==
 
-Download http://dswiki.googlecode.com/files/dswiki-indexer-1.0.zip and unpack it into the same directory that contains the article file.
+Download the latest indexer from http://code.google.com/p/dswiki/downloads/list and unpack it into the same directory that contains the article file.
 
 Under Windows, run {{{indexer.exe <filename>}}} from the command line, under Linux execute {{{./indexer <filename>}}}. After the indexing process, you should have at least these five files (additional files will be created if the source files is too big):
   * articles.ifo
