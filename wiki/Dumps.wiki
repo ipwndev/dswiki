@@ -11,9 +11,10 @@ If you just want to test DSwiki, download one of the smaller dumps first.
 
 || The complete English Wikipedia (2008/10/08)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/en/enwiki-20081008.tar.gz (3,6G)||
 || The complete German Wikipedia (2008/12/06)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/de/dewiki-20081206.tar.gz (1,3G)||
-||The complete French Wikipedia (2008/10/17)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/fr/frwiki-20081017.tar.gz (931 MB)||
-||The complete Polish Wikipedia (2008/06/12)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/pl/plwiki-20080612.tar.gz (411 MB)||
-||The complete Japanese Wikipedia (2008/10/19)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/ja/jawiki-20081019.tar.gz (832 MB)||
+|| The complete French Wikipedia (2008/12/01)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/fr/frwiki-20081201.tar.gz (967M)||
+|| The complete Japanese Wikipedia (2008/10/19)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/ja/jawiki-20081019.tar.gz (832 MB)||
+|| The complete Italian Wikipedia (2008/12/06)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/it/itwiki-20081206.tar.gz (630M)||
+|| The complete Polish Wikipedia (2008/06/12)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/pl/plwiki-20080612.tar.gz (411 MB)||
 || The complete Greek Wikipedia (2008/12/05)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/el/elwiki-20081205.tar.gz (56M)||
 
 == Other projects ==
@@ -30,8 +31,6 @@ If you just want to test DSwiki, download one of the smaller dumps first.
 
 == Not yet uploaded ==
 
-|| The complete French Wikipedia (2008/12/01)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/fr/frwiki-20081201.tar.gz (967M)||
 || The complete Japanese Wikipedia (2008/11/27)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/ja/jawiki-20081127.tar.gz (857M)||
-|| The complete Italian Wikipedia (2008/12/06)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/it/itwiki-20081206.tar.gz (630M)||
 || The complete Polish Wikipedia (2008/12/23)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/pl/plwiki-20081223.tar.gz (485M)||
 || The complete Russian Wikipedia (2008/12/28)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/ru/ruwiki-20081228.tar.gz (469M)||
