@@ -14,8 +14,9 @@ If you just want to test DSwiki, download one of the smaller dumps first.
 ||The complete French Wikipedia (2008/10/17)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/fr/frwiki-20081017.tar.gz (931 MB)||
 ||The complete Polish Wikipedia (2008/06/12)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/pl/plwiki-20080612.tar.gz (411 MB)||
 ||The complete Japanese Wikipedia (2008/10/19)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/ja/jawiki-20081019.tar.gz (832 MB)||
+|| The complete Greek Wikipedia (2008/12/05)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/el/elwiki-20081205.tar.gz (56M)||
 
-== Other ==
+== Other projects ==
 
 || Englisch Wikibooks (2008/12/22)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/en/enwikibooks-20081222.tar.gz (71M)||
 || Englisch Wikiquotes (2008/12/27)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/en/enwikiquote-20081227.tar.gz (41M)||
@@ -34,4 +35,3 @@ If you just want to test DSwiki, download one of the smaller dumps first.
 || The complete Italian Wikipedia (2008/12/06)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/it/itwiki-20081206.tar.gz (630M)||
 || The complete Polish Wikipedia (2008/12/23)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/pl/plwiki-20081223.tar.gz (485M)||
 || The complete Russian Wikipedia (2008/12/28)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/ru/ruwiki-20081228.tar.gz (469M)||
-|| The complete Greek Wikipedia (2008/12/05)|| ftp://ftp5.gwdg.de/pub/wikipedia/nintendo/el/elwiki-20081205.tar.gz (56M)||
