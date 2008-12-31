@@ -1,11 +1,15 @@
 #summary How to create a custom dump file for the use in DSwiki
 #labels Featured
 
+=Official Wikimedia Dumps=
+
+See http://code.google.com/p/dswiki/wiki/Dumps for a list of pre-made dumps, if your preferred language/project is not on that list, you have to create a dump by yourself.
+
 ==Download==
 
-Download a compressed XML dump from http://download.wikimedia.org/.
+Download the compressed XML dump from http://download.wikimedia.org/.
 
-E.g. for the german Wikipedia, download http://dumps.wikimedia.org/dewiki/latest/dewiki-latest-pages-articles.xml.bz2. In my experience, _latest_ does not necessarily mean latest. Better go up one directory and check each labeled folder separately. You always need the ...-pages-articles.xml.bz2 version! The others files do not include the necessary data, or have too much data in them.
+E.g. for the Wikipedia on Esperanto, go to http://dumps.wikimedia.org/eowiki/ and change into the directory with the highest date string (in my experience, _latest_ does not necessarily mean latest). Download the ...-pages-articles.xml.bz2 version! The other files do not include the necessary data, or have too much data in them.
 
 ==Reindexing the file==
 
@@ -21,3 +25,7 @@ Under Windows, run {{{indexer.exe <filename>}}} from the command line, under Lin
 ==Install==
 
 For every file, change "articles" into a better name for your dump. Copy all files into the root directory of your flash card.
+
+=Wikia.com Dumps=
+
+For projects hosted on http://wikia.com, you can follow [http://forum.palib.info/index.php?topic=5616.msg40881#msg40881 this] guide if you are using windows, or [http://forum.palib.info/index.php?topic=5616.msg40501#msg40501 these] short instructions under Linux (and maybe Mac OS X).
