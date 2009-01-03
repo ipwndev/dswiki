@@ -35,6 +35,7 @@ void Cache::clear()
 
 void Cache::insert(string title, string markup)
 {
+	return;
 	CacheEntry newEntry = {title,markup};
 	unsigned int newEntrySize = markup.length();
 	while ((_size + newEntrySize > MAX_CACHE_SIZE) && (_list.size()>0) )

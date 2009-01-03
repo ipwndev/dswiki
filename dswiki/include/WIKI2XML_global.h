@@ -20,8 +20,8 @@ string right(string & s, int num);
 string left(string & s, int num);
 string upper(string s);
 bool is_text_char(chart ch);
-void explode(chart ch, string & l, vector < string > &parts);
-void implode(string mid, vector < string > &parts, string & s);
+void explode(string pattern, string & s, vector < string > &parts);
+void implode(string pattern, vector < string > &parts, string & s);
 string unquote(chart quote, string & s);
 bool submatch(string & main, string & sub, int from);
 string before_first(chart c, string s);
@@ -31,7 +31,7 @@ string after_last(chart c, string s);
 string trim(string & s);
 string val(int a);
 int find_next_unquoted(chart c, string & s, int start = 0);
-string xml_embed(string inside, string tag, string param = "");
-string xml_params(string l);
+string xml_embed(string inside, string tag, string param = "", bool openonly = false);
+// string xml_params(string l);
 
 #endif

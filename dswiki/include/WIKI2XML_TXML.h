@@ -3,15 +3,16 @@
 
 #include "WIKI2XML_global.h"
 
-class TXML {
+class TXML
+{
 	public:
 		TXML() { };
 		TXML(int f, int t, string & s, bool fix_comments = true);
-		virtual void remove_at(int pos);
-		virtual void insert_at(int pos);
+		void remove_at(int pos);
+		void insert_at(int pos);
 
-		virtual void add_key_value(string k, string v = "");
-		virtual string get_string();
+		void add_key_value(string k, string v = "");
+		string get_string();
 
 	    // Variables
 		int from, to;

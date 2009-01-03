@@ -395,27 +395,7 @@ int TitleIndex::getSuggestedArticleNumber(string title, unsigned char indexNo, u
 
 ArticleSearchResult* TitleIndex::isRedirect(string markup)
 {
-	Element* l;
-	if (markup.empty())
-		return NULL;
-	string lowercaseMarkup = lowerPhrase(markup.substr(0,9));
-
-	if ( lowercaseMarkup == "#redirect" )
-	{
-		l = createLink(markup,9,0);
-		if (l)
-		{
-			return findArticle(l->target, "");
-		}
-		else
-		{
-			return NULL;
-		}
-	}
-	else
-	{
-		return NULL;
-	}
+	return NULL;
 }
 
 ArticleSearchResult* TitleIndex::getRandomArticle()
@@ -449,7 +429,6 @@ void TitleIndex::setGlobals(Globals* globals)
 {
 	_globals = globals;
 }
-
 
 ArticleSearchResult::ArticleSearchResult(string title, string titleInArchive, u64 blockPos, int articlePos, int articleLength)
 {

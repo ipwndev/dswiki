@@ -27,7 +27,7 @@ distribution.
 #define TINYXML_INCLUDED
 
 
-#define TIXML_USE_STL
+//#define TIXML_USE_STL
 
 
 #ifdef _MSC_VER

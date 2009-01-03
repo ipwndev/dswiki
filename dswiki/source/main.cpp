@@ -23,6 +23,9 @@
 #include "PercentIndicator.h"
 #include "Statusbar.h"
 #include "TextBox.h"
+#include "WIKI2XML.h"
+#include "WIKI2XML_global.h"
+
 
 Device UpScreen;
 Device DnScreen;
@@ -41,23 +44,7 @@ VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
 #define DEBUG 1
-#define DEBUG_WIKI_NR 1
-
-int getFreeRAM()
-{
-	int size = 4*1024*1024;
-	void *ptr;
-	ptr = malloc(size);
-
-	while(!ptr)
-	{
-		size -= 1024;
-		ptr=malloc(size);
-	}
-
-	free(ptr);
-	return size;
-}
+#define DEBUG_WIKI_NR 0
 
 int main(int argc, char ** argv)
 {
@@ -72,7 +59,11 @@ int main(int argc, char ** argv)
 	KT_UseEFS();
 
 	string markupstr;
-	markupstr.reserve(1572864); // Reserve 1.5 MiB for the markup, all transformations should made be in-place
+// 	markupstr.reserve(1572864); // Reserve 1.5 MiB for the markup, all transformations should be made in-place
+	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations should be made in-place
+
+	string suchtitel = "TestF";
+// 	string suchtitel = "Figuren in Tolkiens Welt";
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
@@ -154,7 +145,7 @@ int main(int argc, char ** argv)
 	PA_Clear16bitBg(1);
 	PA_Clear16bitBg(0);
 
-	PA_InitText   (1, 2);
+	PA_InitText(1, 2);
 	PA_SetTextCol (0, 0, 0, 0);
 	PA_SetTextCol (1, 0, 0, 0);
 	PA_InitKeyboard(2);
@@ -276,7 +267,6 @@ int main(int argc, char ** argv)
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
 
-	string suchtitel = "Eisschnelllauf-Einzelstreckenweltmeisterschaften 2008";
 	string currentTitle;
 
 	Markup* markup = NULL;
@@ -344,27 +334,13 @@ int main(int argc, char ** argv)
 
 	while(1) // main loop
 	{
+// 		PA_Rand();
 		info = mallinfo();
-		PA_OutputText(1,0, 0,"%d      ", Pad.Uptime.Y); /* total space allocated from system */
-		PA_OutputText(1,0, 3,"info.arena   : %d b    ", info.arena   ); /* total space allocated from system */
-		PA_OutputText(1,0, 4,"info.ordblks : %d      ", info.ordblks ); /* number of non-inuse chunks */
-		PA_OutputText(1,0, 5,"info.hblks   : %d      ", info.hblks   ); /* number of mmapped regions */
-		PA_OutputText(1,0, 6,"info.hblkhd  : %d b    ", info.hblkhd  ); /* total space in mmapped regions */
-		PA_OutputText(1,0, 7,"info.uordblks: %d b    ", info.uordblks); /* total allocated space */
-		PA_OutputText(1,0, 8,"info.fordblks: %d b    ", info.fordblks); /* total non-inuse space */
-		PA_OutputText(1,0, 9,"info.keepcost: %d b    ", info.keepcost); /* top-most, releasable (via malloc_trim) space */
-
-		PA_OutputText(1,0, 19,"0x%x    ", markupstr.c_str());
-		PA_OutputText(1,0, 20,"%d    ", markupstr.size());
-		PA_OutputText(1,0, 21,"%d    ", markupstr.length());
-		PA_OutputText(1,0, 22,"%d    ", markupstr.max_size());
-		PA_OutputText(1,0, 23,"%d    ", markupstr.capacity());
-
-		PA_CheckLid();
+		PA_OutputText(1,0, 2,"Heap size : %db    ", info.arena   ); /* total space allocated from system */
+		strdisp(markupstr);
 
 		if (Stylus.Held)
 		{
-// 			PA_OutputText(1,0,10,"  Brute-force: %d b    ", getFreeRAM());
 			if (Stylus.Newpress)
 			{
 				if (PA_SpriteTouched(SPRITE_CONFIGURE))
@@ -401,14 +377,14 @@ int main(int argc, char ** argv)
 					}
 				}
 
-				string markupClick = markup->evaluateClick(Stylus.X,Stylus.Y);
-				if (!markupClick.empty())
-				{
-					suchtitel = markupClick;
-					forcedLine = 0;
-					setNewHistoryItem = 1;
-					loadArticle = 1;
-				}
+// 				string markupClick = markup->evaluateClick(Stylus.X,Stylus.Y);
+// 				if (!markupClick.empty())
+// 				{
+// 					suchtitel = markupClick;
+// 					forcedLine = 0;
+// 					setNewHistoryItem = 1;
+// 					loadArticle = 1;
+// 				}
 			}
 			else
 			{
@@ -417,42 +393,42 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Left || Pad.Held.Left || GHPad.Newpress.Blue || GHPad.Held.Blue)
 		{
-			if (markup->scrollPageUp())
-			{
-				h->updateCurrentLine(markup->currentLine());
-				updateContent = 1;
-				PA_Sleep(10);
-			}
+// 			if (markup->scrollPageUp())
+// 			{
+// 				h->updateCurrentLine(markup->currentLine());
+// 				updateContent = 1;
+// 				PA_Sleep(10);
+// 			}
 		}
 
 		if (Pad.Newpress.Right || Pad.Held.Right || GHPad.Newpress.Green || GHPad.Held.Green)
 		{
-			if (markup->scrollPageDown())
-			{
-				h->updateCurrentLine(markup->currentLine());
-				updateContent = 1;
-				PA_Sleep(10);
-			}
+// 			if (markup->scrollPageDown())
+// 			{
+// 				h->updateCurrentLine(markup->currentLine());
+// 				updateContent = 1;
+// 				PA_Sleep(10);
+// 			}
 		}
 
 		if (Pad.Newpress.Up||Pad.Held.Up)
 		{
-			if (markup->scrollLineUp())
-			{
-				h->updateCurrentLine(markup->currentLine());
-				updateContent = 1;
-				PA_Sleep(10);
-			}
+// 			if (markup->scrollLineUp())
+// 			{
+// 				h->updateCurrentLine(markup->currentLine());
+// 				updateContent = 1;
+// 				PA_Sleep(10);
+// 			}
 		}
 
 		if ((Pad.Newpress.Down||Pad.Held.Down))
 		{
-			if (markup->scrollLineDown())
-			{
-				h->updateCurrentLine(markup->currentLine());
-				updateContent = 1;
-				PA_Sleep(10);
-			}
+// 			if (markup->scrollLineDown())
+// 			{
+// 				h->updateCurrentLine(markup->currentLine());
+// 				updateContent = 1;
+// 				PA_Sleep(10);
+// 			}
 		}
 
 		if (Pad.Newpress.A)
@@ -839,9 +815,16 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Y)
 		{
-// 			unsigned short int* DISPLAY1 = UpScreen.Ptr;
-// 			unsigned short int* DISPLAY2 = DnScreen.Ptr;
-// 			DMA_Copy(&DISPLAY2[0], &DISPLAY1[0], 256*192 ,DMA_16NOW);
+			g->getStatusbar()->displayClearAfter("Loading Bookmarks",45);
+			string bookmark = g->loadBookmark();
+			updateContent = 1;
+			if (!bookmark.empty())
+			{
+				suchtitel = bookmark;
+				forcedLine = 0;
+				setNewHistoryItem = 1;
+				loadArticle = 1;
+			}
 		}
 
 		if (Pad.Newpress.L)
@@ -939,7 +922,7 @@ int main(int argc, char ** argv)
 				{
 					g->getStatusbar()->display("Getting markup from disk...");
 					g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
-// 					c->insert(suchergebnis->TitleInArchive(),markupstr);
+					c->insert(suchergebnis->TitleInArchive(),markupstr);
 				}
 
 				string redirectMessage = "";
@@ -961,15 +944,17 @@ int main(int argc, char ** argv)
 					{
 						g->getStatusbar()->display("Following redirection from disk...");
 						g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
-// 						c->insert(suchergebnis->TitleInArchive(),markupstr);
+						c->insert(suchergebnis->TitleInArchive(),markupstr);
 					}
 				}
 
 				currentTitle = suchergebnis->TitleInArchive();
 				markupstr.insert(0,redirectMessage);
 
+				FillVS(&Titlebar, PA_RGB( 16,16,16));
+				CharArea = (BLOCK) {{5,2},{0,0}};
+				iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
 				g->getStatusbar()->display("Formatting \""+currentTitle+"\"...");
-				PA_OutputText(1,0,14,"%s",currentTitle.c_str());
 
 				markup = new Markup();
 				g->setMarkup(markup);
@@ -977,29 +962,77 @@ int main(int argc, char ** argv)
 
 				markup->parse(markupstr);
 
+				FillVS(&ContentWin2,g->backgroundColor());
+				BLOCK CharArea = {{0,0},{0,0}};
+				iPrint(markupstr,&ContentWin2,&ContentCS,&CharArea,-1,UTF8);
+
 				if (markup->LoadOK())
 				{
 					PA_OutputText(1,0,3,"%c2XML-Parsing OK");
-					BLOCK CharArea = {{0,0},{0,0}};
-					FillVS(&ContentWin2,g->backgroundColor());
-					iPrint(markupstr,&ContentWin2,&ContentCS,&CharArea,-1,UTF8);
 				}
 				else
 				{
 					PA_OutputText(1,0,3,"%c1XML-Parsing failed");
-					FILE* xmlerrorlist = fopen("fat:/dswiki/xml_parsing_errors.txt","a");
+
+					string filenamestr = currentTitle ;
+					replace_all(filenamestr,"\n","");
+					replace_all(filenamestr,"\\","");
+					replace_all(filenamestr,"/","");
+					replace_all(filenamestr,"*","");
+					replace_all(filenamestr,"<","");
+					replace_all(filenamestr,">","");
+					replace_all(filenamestr,":","");
+					replace_all(filenamestr,"?","");
+					replace_all(filenamestr,"\"","");
+					replace_all(filenamestr,"|","");
+					replace_all(filenamestr,"'","");
+					filenamestr = "fat:/dswiki/parseerror_" + filenamestr + ".xml";
+					FILE* xmlerror = fopen(filenamestr.c_str(),"wb");
+					if (xmlerror != NULL)
+					{
+						fprintf(xmlerror,"%s",markupstr.c_str());
+						fclose(xmlerror);
+					}
+
+					string xmlerrors;
+					FILE* xmlerrorlist = fopen("fat:/dswiki/xml_parsing_errors.txt","rb");
 					if (xmlerrorlist!=NULL)
 					{
-						fprintf(xmlerrorlist,"%s: %s\n",currentSelectedWiki.c_str(),currentTitle.c_str());
+						fseek(xmlerrorlist,0,SEEK_END);
+						int size = ftell(xmlerrorlist);
+						fseek(xmlerrorlist,0,SEEK_SET);
+						char* buffer = (char*) malloc(size+1);
+						fread(buffer,size,1,xmlerrorlist);
+						buffer[size] = '\0';
+						fclose(xmlerrorlist);
+						xmlerrors = string(buffer);
+					}
+					vector<string> errors1, errors2;
+					explode("\n",xmlerrors,errors1);
+					errors1.push_back(currentSelectedWiki+": "+currentTitle);
+					sort(errors1.begin(),errors1.end());
+					if (!errors1[0].empty())
+						errors2.push_back(errors1[0]);
+					for (int a=1;a<errors1.size();a++)
+					{
+						if ((!errors1[a].empty()) && (errors1[a]!=errors1[a-1]))
+						{
+							errors2.push_back(errors1[a]);
+						}
+					}
+					implode("\n",errors2,xmlerrors);
+					xmlerrors += "\n";
+					xmlerrorlist = fopen("fat:/dswiki/xml_parsing_errors.txt","wb");
+					if (xmlerrorlist!=NULL)
+					{
+						fprintf(xmlerrorlist,"%s",xmlerrors.c_str());
 						fclose(xmlerrorlist);
 					}
 				}
 
-				markup->createLines(&ContentWin1,&ContentCS);
-
 				g->getStatusbar()->displayClearAfter("Formatting complete",30);
 
-				markup->setCurrentLine(forcedLine);
+// 				markup->setCurrentLine(forcedLine);
 
 				if (setNewHistoryItem)
 				{
@@ -1042,7 +1075,7 @@ int main(int argc, char ** argv)
 
 		if (updatePercent)
 		{
-			g->getPercentIndicator()->update(markup->currentPercent());
+// 			g->getPercentIndicator()->update(markup->currentPercent());
 			g->getPercentIndicator()->redraw();
 			updatePercent = 0;
 		}

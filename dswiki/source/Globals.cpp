@@ -71,7 +71,7 @@ string Globals::loadBookmark()
 	free(buffer);
 	buffer = NULL;
 	vector<string> bookmarks;
-	explode('\n',bookmarkStr,bookmarks);
+	explode("\n",bookmarkStr,bookmarks);
 	bookmarkStr.clear();
 
 	TextBox BookmarkChooser(bookmarks);
@@ -96,7 +96,7 @@ void Globals::saveBookmark(string s)
 		string bookmarkStr(buffer);
 		free(buffer);
 		buffer = NULL;
-		explode('\n',bookmarkStr,bookmarks);
+		explode("\n",bookmarkStr,bookmarks);
 		bookmarkStr.clear();
 		fclose(bookmarkfile);
 	}
