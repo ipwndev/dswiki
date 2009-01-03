@@ -17,7 +17,7 @@ TXML::TXML(int f, int t, string & s, bool fix_comments)
 	closing = selfclosing = false;
 
 	name = s.substr(from + 1, to - (from + 1));
-	trim(name);
+	name = trim(name);
 	if (left(name, 1) == "/")
 	{
 		closing = true;
@@ -82,10 +82,10 @@ string TXML::get_string()
 				key[a][b] = '_';
 		}
 		ret += " " + key[a];
-		if (value[a] != "")
+		if (!(value[a].empty()))
 			ret += "=\"" + unquote(SINGLE_QUOTE, value[a]) + "\"";
 	}
-	if (text == "")
+	if (text.empty())
 		ret += " />";
 	else
 		ret += ">" + text + "</" + name + ">";

@@ -41,7 +41,7 @@ string right(string & s, int num)
 	if (from <= 0)
 		return s;
 	else
-		return s.substr(from, s.length());
+		return s.substr(from, s.length() - from);
 }
 
 string upper(string s)		// For internal purposes, will do...
@@ -55,29 +55,23 @@ string upper(string s)		// For internal purposes, will do...
 	return s;
 }
 
-void explode(chart ch, string & l, vector < string > &parts)
+void explode(string pattern, string & s, vector < string > & parts)
 {
 	parts.clear();
 	int a, b;
-	for (a = b = 0; a < l.length(); a++)
-	{
-		if (l[a] == ch) {
-			parts.push_back(l.substr(b, a - b));
-			b = a + 1;
-		}
-	}
-	parts.push_back(l.substr(b, a - b));
 
-	if (debug)
+	a = 0;
+	b = s.find(pattern,a);
+	while (b != string::npos)
 	{
-		cout << "Explode : " << l << endl;
-		for (a = 0; a < parts.size(); a++)
-			cout << a << " " << parts[a] << endl;
-		cout << endl;
+		parts.push_back(s.substr(a,b-a));
+		a = b + pattern.length();
+		b = s.find(pattern,a);
 	}
+	parts.push_back(s.substr(a));
 }
 
-void implode(string mid, vector < string > & parts, string & s)
+void implode(string pattern, vector < string > & parts, string & s)
 {
 	s.clear();
 
@@ -92,7 +86,7 @@ void implode(string mid, vector < string > & parts, string & s)
 	s += parts[0];
 	for (int a = 1; a < parts.size(); a++)
 	{
-		s += mid + parts[a];
+		s += pattern + parts[a];
 	}
 }
 
@@ -214,51 +208,67 @@ string val(int a)
 	return string(t);
 }
 
-string xml_embed(string inside, string tag, string param)
+/*
+ * ( inside, tag    ""        ) => <tag>inside</tag>
+ * ( inside, tag, param       ) => <tag param>inside</tag>
+ * (   ""    tag    ""        ) => <tag />
+ * (   ""    tag, param       ) => <tag param />
+ * (   ??    tag, param, true ) => <tag param>
+ */
+string xml_embed(string inside, string tag, string param, bool openonly)
 {
 	string ret;
+
+	tag = trim(tag);
+	param = trim(param);
+	inside = trim(inside);
+
 	ret = "<" + tag;
-	if (param != "")
+	if (!param.empty())
 		ret += " " + param;
-	if (inside == "")
+	if (openonly)
+		return ret + ">";
+	else if (inside.empty())
 		return ret + " />";
-	return ret + ">" + trim(inside) + "</" + tag + ">";
+	else
+		return ret + ">" + inside + "</" + tag + ">";
 }
 
-string xml_params(string l)	// Yes, this function is thin...
-{
-	string ret;
-	vector < string > params;
-	while (l != "")
-	{
-		int p = find_next_unquoted(' ', l);
-		string first;
-		if (p == -1)
-		{
-			first = l;
-			l = "";
-		}
-		else
-		{
-			first = left(l, p+1);
-			l = l.substr(p+1, l.length() - p - 1);
-		}
-		trim(first);
-		trim(l);
-		if (first == "")
-			continue;
 
-		p = find_next_unquoted('=', first);
-		if (p == -1)
-			first = xml_embed(first, "val");
-		else
-		{
-			first = xml_embed(left(first, p), "key") +
-					xml_embed(first.substr(p + 1, first.length() - p),
-							  "val");
-		}
-		first = xml_embed(first, "wp");
-		ret += first;
-	}
-	return ret;
-}
+// string xml_params(string l)
+// {
+// 	string ret;
+// 	vector < string > params;
+// 	l = trim(l);
+// 	while (!l.empty())
+// 	{
+// 		int p = find_next_unquoted(' ', l);
+// 		string first;
+// 		if (p == -1)
+// 		{
+// 			first = l;
+// 			l = "";
+// 		}
+// 		else
+// 		{
+// 			first = left(l, p+1);
+// 			l = l.substr(p+1, l.length() - p - 1);
+// 		}
+// 		first = trim(first);
+// 		l = trim(l);
+//
+// 		if (first.empty())
+// 			continue;
+//
+// 		p = find_next_unquoted('=', first);
+// 		if (p == -1)
+// 			first = xml_embed(first, "key");
+// 		else
+// 		{
+// 			first = xml_embed(left(first, p), "key") + xml_embed(first.substr(p + 1, first.length() - p), "val");
+// 		}
+// 		first = xml_embed(first, "wp");
+// 		ret += first;
+// 	}
+// 	return ret;
+// }

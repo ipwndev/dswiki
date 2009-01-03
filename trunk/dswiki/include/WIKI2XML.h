@@ -4,42 +4,48 @@
 #include "WIKI2XML_global.h"
 #include "WIKI2XML_TXML.h"
 
-class TTableInfo {
+class Globals;
+
+class TTableInfo
+{
 	public:
 		TTableInfo();
-		virtual string new_cell(string type);
-		virtual string new_row();
-		virtual string close();
-		bool tr_open, td_open;
-		string td_type;
+		string new_row       (string attributes = "");
+		string new_cell      (string attributes = "");
+		string new_headercell(string attributes = "");
+		string new_caption   (string caption, string attributes = "");
+		string close();
+		bool tr_open, td_open, th_open;
 };
 
 class WIKI2XML {
 	public:
 		WIKI2XML();
-		virtual void parse(string & s);
+		void parse(string & s);
+		void setGlobals(Globals* globals);
 	private:
-		virtual void doQuotes(string & l);
-		virtual void make_tag_list(string & s, vector < TXML > &list);
-		virtual void parse_link(string & l, int &from, char mode = 'L');
-		virtual void parse_line_sub(string & l);
-		virtual void parse_line(string & l);
-		virtual string fix_list(string & l);
-		virtual string get_list_tag(chart c, bool open);
-		virtual bool is_list_char(chart c);
-		virtual void sanitize_html(string & s, vector < TXML > &taglist);
-		virtual void replace_part(string & s, int from, int to, string with);
-		virtual void replace_part_sync(string & s, int from, int to, string with, vector < TXML > &list);
-		virtual void parse_external_freelink(string & l, int &from);
-		virtual void parse_external_link(string & l, int &from);
-		virtual bool is_external_link_protocol(string protocol);
-		virtual int scan_url(string & l, int from);
-		virtual string table_markup(string & l);
+		void doQuotes(string & l);
+		void make_tag_list(string & s, vector < TXML > &list);
+		void parse_link(string & l, int &from, char mode = 'L');
+		void parse_line_sub(string & l);
+		void parse_line(string & l);
+		string fix_list(string & l);
+		string get_list_tag(chart c, bool open);
+		bool is_list_char(chart c);
+		void sanitize_html(string & s, vector < TXML > &taglist);
+		void replace_part(string & s, int from, int to, string with);
+		void replace_part_sync(string & s, int from, int to, string with, vector < TXML > &list);
+		void parse_external_freelink(string & l, int &from);
+		void parse_external_link(string & l, int &from);
+		bool is_external_link_protocol(string protocol);
+		int scan_url(string & l, int from);
+		string table_markup(string & l);
 
-    // Variables
+		// Variables
 		vector < string > allowed_html, nowiki_contents, math_contents, pre_contents, source_contents;
 		vector < TTableInfo > tables;
 		string list;
+		Globals* _globals;
 };
 
 #endif
