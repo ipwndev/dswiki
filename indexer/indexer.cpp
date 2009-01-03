@@ -21,7 +21,7 @@
 */
 
 const char version[] = "0.65b";
-const char dsversion[] = "1.0.2";
+const char dsversion[] = "1.0.4";
 #define INDEX_VERSION 2
 
 #ifdef _WIN32
@@ -186,10 +186,19 @@ static void XmlDecode(char* src)
 
 static void Quicksort(int left, int right)
 {
+// 	printf("Quicksort: %d-%d\n", left, right);
 	if ( left<right )
 	{
 		int i = left;
 		int j = right - 1;
+		int m = (left+right)/2;
+
+		string h = aTitles[m];
+		aTitles[m] = aTitles[right];
+		aTitles[right] = h;
+		int help = articlesIndex[m];
+		articlesIndex[m] = articlesIndex[right];
+		articlesIndex[right] = help;
 
 		string pivotTitle = aTitles[right];
 		do
@@ -217,9 +226,9 @@ static void Quicksort(int left, int right)
 				string h = aTitles[i];
 				aTitles[i] = aTitles[j];
 				aTitles[j] = h;
-				h = aTitlesOriginal[i];
-				aTitlesOriginal[i] = aTitlesOriginal[j];
-				aTitlesOriginal[j] = h;
+// 				h = aTitlesOriginal[i];
+// 				aTitlesOriginal[i] = aTitlesOriginal[j];
+// 				aTitlesOriginal[j] = h;
 				int help = articlesIndex[i];
 				articlesIndex[i] = articlesIndex[j];
 				articlesIndex[j] = help;
@@ -231,9 +240,9 @@ static void Quicksort(int left, int right)
 			string h = aTitles[i];
 			aTitles[i] = aTitles[right];
 			aTitles[right] = h;
-			h = aTitlesOriginal[i];
-			aTitlesOriginal[i] = aTitlesOriginal[right];
-			aTitlesOriginal[right] = h;
+// 			h = aTitlesOriginal[i];
+// 			aTitlesOriginal[i] = aTitlesOriginal[right];
+// 			aTitlesOriginal[right] = h;
 			int help = articlesIndex[i];
 			articlesIndex[i] = articlesIndex[right];
 			articlesIndex[right] = help;
@@ -281,6 +290,7 @@ static void WriteArticle(char* title, char* text)
 
 	// fix the text, remove xml codings
 	XmlDecode(text);
+
 	size_t length = strlen(text);
 
 	int bzerror = BZ_OK;
@@ -472,6 +482,8 @@ static int index(int argc, char* argv[])
 	}
 
 	char* sourceFileName = NULL;
+	char* sourceFileBasename = NULL;
+
 	articlesTitles = NULL;
     checkStructSizes();
 
@@ -616,8 +628,13 @@ static int index(int argc, char* argv[])
 
 	FILEHEADER fileHeader;
 	memset(&fileHeader, 0, sizeof fileHeader);
-	fileHeader.languageCode[0] = tolower(sourceFileName[0]);
-	fileHeader.languageCode[1] = tolower(sourceFileName[1]);
+	sourceFileBasename = sourceFileName;
+	while (*sourceFileBasename) sourceFileBasename++;
+	while ((*sourceFileBasename != '/') && (sourceFileBasename > sourceFileName)) sourceFileBasename--;
+	if (*sourceFileBasename == '/') sourceFileBasename++;
+
+	fileHeader.languageCode[0] = tolower(sourceFileBasename[0]);
+	fileHeader.languageCode[1] = tolower(sourceFileBasename[1]);
 	fileHeader.version = INDEX_VERSION;
 
 	bool chinesesCharacters = (fileHeader.languageCode[0]=='z' && fileHeader.languageCode[1]=='h');
@@ -647,10 +664,11 @@ static int index(int argc, char* argv[])
 	char* pTagAttributes = NULL;
 	int tagAttributesSize = 0;
 
-	char* content = NULL;
-	char* pContent = NULL;
+	char* content = NULL;  // pointer to first position
+	char* pContent = NULL; // pointer to current position
 	int contentSize = 0;
 	int contentRemain = 0;
+	bool collectContent = true;
 
 	int namespaceKey = 0;
 
@@ -665,237 +683,246 @@ static int index(int argc, char* argv[])
 		while ( read-- )
 		{
 			char c = *buf++;
+// 			if (state==1) printf("%c\n",c);
+// 			else printf("         %c\n",c);
 			switch (state)
 			{
-			case 0:
-				// inside text
-				if ( c=='<' )
-				{
-					if ( content )
-						*pContent = 0x0;
-
-					pTagAttributes = NULL;
-					pTagName = NULL;
-					endTag = false;
-
-					state = 1;
-				}
-				else if ( content )
-				{
-					// collect the content of the tag
-					if ( !contentRemain )
+				case 0:
+					// inside text
+					if ( c=='<' )
 					{
-						// realloc
-						contentSize += CONTENT_SIZE;
-						content = (char*) realloc(content, contentSize + 1);
-						contentRemain = CONTENT_SIZE;
+						if ( content )
+							*pContent = 0x0;
 
-						pContent = content + (contentSize - CONTENT_SIZE);
+						pTagAttributes = NULL;
+						pTagName = NULL;
+						endTag = false;
+
+						state = 1;
+// 						printf(" state 0->1\n");
 					}
-
-					*pContent++ = c;
-					contentRemain--;
-				}
-				break;
-
-			case 1:
-				// inside tag
-				if ( c=='>' )
-				{
-					state = 0;
-
-					// done reading the tag
-					if ( pTagName )
-						*pTagName = 0x0;
-					else
-						tagName[0] = 0x0;
-
-					if ( pTagAttributes )
-						*pTagAttributes++ = 0x0;
-					else
-						tagAttributes[0] = 0x0;
-
-					if ( !endTag )
+					else if ( content && collectContent )
 					{
-						if ( !strcmp(tagName, "title") || !strcmp(tagName, "text") || !strcmp(tagName, "namespace") )
+						// collect the content of the tag
+						if ( !contentRemain )
 						{
-							if ( content )
-								free(content);
-
-							// start collecting the content
-							contentSize = CONTENT_SIZE;
-							content = (char*) malloc(contentSize + 1);
+							// realloc
+							contentSize += CONTENT_SIZE;
+							content = (char*) realloc(content, contentSize + 1);
 							contentRemain = CONTENT_SIZE;
 
-							pContent = content;
-
-							if ( !strcmp(tagName, "namespace") )
-							{
-								namespaceKey = 0;
-
-								// save the key
-								char* key = strstr(tagAttributes, "key=\"");
-								if ( key )
-								{
-									key += 5;
-
-									char buffer[512];
-									char* pBuffer = buffer;
-									while ( *key && *key!='"' )
-										*pBuffer++ = *key++;
-									*pBuffer = 0;
-
-									namespaceKey = atoi(buffer);
-								}
-							}
+							pContent = content + (contentSize - CONTENT_SIZE);
 						}
+
+						*pContent++ = c;
+						contentRemain--;
+// 						printf("             +\n");
 					}
-					else if ( endTag )
+					break;
+
+				case 1:
+					// inside tag
+					if ( c=='>' )
 					{
-						if ( !strcmp(tagName, "page") )
+						state = 0;
+// 						printf(" state 1->0\n");
+
+						// done reading the tag
+						if ( pTagName )
+							*pTagName = 0x0;
+						else
+							tagName[0] = 0x0;
+
+						if ( pTagAttributes )
+							*pTagAttributes++ = 0x0;
+						else
+							tagAttributes[0] = 0x0;
+
+						if ( !endTag )
 						{
-// 							printf("page end\n");
-							if ( articleTitle )
+							collectContent = true;
+							if ( !strcmp(tagName, "title") || !strcmp(tagName, "text") || !strcmp(tagName, "namespace") )
 							{
-// 								printf("Schreibe %s\n->%s<-\n",articleTitle,content);
-								WriteArticle(articleTitle, content);
+								if ( content )
+									free(content);
 
-								free(articleTitle);
-								articleTitle = NULL;
-							}
-							if ( content )
-								free(content);
+								// start collecting the content
+								contentSize = CONTENT_SIZE;
+								content = (char*) malloc(contentSize + 1);
+								contentRemain = CONTENT_SIZE;
 
-							content = NULL;
-							contentRemain = 0;
-							contentSize = 0;
-						}
-						else if ( !strcmp(tagName, "title") )
-						{
-							if ( articleTitle )
-								free(articleTitle);
+								pContent = content;
 
-							// store the title for later use
-							articleTitle = content;
-
-							// this prevents that the memory is freed
-							content = NULL;
-
-							contentRemain = 0;
-							contentSize = 0;
-						}
-						else if ( !strcmp(tagName, "text") )
-						{
-							if ( (indexStatus->articlesWritten&0x0ff)==0 )
-							{
-								offset_t currentPos;
-								currentPos=ftello(srcFile);
-								indexStatus->progress = (int)(10000*currentPos/sourceSize);
-								if ( verbose && (indexStatus->articlesWritten&0x03ff)==0 )
+								if ( !strcmp(tagName, "namespace") )
 								{
-									printf("\rProcessed: %.0f%% (%i articles) ", (100.0*currentPos/sourceSize), indexStatus->articlesWritten);
-									fflush(stdout);
+									namespaceKey = 0;
+
+									// save the key
+									char* key = strstr(tagAttributes, "key=\"");
+									if ( key )
+									{
+										key += 5;
+
+										char buffer[512];
+										char* pBuffer = buffer;
+										while ( *key && *key!='"' )
+											*pBuffer++ = *key++;
+										*pBuffer = 0;
+
+										namespaceKey = atoi(buffer);
+									}
 								}
 							}
 						}
-						else if ( !strcmp(tagName, "namespace") )
+						else if ( endTag )
 						{
-							if ( namespaceKey && content && strlen(content) )
+							if ( !strcmp(tagName, "page") )
 							{
-								if ( strlen(content)<32 )
+// 								printf("page end\n");
+								if ( articleTitle )
 								{
-									if ( namespaceKey==6 && strlen(content)<32 )
-									{
-										strcpy(fileHeader.imageNamespace, content);
+// 									printf("%s (%d):\n->%s<-\n",articleTitle,strlen(content),content);
+// 									printf("Going to WriteArticle()\n");
+									WriteArticle(articleTitle, content);
+// 									printf("Finished to WriteArticle()\n");
 
-										// only do that if it's not Image, these will always be searched
-										if ( strcmp(content, "Image") ) // TODO: Localized?
-										{
-											// get it into the proper form
-											imagesPrefix = (char*) malloc(2 + strlen(content) + 1 + 1);
-											strcpy(imagesPrefix, "[[");
-											strcat(imagesPrefix, content);
-											strcat(imagesPrefix, ":");
-										}
-									}
-									else if ( namespaceKey==10 && strlen(content)<32 )
-										strcpy(fileHeader.templateNamespace, content);
-									if ( removedUnusedArticles)
+									free(articleTitle);
+									articleTitle = NULL;
+								}
+								if ( content )
+									free(content);
+
+								content = NULL;
+								contentRemain = 0;
+								contentSize = 0;
+							}
+							else if ( !strcmp(tagName, "title") )
+							{
+								if ( articleTitle )
+									free(articleTitle);
+
+								// store the title for later use
+								articleTitle = content;
+
+								// this prevents that the memory is freed
+								content = NULL;
+
+								contentRemain = 0;
+								contentSize = 0;
+							}
+							else if ( !strcmp(tagName, "text") )
+							{
+								collectContent = false;
+								if ( (indexStatus->articlesWritten&0x0ff)==0 )
+								{
+									offset_t currentPos;
+									currentPos=ftello(srcFile);
+									indexStatus->progress = (int)(10000*currentPos/sourceSize);
+									if ( verbose && (indexStatus->articlesWritten&0x03ff)==0 )
 									{
-										// add some namespaces to the list of ignored ones
-										switch ( namespaceKey )
+										printf("\rProcessed: %.0f%% (%i articles) ", (100.0*currentPos/sourceSize), indexStatus->articlesWritten);
+										fflush(stdout);
+									}
+								}
+							}
+							else if ( !strcmp(tagName, "namespace") )
+							{
+								if ( namespaceKey && content && strlen(content) )
+								{
+									if ( strlen(content)<32 )
+									{
+										if ( namespaceKey==6 && strlen(content)<32 )
 										{
-										case -2: // Media
-										case -1: // Wiki
-										case  1: // Talk
-										case  2: // User
-										case  3: // User talk
-										case  4: // Wikipedia
-										case  5: // Wikipedia talk
-										case  6: // Image
-										case  7: // Image talk
-										case  8: // Mediawiki
-										case  9: // Mediawiki talk
-										case 11: // Template talk
-										case 12: // Help
-										case 13: // Help talk
-										case 14: // Category
-										case 15: // Category talk
-											if ( numberOfIgnoredNamespaces<MAX_IGNORED_NAMESPACES)
+											strcpy(fileHeader.imageNamespace, content);
+
+											// only do that if it's not Image, these will always be searched
+											if ( strcmp(content, "Image") ) // TODO: Localized?
 											{
-												ignoredNamespaces[numberOfIgnoredNamespaces] = (char*) malloc(strlen(content)+1);
-												strcpy(ignoredNamespaces[numberOfIgnoredNamespaces], content);
-												if ( verbose )
-													printf("Articles in namespace '%s' are ignored\r\n", ignoredNamespaces[numberOfIgnoredNamespaces]);
-												numberOfIgnoredNamespaces++;
+												// get it into the proper form
+												imagesPrefix = (char*) malloc(2 + strlen(content) + 1 + 1);
+												strcpy(imagesPrefix, "[[");
+												strcat(imagesPrefix, content);
+												strcat(imagesPrefix, ":");
 											}
-											break;
+										}
+										else if ( namespaceKey==10 && strlen(content)<32 )
+											strcpy(fileHeader.templateNamespace, content);
+										if ( removedUnusedArticles)
+										{
+											// add some namespaces to the list of ignored ones
+											switch ( namespaceKey )
+											{
+											case -2: // Media
+											case -1: // Wiki
+											case  1: // Talk
+											case  2: // User
+											case  3: // User talk
+											case  4: // Wikipedia
+											case  5: // Wikipedia talk
+											case  6: // Image
+											case  7: // Image talk
+											case  8: // Mediawiki
+											case  9: // Mediawiki talk
+											case 11: // Template talk
+											case 12: // Help
+											case 13: // Help talk
+											case 14: // Category
+											case 15: // Category talk
+												if ( numberOfIgnoredNamespaces<MAX_IGNORED_NAMESPACES)
+												{
+													ignoredNamespaces[numberOfIgnoredNamespaces] = (char*) malloc(strlen(content)+1);
+													strcpy(ignoredNamespaces[numberOfIgnoredNamespaces], content);
+													if ( verbose )
+														printf("Articles in namespace '%s' are ignored\r\n", ignoredNamespaces[numberOfIgnoredNamespaces]);
+													numberOfIgnoredNamespaces++;
+												}
+												break;
+											}
 										}
 									}
 								}
-							}
-							if ( content )
-								free(content);
+								if ( content )
+									free(content);
 
-							content = NULL;
-							contentRemain = 0;
-							contentSize = 0;
+								content = NULL;
+								contentRemain = 0;
+								contentSize = 0;
+							}
 						}
 					}
-				}
-				else if ( !pTagName )
-				{
-					// first char after the "<"
+					else if ( !pTagName )
+					{
+						// first char after the "<"
 
-					pTagName = tagName;
-					tagNameSize = 0;
+						pTagName = tagName;
+						tagNameSize = 0;
 
-					if (c=='/')
-						endTag = true;
-					else if (c!=' ')
-						*pTagName++ = c;
+						if (c=='/')
+							endTag = true;
+						else if (c!=' ')
+							*pTagName++ = c;
+						else
+							pTagAttributes = tagAttributes;
+					}
+					else if ( !pTagAttributes )
+					{
+						if ( c==' ' )
+							pTagAttributes = tagAttributes;
+						else if ( tagNameSize<512 )
+						{
+							*pTagName++ = c;
+							tagNameSize++;
+						}
+					}
 					else
-						pTagAttributes = tagAttributes;
-				}
-				else if ( !pTagAttributes )
-				{
-					if ( c==' ' )
-						pTagAttributes = tagAttributes;
-					else if ( tagNameSize<512 )
 					{
-						*pTagName++ = c;
-						tagNameSize++;
+						if ( tagAttributesSize<512 )
+						{
+							*pTagAttributes++ = c;
+							tagAttributesSize++;
+						}
 					}
-				}
-				else
-				{
-					if ( tagAttributesSize<512 )
-					{
-						*pTagAttributes++ = c;
-						tagAttributesSize++;
-					}
-				}
-				break;
+					break;
 			}
 		}
 	}
@@ -910,16 +937,16 @@ static int index(int argc, char* argv[])
 
 	if ( verbose )
 #ifdef WIN32
-	printf("\n\rRepackaging done:\r\n%I64d bytes before, %i articles written (%I64d bytes)\r\n%i articles skipped (%I64d bytes)\r\n%i blocks\r\n",
+		printf("\n\rRepackaging done:\r\n%I64d bytes before, %i articles written (%I64d bytes)\r\n%i blocks\r\n%i articles skipped (%I64d bytes)\r\n",
 #else
-	printf("\n\rRepackaging done:\r\n%lld bytes before, %i articles written (%lld bytes)\r\n%i articles skipped (%lld bytes)\r\n%i blocks\r\n",
+		printf("\n\rRepackaging done:\r\n%lld bytes before, %i articles written (%lld bytes)\r\n%i blocks\r\n%i articles skipped (%lld bytes)\r\n",
 #endif
 		totalBytes,
 		indexStatus->articlesWritten,
 		indexStatus->bytesTotal,
+		indexStatus->blockCount,
 		indexStatus->articlesSkipped,
-		indexStatus->bytesSkipped,
-		indexStatus->blockCount
+		indexStatus->bytesSkipped
 		);
 
 	if ( verbose )
@@ -1030,7 +1057,7 @@ static int index(int argc, char* argv[])
 		int no = 0;
 
 		aTitles.clear();
-		aTitlesOriginal.clear();
+// 		aTitlesOriginal.clear();
 
 		char* help = articlesTitles;
 		while ( (help-articlesTitles) < (int) read )
@@ -1043,7 +1070,7 @@ static int index(int argc, char* argv[])
 			string titleTest = help;
 			int length = titleTest.length();
 
-			aTitlesOriginal.push_back(titleTest);
+// 			aTitlesOriginal.push_back(titleTest);
 			// remove the diacritics (only for index number 1)
 			// attention this may change the length so length calculation has to be done before
 			if ( index==1 )
