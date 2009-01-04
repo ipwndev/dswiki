@@ -226,9 +226,6 @@ static void Quicksort(int left, int right)
 				string h = aTitles[i];
 				aTitles[i] = aTitles[j];
 				aTitles[j] = h;
-// 				h = aTitlesOriginal[i];
-// 				aTitlesOriginal[i] = aTitlesOriginal[j];
-// 				aTitlesOriginal[j] = h;
 				int help = articlesIndex[i];
 				articlesIndex[i] = articlesIndex[j];
 				articlesIndex[j] = help;
@@ -240,9 +237,6 @@ static void Quicksort(int left, int right)
 			string h = aTitles[i];
 			aTitles[i] = aTitles[right];
 			aTitles[right] = h;
-// 			h = aTitlesOriginal[i];
-// 			aTitlesOriginal[i] = aTitlesOriginal[right];
-// 			aTitlesOriginal[right] = h;
 			int help = articlesIndex[i];
 			articlesIndex[i] = articlesIndex[right];
 			articlesIndex[right] = help;
@@ -349,7 +343,7 @@ void Help()
 	printf("Usage:\r\n  indexer [-a] <filename> \r\n\r\n");
 	printf("   filename: articles file from wikipedia like 'enwiki-latest-pages-articles.xml.bz2'\r\n");
 	printf("    -a : Add all articles (not removing namespaces \n\t like 'Help', 'Category' etc.)\r\n");
-	printf("    -t : Create the file articles.txt containing\n\t all article titles (not needed by DSwiki).\r\n");
+	printf("    -t : Create the file articles.txt containing\n\t all article titles and lengths (not needed by DSwiki).\r\n");
 	printf("\r\n");
 }
 
@@ -1057,12 +1051,20 @@ static int index(int argc, char* argv[])
 		int no = 0;
 
 		aTitles.clear();
-// 		aTitlesOriginal.clear();
+
+		FILE* f_titles = NULL;
+		if (createSecondIndexTextfile)
+		{
+			f_titles = fopen("articles.txt","w");
+		}
 
 		char* help = articlesTitles;
 		while ( (help-articlesTitles) < (int) read )
 		{
 			articlesIndex[no++] = (int) (help - articlesTitles);
+
+// 			int* helpint = (int*)(help+12);
+			int articleLength = *(int*)(help+12);
 
 			// skip the binary position information (8+4+4 bytes)
 			help += SIZEOF_POSITION_INFORMATION;
@@ -1070,7 +1072,9 @@ static int index(int argc, char* argv[])
 			string titleTest = help;
 			int length = titleTest.length();
 
-// 			aTitlesOriginal.push_back(titleTest);
+			if (f_titles)
+				fprintf(f_titles,"%d;%s\n",articleLength,titleTest.c_str());
+
 			// remove the diacritics (only for index number 1)
 			// attention this may change the length so length calculation has to be done before
 			if ( index==1 )
@@ -1087,19 +1091,15 @@ static int index(int argc, char* argv[])
 			// go to the start of the next title
 			help += (length + 1);
 		}
+		if (f_titles)
+		{
+			fclose(f_titles);
+		}
 
 		if ( verbose )
 			printf("sorting index\r\n");
 
 		Quicksort(0, indexStatus->articlesWritten-1);
-
-		if (createSecondIndexTextfile && (index==1))
-		{
-			FILE* f_titles = fopen("articles.txt","w");
-			for (int i=0;i<indexStatus->articlesWritten; i++)
-				fprintf(f_titles,"%s\n",aTitlesOriginal[i].c_str());
-			fclose(f_titles);
-		}
 
 		if ( verbose )
 			printf("checking index: ");
