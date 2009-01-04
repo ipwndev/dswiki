@@ -1063,7 +1063,6 @@ static int index(int argc, char* argv[])
 		{
 			articlesIndex[no++] = (int) (help - articlesTitles);
 
-// 			int* helpint = (int*)(help+12);
 			int articleLength = *(int*)(help+12);
 
 			// skip the binary position information (8+4+4 bytes)
