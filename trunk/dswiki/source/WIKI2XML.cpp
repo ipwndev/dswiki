@@ -80,7 +80,8 @@ string TTableInfo::new_caption(string caption, string attributes)
 		ret += "</td>";
 	if (tr_open)
 		ret += "</tr>";
-	ret += xml_embed(trim(caption), "caption", attributes);
+	trim(caption);
+	ret += xml_embed(caption, "caption", attributes);
 	th_open = false;
 	td_open = false;
 	tr_open = false;
@@ -641,6 +642,7 @@ void WIKI2XML::parse_line(string & l)
 		{
 			l.erase(0,a);
 			l.erase(l.length() - a);
+			trim(l);
 			h[1] += a;
 			l = xml_embed(l, h);
 		}
@@ -682,7 +684,6 @@ void WIKI2XML::parse_line(string & l)
 void WIKI2XML::parse(string & s)
 {
 	_globals->getStatusbar()->display("Transformation: WikiMarkup->XML");
-	strdisp(s);
 
 	int a,b,c,d;
 	string substring;
@@ -708,7 +709,7 @@ void WIKI2XML::parse(string & s)
 		replace_all(substring,"\"","&quot;");
 		replace_all(substring,"'","&apos;");
 		replace_all(substring,"\n"," ");
-		substring = trim(substring);
+		trimDoubleSpaces(substring);
 		nowiki_contents.push_back(substring);
 		substring.clear();
 		replace_part(s, a, b+8, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()-1));
@@ -733,7 +734,8 @@ void WIKI2XML::parse(string & s)
 		replace_all(substring,"\"","&quot;");
 		replace_all(substring,"'","&apos;");
 		replace_all(substring,"\n"," ");
-		substring = trim(substring);
+		trim(substring);
+		trimDoubleSpaces(substring);
 		math_contents.push_back(substring);
 		substring.clear();
 		replace_part(s, a, b+6, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()-1));
@@ -765,6 +767,7 @@ void WIKI2XML::parse(string & s)
 		replace_all(substring,">","&gt;");
 		replace_all(substring,"\"","&quot;");
 		replace_all(substring,"'","&apos;");
+		trimSpacesBeforeLinebreaks(substring);
 		pre_contents.push_back(substring);
 		replace_part(s, a, b+5, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+pre_contents.size()-1));
 		a = s.find("<pre>",a+1);
@@ -800,26 +803,14 @@ void WIKI2XML::parse(string & s)
 		replace_all(substring,">","&gt;");
 		replace_all(substring,"\"","&quot;");
 		replace_all(substring,"'","&apos;");
+		trimSpacesBeforeLinebreaks(substring);
 		source_contents.push_back(s.substr(a+7,c-a-6)+substring);
 		replace_part(s, a, b+8, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+pre_contents.size()+source_contents.size()-1));
 		a = s.find("<source",a+1);
 	}
 
-	// Remove HTML-Comments Testphase
-	a = s.find("<!--");
-	while (a != string::npos)
-	{
-		b = s.find("-->",a);
-		if (b == string::npos)
-			b = s.length() - 1;
-		else
-			b += 2;
-
-		replace_part(s, a, b, "");
-		a = s.find("<!--",a+1);
-	}
-
-	// In the remaining text, we exchange all uncritical named SGML-entities
+	// In the remaining text, we exchange all uncritical named SGML-entities,
+	// As, for example, "&apos;" should not be interpretated as wiki-markup, we must exclude it
 	exchangeSGMLEntities(s,true);
 
 	// TODO: Include templates here
@@ -837,9 +828,11 @@ void WIKI2XML::parse(string & s)
 		replace_part(s, a, b, "");
 		a = s.find("<!--",a+1);
 	}
-	// everything was separated out
 
-	// Help 'make_tags' and mask literal '&' and '<'
+	// Everything was separated out
+	trimSpacesBeforeLinebreaks(s);
+
+	// Help 'make_tag_list' and mask literal '&' and '<'
 	a = s.find("&");
 	while (a != string::npos)
 	{
@@ -883,8 +876,8 @@ void WIKI2XML::parse(string & s)
 		_globals->getPercentIndicator()->update(b*100/s.length());
 		substring = s.substr(a+1,b-a-1);
 		parse_line(substring);
-		replace_part(s,a+1,b,substring);
-		a += substring.length();
+		replace_part(s,a+1,b,substring+" ");
+		a += substring.length()+1;
 		b = s.find("\n",a+1);
 		strdisp(s);
 	}

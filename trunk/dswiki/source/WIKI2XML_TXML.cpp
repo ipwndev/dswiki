@@ -17,7 +17,7 @@ TXML::TXML(int f, int t, string & s, bool fix_comments)
 	closing = selfclosing = false;
 
 	name = s.substr(from + 1, to - (from + 1));
-	name = trim(name);
+	trim(name);
 	if (left(name, 1) == "/")
 	{
 		closing = true;
@@ -66,8 +66,10 @@ void TXML::insert_at(int pos)
 
 void TXML::add_key_value(string k, string v)
 {
-	key.push_back(trim(k));
-	value.push_back(trim(v));
+	trim(k);
+	trim(v);
+	key.push_back(k);
+	value.push_back(v);
 }
 
 string TXML::get_string()

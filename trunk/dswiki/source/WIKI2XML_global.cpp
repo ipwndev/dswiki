@@ -33,6 +33,7 @@ string left(string & s, int num)
 	return s.substr(0, num);
 }
 
+
 string right(string & s, int num)
 {
 	if (num <= 0)
@@ -44,6 +45,7 @@ string right(string & s, int num)
 		return s.substr(from, s.length() - from);
 }
 
+
 string upper(string s)		// For internal purposes, will do...
 {
 	int a;
@@ -54,6 +56,7 @@ string upper(string s)		// For internal purposes, will do...
 	}
 	return s;
 }
+
 
 void explode(string pattern, string & s, vector < string > & parts)
 {
@@ -70,6 +73,7 @@ void explode(string pattern, string & s, vector < string > & parts)
 	}
 	parts.push_back(s.substr(a));
 }
+
 
 void implode(string pattern, vector < string > & parts, string & s)
 {
@@ -90,6 +94,7 @@ void implode(string pattern, vector < string > & parts, string & s)
 	}
 }
 
+
 string unquote(chart quote, string & s)
 {
 	int a;
@@ -104,6 +109,7 @@ string unquote(chart quote, string & s)
 	return s;
 }
 
+
 bool submatch(string & main, string & sub, int from)
 {
 	if (from + sub.length() > main.length())
@@ -117,6 +123,7 @@ bool submatch(string & main, string & sub, int from)
 	return true;
 }
 
+
 int find_first(chart c, string & s)
 {
 	int a;
@@ -125,6 +132,7 @@ int find_first(chart c, string & s)
 		return -1;
 	return a;
 }
+
 
 int find_last(chart c, string & s)
 {
@@ -137,6 +145,7 @@ int find_last(chart c, string & s)
 	return b;
 }
 
+
 string before_first(chart c, string s)
 {
 	int pos = find_first(c, s);
@@ -144,6 +153,7 @@ string before_first(chart c, string s)
 		return s;
 	return s.substr(0, pos);
 }
+
 
 string before_last(chart c, string s)
 {
@@ -153,6 +163,7 @@ string before_last(chart c, string s)
 	return s.substr(0, pos);
 }
 
+
 string after_first(chart c, string s)
 {
 	int pos = find_first(c, s);
@@ -160,6 +171,7 @@ string after_first(chart c, string s)
 		return "";
 	return s.substr(pos + 1, s.length());
 }
+
 
 string after_last(chart c, string s)
 {
@@ -169,16 +181,68 @@ string after_last(chart c, string s)
 	return s.substr(pos + 1, s.length());
 }
 
-string trim(string & s)
+
+void trim(string & s)
 {
-	if (s.length() == 0)
-		return s;
-	if (s[0] != ' ' && s[s.length() - 1] != ' ')
-		return s;
+	trimLeft(s);
+	trimRight(s);
+}
+
+
+void trimDoubleSpaces(string & s)
+{
+	if (s.empty())
+		return;
 	int a, b;
+	a = s.find(" ");
+	while (a != string::npos)
+	{
+		for (b=a+1;b<s.length() && s[b]==' ';b++);
+		s.erase(a+1,b-a-1);
+		a = s.find(" ",a+1);
+	}
+}
+
+
+void trimSpacesBeforeLinebreaks(string & s)
+{
+	if (s.empty())
+		return;
+	int a, b;
+	a = s.find("\n");
+	while (a != string::npos)
+	{
+		if ((a>0) && s[a-1]==' ')
+		{
+			for (b=a-1;b-1>=0 && s[b-1]==' ';b--);
+			s.erase(b,a-b);
+			a = s.find("\n",b+2);
+		}
+		else
+			a = s.find("\n",a+2);
+	}
+}
+
+void trimLeft(string & s)
+{
+	if (s.empty())
+		return;
+	if (s[0] != ' ')
+		return;
+	int a;
 	for (a = 0; a < s.length() && s[a] == ' '; a++);
+	s.erase(0,a);
+}
+
+void trimRight(string & s)
+{
+	if (s.empty())
+		return;
+	if (s[s.length() - 1] != ' ')
+		return;
+	int b;
 	for (b = s.length() - 1; b >= 0 && s[b] == ' '; b--);
-	return s.substr(a, b - a + 1);
+	s.erase(b+1);
 }
 
 int find_next_unquoted(chart c, string & s, int start)
@@ -219,9 +283,8 @@ string xml_embed(string inside, string tag, string param, bool openonly)
 {
 	string ret;
 
-	tag = trim(tag);
-	param = trim(param);
-	inside = trim(inside);
+	trim(tag);
+	trim(param);
 
 	ret = "<" + tag;
 	if (!param.empty())
@@ -233,42 +296,3 @@ string xml_embed(string inside, string tag, string param, bool openonly)
 	else
 		return ret + ">" + inside + "</" + tag + ">";
 }
-
-
-// string xml_params(string l)
-// {
-// 	string ret;
-// 	vector < string > params;
-// 	l = trim(l);
-// 	while (!l.empty())
-// 	{
-// 		int p = find_next_unquoted(' ', l);
-// 		string first;
-// 		if (p == -1)
-// 		{
-// 			first = l;
-// 			l = "";
-// 		}
-// 		else
-// 		{
-// 			first = left(l, p+1);
-// 			l = l.substr(p+1, l.length() - p - 1);
-// 		}
-// 		first = trim(first);
-// 		l = trim(l);
-//
-// 		if (first.empty())
-// 			continue;
-//
-// 		p = find_next_unquoted('=', first);
-// 		if (p == -1)
-// 			first = xml_embed(first, "key");
-// 		else
-// 		{
-// 			first = xml_embed(left(first, p), "key") + xml_embed(first.substr(p + 1, first.length() - p), "val");
-// 		}
-// 		first = xml_embed(first, "wp");
-// 		ret += first;
-// 	}
-// 	return ret;
-// }

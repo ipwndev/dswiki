@@ -560,6 +560,7 @@ Font::Font()
 	{
 		_initOK = 0;
 	}
+	_initOK = 1;
 }
 
 unsigned char * Font::getCharacterData(unsigned int Uni, Cut FontCut)
