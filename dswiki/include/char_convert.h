@@ -28,7 +28,6 @@ typedef struct
 
 string exchangeDiacriticChars(string phrase, unsigned char indexVersion = 0);
 string lowerPhrase(string phrase, unsigned char indexVersion = 0);
-string trimPhrase(string Str);
 void exchangeSGMLEntities(string & phrase, bool exclude_XML_entities = false );
 string preparePhrase(string phrase, unsigned char indexNo, unsigned char indexVersion);
 void replace_all(string & s, string pattern, string with);

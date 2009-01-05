@@ -1050,17 +1050,17 @@ void TiXmlElement::StreamIn (std::istream * in, TIXML_STRING * tag)
 
 const char* TiXmlElement::Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding )
 {
-	PA_ClearTextBg(1);
 	struct mallinfo info = mallinfo();
-	PA_OutputText(1,0, 2,"Heap size : %db    ", info.arena   ); /* total space allocated from system */
-	PA_OutputText(1,0,16,"Parsing elem.@0x%x",p);
-	char buf[2];
-	buf[1] = '\0';
-	for (int a=0;a<32;a++)
-	{
-		buf[0] = p[a];
-		PA_OutputText(1,a,17,"%s",buf);
-	}
+	PA_OutputText(1,0, 2,"Heap size : %d bytes   ", info.arena   ); /* total space allocated from system */
+	PA_OutputText(1,0, 3,"Memory in use: %d bytes   ", info.usmblks + info.uordblks);
+	PA_OutputText(1,0, 4,"Memory in free: %d bytes   ", info.fsmblks + info.fordblks);
+// 	char buf[2];
+// 	buf[1] = '\0';
+// 	for (int a=0;a<32;a++)
+// 	{
+// 		buf[0] = p[a];
+// 		PA_OutputText(1,a,17,"%s",buf);
+// 	}
 
 	p = SkipWhiteSpace( p, encoding );
 	TiXmlDocument* document = GetDocument();
@@ -1089,7 +1089,6 @@ const char* TiXmlElement::Parse( const char* p, TiXmlParsingData* data, TiXmlEnc
 	const char* pErr = p;
 
     p = ReadName( p, &value, encoding );
-	PA_OutputText(1,0,18,"read name -> p=0x%x",p);
 
 	if ( !p || !*p )
 	{
@@ -1240,6 +1239,7 @@ const char* TiXmlElement::ReadValue( const char* p, TiXmlParsingData* data, TiXm
 			else
 			{
 				TiXmlNode* node = Identify( p, encoding );
+				PA_OutputText(1,0,18,"%x   ",node);
 				if ( node )
 				{
 					p = node->Parse( p, data, encoding );
@@ -1588,7 +1588,6 @@ void TiXmlDeclaration::StreamIn( std::istream * in, TIXML_STRING * tag )
 
 const char* TiXmlDeclaration::Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding _encoding )
 {
-	PA_OutputText(1,0,16,"Parsing decl.");
 	p = SkipWhiteSpace( p, _encoding );
 	// Find the beginning, find the end, and look for
 	// the stuff in-between.

@@ -103,21 +103,6 @@ string lowerPhrase(string phrase, unsigned char indexVersion)
 	return dest;
 }
 
-string trimPhrase(string Str)
-{
-	if (Str.empty())
-		return "";
-
-	int first = Str.find_first_not_of(" ");
-	int last = Str.find_last_not_of(" ");
-
-	if ((first==string::npos) || (last==string::npos))
-		return "";
-
-	Str = Str.substr(first,last-first+1);
-	return Str;
-}
-
 
 void exchangeSGMLEntities(string & phrase, bool exclude_XML_entities)
 {
@@ -235,7 +220,6 @@ void exchangeSGMLEntities(string & phrase, bool exclude_XML_entities)
 
 string preparePhrase(string phrase, unsigned char indexNo, unsigned char indexVersion)
 {
-// 	phrase = trimPhrase(phrase);
 	if (indexNo==1)
 		return lowerPhrase(exchangeDiacriticChars(lowerPhrase(phrase,indexVersion),indexVersion), indexVersion);
 	else
