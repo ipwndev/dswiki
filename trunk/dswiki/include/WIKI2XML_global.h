@@ -39,4 +39,6 @@ void trimSpacesBeforeLinebreaks(string & s);
 int find_next_unquoted(chart c, string & s, int start = 0);
 string xml_embed(string inside, string tag, string param = "", bool openonly = false);
 
+void replaceLinebreaks(string & s);
+
 #endif

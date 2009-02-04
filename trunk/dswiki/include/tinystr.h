@@ -1,61 +1,9 @@
-/*
-www.sourceforge.net/projects/tinyxml
-Original file by Yves Berquin.
-
-This software is provided 'as-is', without any express or implied
-warranty. In no event will the authors be held liable for any
-damages arising from the use of this software.
-
-Permission is granted to anyone to use this software for any
-purpose, including commercial applications, and to alter it and
-redistribute it freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must
-not claim that you wrote the original software. If you use this
-software in a product, an acknowledgment in the product documentation
-would be appreciated but is not required.
-
-2. Altered source versions must be plainly marked as such, and
-must not be misrepresented as being the original software.
-
-3. This notice may not be removed or altered from any source
-distribution.
-*/
-
-/*
- * THIS FILE WAS ALTERED BY Tyge Lovset, 7. April 2005.
- *
- * - completely rewritten. compact, clean, and fast implementation.
- * - sizeof(TiXmlString) = pointer size (4 bytes on 32-bit systems)
- * - fixed reserve() to work as per specification.
- * - fixed buggy compares operator==(), operator<(), and operator>()
- * - fixed operator+=() to take a const ref argument, following spec.
- * - added "copy" constructor with length, and most compare operators.
- * - added swap(), clear(), size(), capacity(), operator+().
- */
-
-#ifndef TIXML_USE_STL
-
 #ifndef TIXML_STRING_INCLUDED
 #define TIXML_STRING_INCLUDED
 
 #include <assert.h>
 #include <string.h>
-
-/*	The support for explicit isn't that universal, and it isn't really
-	required - it is used to check that the TiXmlString class isn't incorrectly
-	used. Be nice to old compilers and macro it here:
-*/
-#if defined(_MSC_VER) && (_MSC_VER >= 1200 )
-	// Microsoft visual studio, version 6 and higher.
-	#define TIXML_EXPLICIT explicit
-#elif defined(__GNUC__) && (__GNUC__ >= 3 )
-	// GCC version 3 and higher.s
-	#define TIXML_EXPLICIT explicit
-#else
-	#define TIXML_EXPLICIT
-#endif
-
+#include <string>
 
 /*
    TiXmlString is an emulation of a subset of the std::string template.
@@ -87,14 +35,14 @@ class TiXmlString
 	}
 
 	// TiXmlString constructor, based on a string
-	TIXML_EXPLICIT TiXmlString ( const char * copy) : rep_(0)
+	TiXmlString ( const char * copy) : rep_(0)
 	{
 		init( static_cast<size_type>( strlen(copy) ));
 		memcpy(start(), copy, length());
 	}
 
 	// TiXmlString constructor, based on a string
-	TIXML_EXPLICIT TiXmlString ( const char * str, size_type len) : rep_(0)
+	TiXmlString ( const char * str, size_type len) : rep_(0)
 	{
 		init(len);
 		memcpy(start(), str, len);
@@ -238,7 +186,7 @@ class TiXmlString
 			// to the normal allocation, although use an 'int' for systems
 			// that are overly picky about structure alignment.
 			const size_type bytesNeeded = sizeof(Rep) + cap;
-			const size_type intsNeeded = ( bytesNeeded + sizeof(int) - 1 ) / sizeof( int ); 
+			const size_type intsNeeded = ( bytesNeeded + sizeof(int) - 1 ) / sizeof( int );
 			rep_ = reinterpret_cast<Rep*>( new int[ intsNeeded ] );
 
 			rep_->str[ rep_->size = sz ] = '\0';
@@ -290,30 +238,4 @@ TiXmlString operator + (const TiXmlString & a, const TiXmlString & b);
 TiXmlString operator + (const TiXmlString & a, const char* b);
 TiXmlString operator + (const char* a, const TiXmlString & b);
 
-
-/*
-   TiXmlOutStream is an emulation of std::ostream. It is based on TiXmlString.
-   Only the operators that we need for TinyXML have been developped.
-*/
-class TiXmlOutStream : public TiXmlString
-{
-public :
-
-	// TiXmlOutStream << operator.
-	TiXmlOutStream & operator << (const TiXmlString & in)
-	{
-		*this += in;
-		return *this;
-	}
-
-	// TiXmlOutStream << operator.
-	TiXmlOutStream & operator << (const char * in)
-	{
-		*this += in;
-		return *this;
-	}
-
-} ;
-
 #endif	// TIXML_STRING_INCLUDED
-#endif	// TIXML_USE_STL
