@@ -29,5 +29,6 @@ extern VirScreen ContentWin1;
 extern VirScreen ContentWin2;
 extern VirScreen StatusbarVS;
 
+int getFreeRAM();
 
 #endif

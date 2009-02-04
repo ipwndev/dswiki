@@ -56,19 +56,43 @@ void Markup::parse(string & Str)
 	_td = new TiXmlDocument();
 	_td->ClearError();
 	_globals->getStatusbar()->display("Parsing XML");
+	PA_ClearTextBg(0);
+	PA_ClearTextBg(1);
+	PA_Clear16bitBg(0);
+	PA_Clear16bitBg(1);
+	struct mallinfo info = mallinfo();
+	PA_OutputText(1,0, 0,"Heap size      : %d bytes   ", info.arena   ); /* total space allocated from system */
+	PA_OutputText(1,0, 1,"Memory in use  : %d bytes   ", info.usmblks + info.uordblks);
+	PA_OutputText(1,0, 2,"Memory in free : %d bytes   ", info.fsmblks + info.fordblks);
+	int vorher = getFreeRAM();
+	PA_OutputText(1,0, 3,"getFreeRAM     : %d bytes   ", vorher);
+
 	_td->Parse(Str.c_str(), NULL, TIXML_ENCODING_UTF8);
+
+	struct mallinfo info2 = mallinfo();
+	PA_OutputText(1,0, 5,"Heap size      : %d bytes   ", info2.arena   ); /* total space allocated from system */
+	PA_OutputText(1,0, 6,"Memory in use  : %d bytes   ", info2.usmblks + info2.uordblks);
+	PA_OutputText(1,0, 7,"Memory in free : %d bytes   ", info2.fsmblks + info2.fordblks);
+	int nachher = getFreeRAM();
+	PA_OutputText(1,0, 8,"getFreeRAM     : %d bytes   ", nachher);
+
+	PA_OutputText(1,0, 10,"Differenz (arena)     : %d", info2.arena-info.arena);
+	PA_OutputText(1,0, 11,"Differenz (getFreeRAM): %c1%d", vorher-nachher);
+
 	_loadOK = !(_td->Error());
 
 	if (_loadOK)
 	{
 		vector <TiXmlNode*> index;
 		build_index(_td, index);
-		PA_ClearTextBg(1);
 		for (int a=0;a<index.size();a++)
 		{
-			PA_OutputText(1,0,4+a,"%s: %s",index[a]->Value(),index[a]->FirstChild()->Value());
+			PA_OutputText(0,0,a,"%s: %s",index[a]->Value(),index[a]->FirstChild()->Value());
 		}
+		string ersterText = _td->LastChild()->FirstChild()->Value();
+		PA_OutputText(0,0,12,"(%d Zeichen)\n%s", ersterText.length(), ersterText.c_str());
 	}
+	exit(0);
 }
 
 void build_index(TiXmlNode* pParent, vector <TiXmlNode*> & index)
@@ -76,7 +100,6 @@ void build_index(TiXmlNode* pParent, vector <TiXmlNode*> & index)
 	if ( !pParent ) return;
 
 	TiXmlNode* pChild;
-	TiXmlText* pText;
 	if (pParent->Type() == TiXmlNode::ELEMENT)
 	{
 		string value = pParent->Value();

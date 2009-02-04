@@ -26,6 +26,8 @@
 #include "WIKI2XML.h"
 #include "WIKI2XML_global.h"
 
+#include "tinystr.h"
+
 Device UpScreen;
 Device DnScreen;
 CharStat NormalCS;
@@ -68,9 +70,6 @@ int main(int argc, char ** argv)
 	// PAlib initialization
 	PA_Init();
 	PA_InitVBL();
-	string markupstr;
-	markupstr.reserve(1572864); // Reserve 1.5 MiB for the markup, all transformations should be made in-place
-// 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations should be made in-place
 	PA_InitGHPad();
 	PA_SetAutoUpdateGHPadTimes(1);
 	PA_SetAutoUpdatePadTimes(1);
@@ -78,13 +77,18 @@ int main(int argc, char ** argv)
 	KT_Init();
 	KT_UseEFS();
 
+	string markupstr;
+	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations should be made in-place
 
-	string suchtitel = "Temp";
-// 	string suchtitel = "Figuren in Tolkiens Welt";
+	string suchtitel = "Riesentext";
+// 	string suchtitel = "Test";
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
 	PA_InitText(1,2);
+#if DEBUG
+	PA_InitText(0,2);
+#endif
 
 	PA_SetBrightness(0,-31);
 	PA_SetBrightness(1,-31);
@@ -165,8 +169,10 @@ int main(int argc, char ** argv)
 
 	PA_SetTextCol (0, 0, 0, 0);
 	PA_SetTextCol (1, 0, 0, 0);
+#if !DEBUG
 	PA_InitKeyboard(2);
 	PA_KeyboardOut();
+#endif
 
 	// visible again
 	PA_SetBrightness(0,0);
@@ -227,14 +233,6 @@ int main(int argc, char ** argv)
 	}
 	PA_ClearTextBg(1);
 
-	int freemem = getFreeRAM();
-	struct mallinfo info = mallinfo();
-	PA_OutputText(1,0,0,"free: %d", freemem);
-	PA_OutputText(1,0,1,"used: %d",info.arena);
-	PA_OutputText(1,0,2," sum: %d",info.arena+freemem);
-// 	PA_WaitFor(Pad.Newpress.Anykey);
-// /*
-
 	enum {
 		SPRITE_HISTORY, SPRITE_HISTORYX, SPRITE_RELOAD, SPRITE_CANCEL, SPRITE_OK, SPRITE_2UPARROW, SPRITE_1UPARROW, SPRITE_1DOWNARROW, SPRITE_2DOWNARROW, SPRITE_1LEFTARROW, SPRITE_1RIGHTARROW, SPRITE_CLEARLEFT, SPRITE_CONFIGURE,  SPRITE_BOOKMARKADD, SPRITE_BOOKMARK, SPRITE_VIEWMAG
 	};
@@ -289,6 +287,23 @@ int main(int argc, char ** argv)
 	BLOCK CharArea = {{ 0, 0},{ 0, 0}};
 
 	// use graphical interface from now on
+
+	string olli = "Init";
+	TiXmlString* tinyolli = new TiXmlString();
+
+	PA_OutputText(1,0,0,"(%d)%s",olli.length(),olli.c_str());
+	PA_OutputText(1,0,1,"(%d)%s",tinyolli->length(),tinyolli->c_str());
+
+	string olli2 = "Tail";
+	for (int a=0;a<olli2.length();a++)
+		*tinyolli += olli2[a];
+	PA_OutputText(1,0,2,"(%d)%s",tinyolli->length(),tinyolli->c_str());
+	*tinyolli += olli2.c_str();
+	PA_OutputText(1,0,3,"(%d)%s",tinyolli->length(),tinyolli->c_str());
+	tinyolli->append(olli2.c_str(),3);
+	PA_OutputText(1,0,4,"(%d)%s",tinyolli->length(),tinyolli->c_str());
+
+	PA_WaitFor(Pad.Newpress.Anykey);
 
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
@@ -357,16 +372,17 @@ int main(int argc, char ** argv)
 	PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
 
 
+
 	while(1) // main loop
 	{
 // 		loadArticle = 1;
 // 		PA_Rand();
-		info = mallinfo();
-		PA_OutputText(1,0, 2,"Heap size : %d bytes   ", info.arena   ); // total space allocated from system
-		PA_OutputText(1,0, 3,"     Free : %d bytes   ", getFreeRAM()   ); // total space allocated from system
+// 		struct mallinfo info = mallinfo();
+// 		PA_OutputText(1,0, 2,"Heap size : %d bytes   ", info.arena   ); // total space allocated from system
+// 		PA_OutputText(1,0, 3,"     Free : %d bytes   ", getFreeRAM()   ); // total space allocated from system
 // 		PA_OutputText(1,0, 3,"Memory in use: %d bytes   ", info.usmblks + info.uordblks);
 // 		PA_OutputText(1,0, 4,"Memory in free: %d bytes   ", info.fsmblks + info.fordblks);
-		strdisp(markupstr);
+// 		strdisp(markupstr);
 
 		if (Stylus.Held)
 		{
@@ -998,6 +1014,7 @@ int main(int argc, char ** argv)
 				if (markup->LoadOK())
 				{
 					PA_OutputText(1,0,3,"%c2XML-Parsing OK");
+					PA_WaitFor(Pad.Newpress.Anykey);
 				}
 				else
 				{

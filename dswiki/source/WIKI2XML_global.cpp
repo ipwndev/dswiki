@@ -182,6 +182,26 @@ string after_last(chart c, string s)
 }
 
 
+void replaceLinebreaks(string & s)
+{
+	if (s.empty())
+		return;
+	int a, b;
+	a = s.find("\n");
+	while (a != string::npos)
+	{
+		for (b=a;b+1<s.length() && s[b+1]=='\n';b++);
+		if (b==a)
+		{
+			s.replace(a,1," ");
+		}
+		else
+		{
+		}
+		a = s.find("\n",b+2);
+	}
+}
+
 void trim(string & s)
 {
 	trimLeft(s);
@@ -215,11 +235,14 @@ void trimSpacesBeforeLinebreaks(string & s)
 		if ((a>0) && s[a-1]==' ')
 		{
 			for (b=a-1;b-1>=0 && s[b-1]==' ';b--);
-			s.erase(b,a-b);
-			a = s.find("\n",b+2);
+			if (b>0 && s[b-1]!='\n')
+			{
+				s.erase(b,a-b);
+				a = s.find("\n",b+2);
+				continue;
+			}
 		}
-		else
-			a = s.find("\n",a+2);
+		a = s.find("\n",a+2);
 	}
 }
 
