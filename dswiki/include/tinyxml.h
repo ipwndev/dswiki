@@ -33,6 +33,7 @@ distribution.
 #include <assert.h>
 #include <string>
 #include "tinystr.h"
+#include <PA9.h>
 
 #define TIXML_STRING	std::string
 
@@ -1090,6 +1091,8 @@ public:
 	/** Walk the XML tree visiting this node and all of its children.
 	*/
 	virtual bool Accept( TiXmlVisitor* content ) const;
+
+	const char *Value() const { return value.c_str (); }
 
 protected :
 	///  [internal use] Creates a new Element and returns it.
