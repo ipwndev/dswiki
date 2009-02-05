@@ -87,9 +87,9 @@ void Markup::parse(string & Str)
 		build_index(_td, index);
 		for (int a=0;a<index.size();a++)
 		{
-			PA_OutputText(0,0,a,"%s: %s",index[a]->Value(),index[a]->FirstChild()->Value());
+			PA_OutputText(0,0,a+5,"%s: %s",index[a]->Value(),((TiXmlText*) index[a]->FirstChild())->Value());
 		}
-		string ersterText = _td->LastChild()->FirstChild()->Value();
+		string ersterText = ((TiXmlText*) _td->LastChild()->FirstChild())->Value();
 		PA_OutputText(0,0,12,"(%d Zeichen)\n%s", ersterText.length(), ersterText.c_str());
 	}
 	exit(0);
