@@ -12,7 +12,7 @@
 #include "struct.h"
 #include "chrlib.h"
 #include "char_convert.h"
-#include "Cache.h"
+#include "CachingFont.h"
 #include "History.h"
 #include "Markup.h"
 #include "Search.h"
@@ -25,8 +25,6 @@
 #include "TextBox.h"
 #include "WIKI2XML.h"
 #include "WIKI2XML_global.h"
-
-#include "tinystr.h"
 
 Device UpScreen;
 Device DnScreen;
@@ -78,10 +76,12 @@ int main(int argc, char ** argv)
 	KT_UseEFS();
 
 	string markupstr;
-	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations should be made in-place
+	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
-	string suchtitel = "Riesentext";
+// 	string suchtitel = "Riesentext";
 // 	string suchtitel = "Zwergentext";
+	string suchtitel = "Headings";
+// 	string suchtitel;
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
@@ -205,16 +205,16 @@ int main(int argc, char ** argv)
 		dirclose(dswikiFontDir);
 	}
 	PA_OutputText(1,0,4,"Initializing fonts...");
-	Font* CompleteFont = new Font();
-	if (CompleteFont->initOK())
-	{
-		PA_OutputText(1,28,4,"%c2[OK]");
-	}
-	else
-	{
-		PA_OutputText(1,24,4,"%c1[Failed]");
-		return 1;
-	}
+// 	Font* CompleteFont = new Font();
+// 	if (CompleteFont->initOK())
+// 	{
+// 		PA_OutputText(1,28,4,"%c2[OK]");
+// 	}
+// 	else
+// 	{
+// 		PA_OutputText(1,24,4,"%c1[Failed]");
+// 		return 1;
+// 	}
 	PA_OutputText(1,0,5,"Gathering installed wikis...");
 	Dumps* d = new Dumps();
 	vector<string> possibleWikis = d->getPossibleWikis();
@@ -258,20 +258,20 @@ int main(int argc, char ** argv)
 	Statusbar* sb = new Statusbar();
 	PercentIndicator* p = new PercentIndicator();
 	g->setDumps(d);
-	g->setFont(CompleteFont);
+// 	g->setFont(CompleteFont);
 	g->setStatusbar(sb);
 	g->setPercentIndicator(p);
 
 	// Initialization of global variables
 	UpScreen         = (Device)   { "U", 1, (unsigned short int*)PA_DrawBg[1], 256, 192};
 	DnScreen         = (Device)   { "D", 0, (unsigned short int*)PA_DrawBg[0], 256, 192};
-	NormalCS         = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
+/*	NormalCS         = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
 	ContentCS        = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
 	ErrorCS          = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB(27, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
 	StatusbarCS      = (CharStat) { CompleteFont, REGULAR, 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
 	StatErrorCS      = (CharStat) { CompleteFont, REGULAR, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
 	SearchResultsCS1 = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
-	SearchResultsCS2 = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
+	SearchResultsCS2 = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };*/
 	PercentArea = (VirScreen) { 229, 176,  27,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&PercentArea);
 	Titlebar    = (VirScreen) {   0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
 	ContentWin1 = (VirScreen) {   2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
@@ -281,29 +281,22 @@ int main(int argc, char ** argv)
 
 	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-	CharStat       TitlebarCS = { CompleteFont, REGULAR, 0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
-	CharStat SearchResultsCS3 = { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
+	CharStat       TitlebarCS = { NULL, REGULAR, 0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+	CharStat SearchResultsCS3 = { NULL, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
 
 	BLOCK CharArea = {{ 0, 0},{ 0, 0}};
 
 	// use graphical interface from now on
 
-// 	string olli = "Init";
-// 	TiXmlString* tinyolli = new TiXmlString();
-//
-// 	PA_OutputText(1,0,0,"(%d)%s",olli.length(),olli.c_str());
-// 	PA_OutputText(1,0,1,"(%d)%s",tinyolli->length(),tinyolli->c_str());
-//
-// 	string olli2 = "Tail";
-// 	for (int a=0;a<olli2.length();a++)
-// 		*tinyolli += olli2[a];
-// 	PA_OutputText(1,0,2,"(%d)%s",tinyolli->length(),tinyolli->c_str());
-// 	*tinyolli += olli2.c_str();
-// 	PA_OutputText(1,0,3,"(%d)%s",tinyolli->length(),tinyolli->c_str());
-// 	tinyolli->append(olli2.c_str(),3);
-// 	PA_OutputText(1,0,4,"(%d)%s",tinyolli->length(),tinyolli->c_str());
-//
-// 	PA_WaitFor(Pad.Newpress.Anykey);
+	Font* frankenstein = new Font("efs:dswiki/fonts/font_r.dat");
+	unsigned char* c;
+	for (int a=0;a<3000;a++)
+	{
+		c = frankenstein->getCharacterData((PA_RandMinMax(0,4)+PA_RandMinMax(0,5))*256+PA_RandMinMax(0,255));
+		PA_OutputText(0,0,0,"%x -- %d %d %d -- %d           ", c, c[0], c[1], c[2], c[3]);
+		PA_OutputText(0,0,1,"%d Bytes          ", frankenstein->MemoryUsed());
+	}
+	while(1);
 
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
@@ -360,7 +353,6 @@ int main(int argc, char ** argv)
 	g->getStatusbar()->clearAfter(30);
 
 	History* h = new History();
-	Cache*   c = new Cache();
 	Search*  s = new Search();
 
 	g->setSearch(s);
@@ -375,15 +367,6 @@ int main(int argc, char ** argv)
 
 	while(1) // main loop
 	{
-// 		loadArticle = 1;
-// 		PA_Rand();
-// 		struct mallinfo info = mallinfo();
-// 		PA_OutputText(1,0, 2,"Heap size : %d bytes   ", info.arena   ); // total space allocated from system
-// 		PA_OutputText(1,0, 3,"     Free : %d bytes   ", getFreeRAM()   ); // total space allocated from system
-// 		PA_OutputText(1,0, 3,"Memory in use: %d bytes   ", info.usmblks + info.uordblks);
-// 		PA_OutputText(1,0, 4,"Memory in free: %d bytes   ", info.fsmblks + info.fordblks);
-// 		strdisp(markupstr);
-
 		if (Stylus.Held)
 		{
 			if (Stylus.Newpress)
@@ -921,7 +904,6 @@ int main(int argc, char ** argv)
 				wmg->load(currentSelectedWiki);
 
 				h->clear();
-				c->clear();
 
 				loadArticle = 1;
 			}
@@ -958,17 +940,8 @@ int main(int argc, char ** argv)
 				g->getStatusbar()->display("Loading \""+suchergebnis->TitleInArchive()+"\"");
 
 				markupstr.clear();
-				if (c->isInCache(suchergebnis->TitleInArchive()))
-				{
-					g->getStatusbar()->display("Getting markup from cache...");
-					c->getMarkup(suchergebnis->TitleInArchive());
-				}
-				else
-				{
-					g->getStatusbar()->display("Getting markup from disk...");
-					g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
-					c->insert(suchergebnis->TitleInArchive(),markupstr);
-				}
+				g->getStatusbar()->display("Getting markup...");
+				g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
 
 				string redirectMessage = "";
 				unsigned char numberOfRedirections = 0;
@@ -980,17 +953,8 @@ int main(int argc, char ** argv)
 					suchergebnis = redirection;
 
 					markupstr.clear();
-					if (c->isInCache(suchergebnis->TitleInArchive()))
-					{
-						g->getStatusbar()->display("Following redirection from cache...");
-						c->getMarkup(suchergebnis->TitleInArchive());
-					}
-					else
-					{
-						g->getStatusbar()->display("Following redirection from disk...");
-						g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
-						c->insert(suchergebnis->TitleInArchive(),markupstr);
-					}
+					g->getStatusbar()->display("Following redirection...");
+					g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
 				}
 
 				currentTitle = suchergebnis->TitleInArchive();
@@ -1013,12 +977,11 @@ int main(int argc, char ** argv)
 
 				if (markup->LoadOK())
 				{
-					PA_OutputText(1,0,3,"%c2XML-Parsing OK");
-					PA_WaitFor(Pad.Newpress.Anykey);
+					PA_OutputText(1,0,2,"%c2XML-Parsing OK    ");
 				}
 				else
 				{
-					PA_OutputText(1,0,3,"%c1XML-Parsing failed");
+					PA_OutputText(1,0,2,"%c1XML-Parsing failed");
 
 					string filenamestr = currentTitle ;
 					replace_all(filenamestr,"\n","");
@@ -1132,5 +1095,4 @@ int main(int argc, char ** argv)
 	} // end of main loop
 
 	return 0;
-// 	*/
 }

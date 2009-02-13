@@ -17,7 +17,7 @@
 
 string TextBox::run()
 {
-	PA_WaitForVBL();
+/*	PA_WaitForVBL();
 	if (_lines.empty())
 		return "";
 
@@ -137,7 +137,7 @@ string TextBox::run()
 	}
 
 	PA_WaitForVBL();
-	return "";
+	return "";*/
 }
 
 void TextBox::allowCancel(unsigned char allowCancel)

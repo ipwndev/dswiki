@@ -34,7 +34,6 @@ class History
 		int    currentLine();
 		void   updateCurrentLine(int line);
 		void   insert(string ins_str, int ins_line);
-		void   display();
 		unsigned char     back();
 		unsigned char     forward();
 	private:

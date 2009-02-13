@@ -4,6 +4,7 @@
 #include <PA9.h>
 #include <string>
 #include <vector>
+#include <map>
 #include "api.h"
 #include "chrlib.h"
 #include "tinyxml.h"
@@ -21,12 +22,13 @@ class Markup
 		bool			LoadOK();
 		void 			setGlobals(Globals* globals);
 	private:
-		TiXmlDocument*  _td;
-		bool			_loadOK;
-		Globals*		_globals;
+		void build_index(TiXmlNode* pParent, vector <TiXmlNode*> & index);
+		TiXmlDocument*			_td;
+		bool					_loadOK;
+		Globals*				_globals;
+		string					indexMarkupStr;
+		TiXmlNode*				root;
+		map <string,TiXmlNode*>	index;
 };
 
-void dump_to_stdout( TiXmlNode* pParent, unsigned int indent);
-int dump_attribs_to_stdout(TiXmlElement* pElement, unsigned int indent);
-void build_index(TiXmlNode* pParent, vector <TiXmlNode*> & index);
 #endif

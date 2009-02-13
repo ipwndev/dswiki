@@ -64,15 +64,3 @@ int History::currentLine()
 {
 	return _list[_currentPosition].line;
 }
-
-void History::display()
-{
-	int i;
-	for (i=0;i<_list.size();i++)
-	{
-		if (i==_currentPosition)
-			PA_OutputText(1,0,i+3,"(*)");
-		PA_OutputText(1,3,i+3,"l%d in %s",_list[i].line,_list[i].title.c_str());
-	}
-	PA_OutputText(1,0,23,"%d",_currentPosition);
-}
