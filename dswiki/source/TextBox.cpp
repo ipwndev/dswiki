@@ -17,7 +17,7 @@
 
 string TextBox::run()
 {
-/*	PA_WaitForVBL();
+	PA_WaitForVBL();
 	if (_lines.empty())
 		return "";
 
@@ -37,7 +37,7 @@ string TextBox::run()
 
 	VirScreen inner = {0,0,0,0, TextboxOuterBorder.AbsoluteBlock(TextboxOuterBorder.RelativeBound(-14)), &DnScreen};
 	InitVS2(&inner);
-	_numlines = inner.Height/SearchResultsCS1.FONT->Regular.Height;
+	_numlines = inner.Height/SearchResultsCS1.FONT->Height();
 	unsigned char fullupdate = 1;
 	unsigned char update = 1;
 	while(1)
@@ -46,7 +46,7 @@ string TextBox::run()
 		{
 			int y = Stylus.Y;
 			y -= inner.AbsoluteBound.Start.y;
-			int lineClicked = y / SearchResultsCS1.FONT->Regular.Height;
+			int lineClicked = y / SearchResultsCS1.FONT->Height();
 			if (Stylus.Newpress)
 			{
 				if (_allowCancel &&
@@ -137,7 +137,7 @@ string TextBox::run()
 	}
 
 	PA_WaitForVBL();
-	return "";*/
+	return "";
 }
 
 void TextBox::allowCancel(unsigned char allowCancel)

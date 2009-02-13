@@ -42,6 +42,7 @@ class Font
 		unsigned char Height();
 		int MemoryUsed();
 	private:
+		unsigned char _height;
 		bool _initOK;
 		char _filename[32];
 		int* blockImpressions;

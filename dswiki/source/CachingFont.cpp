@@ -20,6 +20,8 @@ Font::Font(char* filename)
 	FILE* f = fopen(_filename,"rb");
 	if (f != NULL)
 	{
+		fseek(f,32,SEEK_SET);
+		fread(&_height,1,1,f);
 		blockImpressions = (int*) malloc(256*sizeof(int));
 		cached = (int*) malloc(256*sizeof(int));
 		_initOK = true;
@@ -46,6 +48,11 @@ int Font::MemoryUsed()
 	for (int a=0;a<UB.size();a++)
 		size += UB[a]->MemoryUsed();
 	return size;
+}
+
+unsigned char Font::Height()
+{
+	return _height;
 }
 
 unsigned char* Font::getCharacterData(unsigned int Uni)

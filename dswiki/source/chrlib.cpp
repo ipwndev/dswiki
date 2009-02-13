@@ -127,7 +127,7 @@ unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea
 
 void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK CharArea)
 {
-/*	unsigned char*  DATA;
+	unsigned char*  DATA;
 	unsigned char   idx;
 	unsigned char   ptr;
 	unsigned char   msk;
@@ -137,7 +137,7 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 	unsigned char   bbx_w, bbx_h;
 	short int  X=0, Y=0;
 	CharStat CopyCStat=*CStat;
-	DATA = CStat->FONT->getCharacterData(*Uni,CStat->FontCut);
+	DATA = CStat->FONT->getCharacterData(*Uni);
 	unsigned char  Width = DATA[0];
 
 	idx=0;
@@ -147,7 +147,7 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 	bbx_w = (DATA[1]>>4)+1;
 	bbx_h = (DATA[1]&0xF)+1;
 	CharArea.End.x = CharArea.Start.x + Width-1;
-	CharArea.End.y = CharArea.Start.y + CStat->FONT->Regular.Height;
+	CharArea.End.y = CharArea.Start.y + CStat->FONT->Height();
 
 	switch(CStat->Fx)
 	{
@@ -183,10 +183,7 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 						switch(CStat->Fx)
 						{
 							case NONE:
-// 								if ((*Uni==0x3c)||(*Uni==0x3e)||(*Uni==0x22)||(*Uni==0x26)||(*Uni==0x27))
-// 									DrawPoint(VScreen ,X , Y, PA_RGB(31,0,0));
-// 								else
-									DrawPoint(VScreen ,X , Y, CStat->Color);
+								DrawPoint(VScreen ,X , Y, CStat->Color);
 								break;
 							case HOLLOW:
 								DrawPoint(VScreen ,X-1 , Y,   CStat->BgColor);
@@ -236,21 +233,21 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 			CopyCStat.Fx=NONE;
 			iDrawChar(Uni,VScreen,&CopyCStat,CharArea);
 			break;
-	}*/
+	}
 }
 
 // TODO: auch ein geprintetes '\n' außerhalb des Screens soll Abbruch verursachen
 unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang)
 {
-/*	unsigned char* Str                = (unsigned char*) St;
-	// global
-	unsigned char  Height             = CStat->FONT->Regular.Height;
+	unsigned char* Str                = (unsigned char*) St;
+	// 	global
+	unsigned char  Height             = CStat->FONT->Height();
 	s16            Origin             = 0;
-	// per character
+	// 	per character
 	unsigned char* DATA;
 	unsigned int   Uni                = 0;
 	unsigned char  Width              = 0;
-	// local variables
+	// 	local variables
 	unsigned int   Skip               = 0;
 	unsigned int   SaveSkipWord       = 0;
 	unsigned int   SaveSkipLetter     = 0;
@@ -338,7 +335,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			if(Uni==0x20)
 			{
 				GlyphsPrinted++;
-				DATA = CStat->FONT->getCharacterData(Uni,CStat->FontCut);
+				DATA = CStat->FONT->getCharacterData(Uni);
 				Width = DATA[0];
 				iDrawChar(&Uni,VScreen,CStat,*CharArea);
 				switch(CStat->Rotate)
@@ -368,7 +365,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			}
 
 			// writing a normal character
-			DATA = CStat->FONT->getCharacterData(Uni,CStat->FontCut);
+			DATA = CStat->FONT->getCharacterData(Uni);
 			Width = DATA[0];
 
 			if (CStat->Wrap==NOWRAP)
@@ -422,7 +419,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			}
 
 			// collecting a normal character
-			DATA = CStat->FONT->getCharacterData(Uni,CStat->FontCut);
+			DATA = CStat->FONT->getCharacterData(Uni);
 			Width = DATA[0];
 
 			if (CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,1))
@@ -452,15 +449,13 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 		}
 	}
 	return SaveSkipLetter;
-*/
 }
 
 unsigned int SimPrint(const char* Str, Device* Dev, unsigned short int Color, Lid Lang)
 {
-	Font stdFont("efs:dswiki/fonts/font_r.dat");
-// 	InitFont(&stdFont,frankenstein);
+	Font stdFont("efs:/dswiki/fonts/font_r.dat");
 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
-	CharStat CharStat = { &stdFont, REGULAR, 0,0, Color, 0, 0, DEG0, NORMALWRAP, NONE, 0};
+	CharStat CharStat = { &stdFont, 0, 0, Color, 0, 0, DEG0, NORMALWRAP, NONE, 0};
 	BLOCK CharArea = {{0,0},{0,0}};
 	return iPrint(Str, &VScreen, &CharStat, &CharArea, -1, Lang);
 }
@@ -468,7 +463,7 @@ unsigned int SimPrint(const char* Str, Device* Dev, unsigned short int Color, Li
 unsigned int iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang)
 {
 	if (!Str.empty())
-		return iPrint(&Str.at(0), VScreen, CStat, CharArea, Limit, Lang);
+		return iPrint(Str.c_str(), VScreen, CStat, CharArea, Limit, Lang);
 	else
 		return 0;
 }
@@ -476,7 +471,7 @@ unsigned int iPrint(const string Str, const VirScreen* VScreen, const CharStat* 
 unsigned int SimPrint(const string Str, Device* Dev, unsigned short int Color, Lid Lang)
 {
 	if (!Str.empty())
-		return SimPrint(&Str.at(0), Dev, Color, Lang);
+		return SimPrint(Str.c_str(), Dev, Color, Lang);
 	else
 		return 0;
 }
