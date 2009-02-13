@@ -683,7 +683,7 @@ void WIKI2XML::parse_line(string & l)
 
 void WIKI2XML::parse(string & s)
 {
-	_globals->getStatusbar()->display("Transformation: WikiMarkup->XML");
+	_globals->getStatusbar()->display("WikiMarkup->XML");
 
 	int a,b,c,d;
 	string substring;
@@ -870,27 +870,19 @@ void WIKI2XML::parse(string & s)
 	trimSpacesBeforeLinebreaks(s);
 
 	// Now evaluate each line
-
-/*	a = 0;
-	b = s.find("\n");
 	_globals->getPercentIndicator()->update(0);
-	while (b != string::npos)
-	{
-		for (c=b;c+1<s.length() && s[c+1]=='\n';c++);
-	}
-	_globals->getPercentIndicator()->update(100);*/
-
 	a = -1;
 	b = s.find("\n",a+1);
 	while (b != string::npos)
 	{
+		_globals->getPercentIndicator()->update(b*100/s.length());
 		substring = s.substr(a+1,b-a-1);
 		parse_line(substring);
 		replace_part(s,a+1,b,substring+"");
 		a += substring.length()+0;
 		b = s.find("\n",a+1);
-// 		strdisp(s);
 	}
+	_globals->getPercentIndicator()->update(100);
 	substring = s.substr(a+1);
 	parse_line(substring);
 	replace_part(s,a+1,s.length()-1,substring);

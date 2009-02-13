@@ -127,7 +127,7 @@ unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea
 
 void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK CharArea)
 {
-	unsigned char*  DATA;
+/*	unsigned char*  DATA;
 	unsigned char   idx;
 	unsigned char   ptr;
 	unsigned char   msk;
@@ -236,13 +236,13 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 			CopyCStat.Fx=NONE;
 			iDrawChar(Uni,VScreen,&CopyCStat,CharArea);
 			break;
-	}
+	}*/
 }
 
 // TODO: auch ein geprintetes '\n' außerhalb des Screens soll Abbruch verursachen
 unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang)
 {
-	unsigned char* Str                = (unsigned char*) St;
+/*	unsigned char* Str                = (unsigned char*) St;
 	// global
 	unsigned char  Height             = CStat->FONT->Regular.Height;
 	s16            Origin             = 0;
@@ -451,13 +451,13 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			Skip+=ToUTF(&Str[Skip],&Uni);
 		}
 	}
-
 	return SaveSkipLetter;
+*/
 }
 
 unsigned int SimPrint(const char* Str, Device* Dev, unsigned short int Color, Lid Lang)
 {
-	Font stdFont;
+	Font stdFont("efs:dswiki/fonts/font_r.dat");
 // 	InitFont(&stdFont,frankenstein);
 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
 	CharStat CharStat = { &stdFont, REGULAR, 0,0, Color, 0, 0, DEG0, NORMALWRAP, NONE, 0};
@@ -481,110 +481,3 @@ unsigned int SimPrint(const string Str, Device* Dev, unsigned short int Color, L
 		return 0;
 }
 
-void Font::InitFont(SingleCut* FONT, const unsigned char* ptr)
-{
-	FONT->Name       = (unsigned short int*)ptr;
-	FONT->Height     = ptr[32];
-	FONT->Index      = (unsigned int*)(ptr+64);
-	FONT->Data       = (unsigned char*)ptr+0x40040;
-	FONT->Ptr        = (unsigned char*)ptr;
-}
-
-Font::Font()
-{
-	_initOK = 1;
-
-	FILE* f;
-	int size;
-
-	f = fopen("efs:dswiki/fonts/font_r.dat","rb");
-	if (f != NULL)
-	{
-		fseek(f, 0, SEEK_END);
-		size = ftell(f);
-		fseek(f, 0, SEEK_SET);
-		_data_regular = (unsigned char*)malloc(size);
-		fread(_data_regular, 1, size, f);
-		InitFont(&Regular,_data_regular);
-		fclose(f);
-	}
-	else
-	{
-		_initOK = 0;
-	}
-
-	f = fopen("efs:dswiki/fonts/font_b.dat","rb");
-	if (f != NULL)
-	{
-/*		fseek(f, 0, SEEK_END);
-		size = ftell(f);
-		fseek(f, 0, SEEK_SET);
-		_data_bold = (unsigned char*)malloc(size);
-		fread(_data_bold, 1, size, f);
-		InitFont(&Bold,_data_bold);
-		fclose(f);*/
-	}
-	else
-	{
-		_initOK = 0;
-	}
-
-	f = fopen("efs:dswiki/fonts/font_o.dat","rb");
-	if (f != NULL)
-	{
-/*		fseek(f, 0, SEEK_END);
-		size = ftell(f);
-		fseek(f, 0, SEEK_SET);
-		_data_italic = (unsigned char*)malloc(size);
-		fread(_data_italic, 1, size, f);
-		InitFont(&Italic,_data_italic);
-		fclose(f);*/
-	}
-	else
-	{
-		_initOK = 0;
-	}
-
-	f = fopen("efs:dswiki/fonts/font_bo.dat","rb");
-	if (f != NULL)
-	{
-/*		fseek(f, 0, SEEK_END);
-		size = ftell(f);
-		fseek(f, 0, SEEK_SET);
-		_data_bolditalic = (unsigned char*)malloc(size);
-		fread(_data_bolditalic, 1, size, f);
-		InitFont(&BoldItalic,_data_bolditalic);
-		fclose(f);*/
-	}
-	else
-	{
-		_initOK = 0;
-	}
-	_initOK = 1;
-}
-
-unsigned char * Font::getCharacterData(unsigned int Uni, Cut FontCut)
-{
-	unsigned char* DATA = NULL;
-	switch (FontCut)
-	{
-		case REGULAR:
-			DATA=&Regular.Data[Regular.Index[Uni]];
-			break;
-		case BOLD:
-			DATA=&Bold.Data[Bold.Index[Uni]];
-			break;
-		case ITALIC:
-			DATA=&Italic.Data[Italic.Index[Uni]];
-			break;
-		case BOLDITALIC:
-			DATA=&BoldItalic.Data[BoldItalic.Index[Uni]];
-			break;
-	}
-	return DATA;
-}
-
-unsigned char Font::initOK()
-{
-	return _initOK;
-}

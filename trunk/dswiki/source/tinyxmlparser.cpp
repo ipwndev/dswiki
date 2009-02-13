@@ -616,16 +616,10 @@ const char* TiXmlBase::ReadText(	const char* p,
 				|| !condenseWhiteSpace )	// if true, whitespace is always kept
 	{
 		// Keep all the white space.
-		while (	   p && *p
-						 && !StringEqual( p, endTag, caseInsensitive, encoding )
-			  )
-		{
-			int len;
-			char cArr[4] = { 0, 0, 0, 0 };
-			p = GetChar( p, cArr, &len, encoding );
-			text->append( cArr, len );
-// 			*text += cArr;
-		}
+		const char * a = p;
+		while ( a && *a && !StringEqual( a, endTag, caseInsensitive, encoding ) ) a++;
+		text->append( p, a-p );
+		p = a;
 	}
 	else
 	{

@@ -1092,7 +1092,7 @@ public:
 	*/
 	virtual bool Accept( TiXmlVisitor* content ) const;
 
-	const char *Value() const { return value.c_str (); }
+	std::string ValueStr() { return this->value.ValueStr(); }
 
 protected :
 	///  [internal use] Creates a new Element and returns it.
@@ -1100,7 +1100,6 @@ protected :
 	void CopyTo( TiXmlText* target ) const;
 
 	bool Blank() const;	// returns true if all white space and new lines
-	// [internal use]
 
 private:
 	bool cdata;			// true if this should be input and output as a CDATA style text element

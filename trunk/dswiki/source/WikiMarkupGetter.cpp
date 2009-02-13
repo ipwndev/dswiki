@@ -107,7 +107,7 @@ void WikiMarkupGetter::getMarkup(string & markup, string title)
 	char buffer[BUFFER_SIZE];
 	int read = 0;
 
-	while ( read = BZ2_bzRead(&bzerror, bzf, buffer, BUFFER_SIZE) )
+	while ( (read = BZ2_bzRead(&bzerror, bzf, buffer, BUFFER_SIZE) ) )
 	{
 		bytesRead += read;
 		percent = bytesRead*100/bytesToRead;

@@ -3,9 +3,11 @@
 
 #include <PA9.h>
 #include <string>
+#include <vector>
 
 #include "struct.h"
 #include "api.h"
+#include "CachingFont.h"
 
 using namespace std;
 
@@ -14,6 +16,7 @@ typedef enum {REGULAR,BOLD,ITALIC,BOLDITALIC} Cut;
 typedef enum {NORMALWRAP,HARDWRAP,NOWRAP} ChrWrap;
 typedef enum {DEG0,DEG90,DEG180,DEG270} ChrRot;
 typedef enum {NONE,HOLLOW,SHADOW,BACKGR,SIMULATE} FX;
+
 
 typedef struct
 {
@@ -24,24 +27,8 @@ typedef struct
 	const unsigned char* Ptr;
 } SingleCut;
 
-class Font
-{
-	public:
-		Font();
-		unsigned char* getCharacterData(unsigned int Uni, Cut CutType);
-		unsigned char initOK();
-		SingleCut Regular;
-		SingleCut Bold;
-		SingleCut Italic;
-		SingleCut BoldItalic;
-	private:
-		void InitFont(SingleCut* FONT, const unsigned char* ptr);
-		unsigned char* _data_regular;
-		unsigned char* _data_bold;
-		unsigned char* _data_italic;
-		unsigned char* _data_bolditalic;
-		unsigned char _initOK;
-};
+
+
 
 typedef struct
 {

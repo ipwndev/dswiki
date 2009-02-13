@@ -10,7 +10,6 @@
 #define COUNTDOWN_START             120
 
 #define PA_Sleep(n) { for (int i=0;i<(n);i++) { PA_WaitForVBL(); } }
-#define strdisp(s) { PA_OutputText(1,0,23,"%x, l=%d          ", s.c_str(), s.length()); }
 
 using namespace std;
 
@@ -28,7 +27,5 @@ extern VirScreen Titlebar;
 extern VirScreen ContentWin1;
 extern VirScreen ContentWin2;
 extern VirScreen StatusbarVS;
-
-int getFreeRAM();
 
 #endif
