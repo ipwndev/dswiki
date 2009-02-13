@@ -42,7 +42,7 @@ VirScreen ContentWin1;
 VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
-#define DEBUG 1
+#define DEBUG 0
 #define DEBUG_WIKI_NR 0
 
 int getFreeRAM()
@@ -80,8 +80,8 @@ int main(int argc, char ** argv)
 
 // 	string suchtitel = "Riesentext";
 // 	string suchtitel = "Zwergentext";
-	string suchtitel = "Headings";
-// 	string suchtitel;
+// 	string suchtitel = "Headings";
+	string suchtitel;
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
@@ -205,16 +205,16 @@ int main(int argc, char ** argv)
 		dirclose(dswikiFontDir);
 	}
 	PA_OutputText(1,0,4,"Initializing fonts...");
-// 	Font* CompleteFont = new Font();
-// 	if (CompleteFont->initOK())
-// 	{
-// 		PA_OutputText(1,28,4,"%c2[OK]");
-// 	}
-// 	else
-// 	{
-// 		PA_OutputText(1,24,4,"%c1[Failed]");
-// 		return 1;
-// 	}
+	Font* CompleteFont = new Font("efs:/dswiki/fonts/font_r.dat");
+	if (CompleteFont->initOK())
+	{
+		PA_OutputText(1,28,4,"%c2[OK]");
+	}
+	else
+	{
+		PA_OutputText(1,24,4,"%c1[Failed]");
+		return 1;
+	}
 	PA_OutputText(1,0,5,"Gathering installed wikis...");
 	Dumps* d = new Dumps();
 	vector<string> possibleWikis = d->getPossibleWikis();
@@ -258,20 +258,20 @@ int main(int argc, char ** argv)
 	Statusbar* sb = new Statusbar();
 	PercentIndicator* p = new PercentIndicator();
 	g->setDumps(d);
-// 	g->setFont(CompleteFont);
+	g->setFont(CompleteFont);
 	g->setStatusbar(sb);
 	g->setPercentIndicator(p);
 
 	// Initialization of global variables
 	UpScreen         = (Device)   { "U", 1, (unsigned short int*)PA_DrawBg[1], 256, 192};
 	DnScreen         = (Device)   { "D", 0, (unsigned short int*)PA_DrawBg[0], 256, 192};
-/*	NormalCS         = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
-	ContentCS        = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
-	ErrorCS          = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB(27, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
-	StatusbarCS      = (CharStat) { CompleteFont, REGULAR, 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
-	StatErrorCS      = (CharStat) { CompleteFont, REGULAR, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
-	SearchResultsCS1 = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
-	SearchResultsCS2 = (CharStat) { CompleteFont, REGULAR, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };*/
+	NormalCS         = (CharStat) { CompleteFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
+	ContentCS        = (CharStat) { CompleteFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
+	ErrorCS          = (CharStat) { CompleteFont, 0, 0, PA_RGB(27, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
+	StatusbarCS      = (CharStat) { CompleteFont, 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
+	StatErrorCS      = (CharStat) { CompleteFont, 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
+	SearchResultsCS1 = (CharStat) { CompleteFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
+	SearchResultsCS2 = (CharStat) { CompleteFont, 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
 	PercentArea = (VirScreen) { 229, 176,  27,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&PercentArea);
 	Titlebar    = (VirScreen) {   0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
 	ContentWin1 = (VirScreen) {   2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
@@ -281,23 +281,12 @@ int main(int argc, char ** argv)
 
 	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-	CharStat       TitlebarCS = { NULL, REGULAR, 0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
-	CharStat SearchResultsCS3 = { NULL, REGULAR, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
+	CharStat       TitlebarCS = { CompleteFont, 0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+	CharStat SearchResultsCS3 = { CompleteFont, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
 
 	BLOCK CharArea = {{ 0, 0},{ 0, 0}};
 
 	// use graphical interface from now on
-
-	Font* frankenstein = new Font("efs:dswiki/fonts/font_r.dat");
-	unsigned char* c;
-	for (int a=0;a<3000;a++)
-	{
-		c = frankenstein->getCharacterData((PA_RandMinMax(0,4)+PA_RandMinMax(0,5))*256+PA_RandMinMax(0,255));
-		PA_OutputText(0,0,0,"%x -- %d %d %d -- %d           ", c, c[0], c[1], c[2], c[3]);
-		PA_OutputText(0,0,1,"%d Bytes          ", frankenstein->MemoryUsed());
-	}
-	while(1);
-
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
 
@@ -362,8 +351,6 @@ int main(int argc, char ** argv)
 	PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, 32, 176);
 	PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
 	PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
-
-
 
 	while(1) // main loop
 	{

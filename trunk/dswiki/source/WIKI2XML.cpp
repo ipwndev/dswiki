@@ -608,7 +608,7 @@ void WIKI2XML::parse_line(string & l)
 {
 	doQuotes(l); // TODO: Woanders hin
 
-	int a, b;
+	int a;
 	string pre;
 	string oldlist = list;
 	pre += fix_list(l);
