@@ -76,9 +76,9 @@ string TXML::get_string()
 {
 	string ret;
 	ret = "<" + name;
-	for (int a = 0; a < key.size(); a++)
+	for (int a = 0; a < (int) key.size(); a++)
 	{
-		for (int b = 0; b < key[a].length(); b++)
+		for (int b = 0; b < (int) key[a].length(); b++)
 		{
 			if (key[a][b] == ' ')
 				key[a][b] = '_';

@@ -46,7 +46,7 @@ void replace_all(string & s, string pattern, string with)
 {
 	int a;
 	a = s.find(pattern);
-	while (a!=string::npos)
+	while (a!= (int) string::npos)
 	{
 		s.replace(a,pattern.length(),with);
 		a = s.find(pattern,a+1);
@@ -115,13 +115,13 @@ void exchangeSGMLEntities(string & phrase, bool exclude_XML_entities)
 	string entity;
 
 	int i;
-	while (posStart<phrase.length())
+	while (posStart< (int) phrase.length())
 	{
 		posStart = phrase.find("&",posStart);
-		if (posStart==string::npos)
+		if (posStart== (int) string::npos)
 			return;
 		posEnd = phrase.find(";",posStart);
-		if (posEnd==string::npos)
+		if (posEnd== (int) string::npos)
 			return;
 
 		entity       = phrase.substr(posStart,posEnd-posStart+1);
@@ -153,11 +153,11 @@ void exchangeSGMLEntities(string & phrase, bool exclude_XML_entities)
 				// hexadecimal format found
 				number.erase(0,1);
 				int temp;
-				if ((temp=number.find_first_not_of("0123456789aAbBcCdDeEfF"))!=string::npos)
+				if ((temp=number.find_first_not_of("0123456789aAbBcCdDeEfF"))!= (int) string::npos)
 					continue;
 
 				// conversion is possible
-				for (i=0;i<number.length();i++)
+				for (i=0;i< (int) number.length();i++)
 				{
 					unsigned char c = number.at(i);
 					if ((0x30<=c) && (c<=0x39))
@@ -172,11 +172,11 @@ void exchangeSGMLEntities(string & phrase, bool exclude_XML_entities)
 			{
 				// decimal format found
 				int temp;
-				if ((temp=number.find_first_not_of("0123456789"))!=string::npos)
+				if ((temp=number.find_first_not_of("0123456789"))!= (int) string::npos)
 					continue;
 
 				// conversion is possible
-				for (i=0;i<number.length();i++)
+				for (i=0;i< (int) number.length();i++)
 				{
 					unsigned char c = number.at(i);
 					codepoint[0] = codepoint[0] * 10 + (c-0x30);

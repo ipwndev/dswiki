@@ -27,7 +27,7 @@ Dumps::Dumps()
 vector<string> Dumps::getPossibleWikis()
 {
 	vector<string> possibleWikis;
-	for (int i=0;i<_possibleWikis.size();i++)
+	for (int i=0;i< (int) _possibleWikis.size();i++)
 	{
 		if (_possibleWikis[i].basename.substr(0,8)!="_dswiki_")
 		{
@@ -40,7 +40,7 @@ vector<string> Dumps::getPossibleWikis()
 
 string Dumps::get_ifo(string basename)
 {
-	for (int i=0;i<_possibleWikis.size();i++)
+	for (int i=0;i< (int) _possibleWikis.size();i++)
 	{
 		if (_possibleWikis[i].basename == basename)
 			return _possibleWikis[i].ifofile;
@@ -50,7 +50,7 @@ string Dumps::get_ifo(string basename)
 
 string Dumps::get_idx(string basename)
 {
-	for (int i=0;i<_possibleWikis.size();i++)
+	for (int i=0;i< (int) _possibleWikis.size();i++)
 	{
 		if (_possibleWikis[i].basename == basename)
 			return _possibleWikis[i].idxfile;
@@ -60,7 +60,7 @@ string Dumps::get_idx(string basename)
 
 string Dumps::get_ao1(string basename)
 {
-	for (int i=0;i<_possibleWikis.size();i++)
+	for (int i=0;i< (int) _possibleWikis.size();i++)
 	{
 		if (_possibleWikis[i].basename == basename)
 			return _possibleWikis[i].ao1file;
@@ -70,7 +70,7 @@ string Dumps::get_ao1(string basename)
 
 string Dumps::get_ao2(string basename)
 {
-	for (int i=0;i<_possibleWikis.size();i++)
+	for (int i=0;i< (int) _possibleWikis.size();i++)
 	{
 		if (_possibleWikis[i].basename == basename)
 			return _possibleWikis[i].ao2file;
@@ -80,7 +80,7 @@ string Dumps::get_ao2(string basename)
 
 vector<string> Dumps::get_dbs(string basename)
 {
-	for (int i=0;i<_possibleWikis.size();i++)
+	for (int i=0;i< (int) _possibleWikis.size();i++)
 	{
 		if (_possibleWikis[i].basename == basename)
 			return _possibleWikis[i].dbsfiles;
@@ -112,17 +112,17 @@ void Dumps::_gatherPossibleWikis()
 			}
 		}
 
-		for (int i=0;i<filenames.size();i++)
+		for (int i=0;i< (int) filenames.size();i++)
 		{
 			int lastDot = filenames[i].rfind(".");
-			if (lastDot != string::npos)
+			if (lastDot != (int) string::npos)
 			{
 				if (lowerPhrase(filenames[i].substr(lastDot+1))=="ifo")
 				{
 					WikiDump currentWiki;
 					currentWiki.basename = filenames[i].substr(0,lastDot);
 					currentWiki.ifofile  = pathname + filenames[i];
-					for (int j = 0; j < filenames.size(); j++)
+					for (int j = 0; j < (int) filenames.size(); j++)
 					{
 						int lastDot2 = filenames[j].rfind(".");
 						string basename2 = filenames[j].substr(0,lastDot2);

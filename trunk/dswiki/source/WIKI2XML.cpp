@@ -109,17 +109,17 @@ void WIKI2XML::doQuotes(string & l)
 	vector < string > parts;
 
 	b = l.find("''");
-	if (b==string::npos)
+	if (b== (int) string::npos)
 		return;
 	parts.push_back(l.substr(0,b));
 	a = b;
-	while (a < l.length())
+	while (a < (int) l.length())
 	{
-		for (b=a;b<l.length() && l[b] == '\''; b++);
+		for (b=a;b< (int) l.length() && l[b] == '\''; b++);
 		parts.push_back(l.substr(a,b-a));
 		a = b;
 		b = l.find("''",a);
-		if (b!=string::npos)
+		if (b!= (int) string::npos)
 		{
 			parts.push_back(l.substr(a,b-a));
 			a = b;
@@ -134,7 +134,7 @@ void WIKI2XML::doQuotes(string & l)
 	int numbold = 0;
 	int numitalics = 0;
 
-	for (a=1;a<parts.size();a+=2)
+	for (a=1;a<(int) parts.size();a+=2)
 	{
 		if (parts[a].length() == 4)
 		{
@@ -143,7 +143,7 @@ void WIKI2XML::doQuotes(string & l)
 		}
 		else if (parts[a].length() > 5)
 		{
-			for (b=0;b<parts[a].length() - 5;b++)
+			for (b=0;b< (int) parts[a].length() - 5;b++)
 				parts[a-1] += "&apos;";
 			parts[a] = "'''''";
 		}
@@ -163,7 +163,7 @@ void WIKI2XML::doQuotes(string & l)
 		int firstsingleletterword = -1;
 		int firstmultiletterword = -1;
 		int firstspace = -1;
-		for ( a = 1; a < parts.size(); a += 2 )
+		for ( a = 1; a < (int) parts.size(); a += 2 )
 		{
 			if ( parts[a].length() == 3 )
 			{
@@ -216,7 +216,7 @@ void WIKI2XML::doQuotes(string & l)
 	string buffer = "";
 	string state  = "";
 
-	for (a = 0; a < parts.size(); a++)
+	for (a = 0; a < (int) parts.size(); a++)
 	{
 		if ((a % 2) == 0)
 		{
@@ -370,22 +370,22 @@ string WIKI2XML::get_list_tag(chart c, bool open)
 string WIKI2XML::fix_list(string & l)
 {
 	int a, b;
-	for (a = 0; a < l.length() && is_list_char(l[a]); a++);
+	for (a = 0; a < (int) l.length() && is_list_char(l[a]); a++);
 	string newlist, pre;
 	if (a > 0)
 	{
 		newlist = left(l, a);
-		while (a < l.length() && l[a] == ' ')
+		while (a < (int) l.length() && l[a] == ' ')
 			a++;		// Removing leading blanks
 		l.erase(0,a);
 	}
 	if (list.empty() && newlist.empty())
 		return "";
-	for (a = 0; a < list.length() && a < newlist.length() && list[a] == newlist[a]; a++);	// The common part, if any
+	for (a = 0; a < (int) list.length() && a < (int) newlist.length() && list[a] == newlist[a]; a++);	// The common part, if any
 
-	for (b = a; b < list.length(); b++)
+	for (b = a; b < (int) list.length(); b++)
 		pre = get_list_tag(list[b], false) + pre;	// Close old list tags
-	for (b = a; b < newlist.length(); b++)
+	for (b = a; b < (int) newlist.length(); b++)
 		pre += get_list_tag(newlist[b], true);	// Open new ones
 
 	list = newlist;
@@ -409,7 +409,7 @@ bool WIKI2XML::is_external_link_protocol(string protocol)
 int WIKI2XML::scan_url(string & l, int from)
 {
 	int a;
-	for (a = from; a < l.length(); a++)
+	for (a = from; a < (int) l.length(); a++)
 	{
 		if (l[a] == '$' || l[a] == '-' || l[a] == '_' || l[a] == '.' || l[a] == '+' || l[a] == '\''
 				  || l[a] == '*' || l[a] == '!' || l[a] == '(' || l[a] == ')' || l[a] == ','
@@ -453,8 +453,8 @@ void WIKI2XML::parse_external_link(string & l, int &from)
 	if (!is_external_link_protocol(protocol))
 		return;
 	int to;
-	for (to = from + 1; to < l.length() && l[to] != ']'; to++);
-	if (to == l.length())
+	for (to = from + 1; to < (int) l.length() && l[to] != ']'; to++);
+	if (to == (int) l.length())
 		return;
 	string url = l.substr(from + 1, to - from - 1);
 	string title = after_first(' ', url);
@@ -485,7 +485,7 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 
 	// Scan the target for disallowed characters,
 	// stop when the alternative text or the end is reached
-	for (a = from + 2; a + 1 < l.length(); a++)
+	for (a = from + 2; a + 1 < (int) l.length(); a++)
 	{
 		if (l[a] == '<')
 			return;
@@ -500,7 +500,7 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 		}
 	}
 
-	for (a = from + 1; cnt > 0 && a + 1 < l.length(); a++)
+	for (a = from + 1; cnt > 0 && a + 1 < (int) l.length(); a++)
 	{
 		if (l[a] == par_open && l[a + 1] == par_open)
 		{
@@ -532,7 +532,7 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 		x.name = "wt";
 	}
 
-	for (a = 0; a < parts.size(); a++)
+	for (a = 0; a < (int) parts.size(); a++)
 	{
 		string p = parts[a];
 
@@ -563,7 +563,7 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 	if (mode == 'L')		// Try link trail
 	{
 		string trail;
-		for (a = to + 2; a < l.length() && is_text_char(l[a]); a++)
+		for (a = to + 2; a < (int) l.length() && is_text_char(l[a]); a++)
 			trail += l[a];
 		to = a - 2;
 		if (!trail.empty())
@@ -582,13 +582,13 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 void WIKI2XML::parse_line_sub(string & l)
 {
 	int a;
-	for (a = 0; a < l.length(); a++)
+	for (a = 0; a < (int) l.length(); a++)
 	{
-		if (l[a] == '[' && a + 1 < l.length() && l[a + 1] == '[')	// [[Link]]
+		if (l[a] == '[' && a + 1 < (int) l.length() && l[a + 1] == '[')	// [[Link]]
 		{
 			parse_link(l, a, 'L');
 		}
-		else if (l[a] == '{' && a + 1 < l.length() && l[a + 1] == '{')	// {{Template}}
+		else if (l[a] == '{' && a + 1 < (int) l.length() && l[a + 1] == '{')	// {{Template}}
 		{
 			parse_link(l, a, 'T');
 		}
@@ -596,7 +596,7 @@ void WIKI2XML::parse_line_sub(string & l)
 		{
 			parse_external_link(l, a);
 		}
-		else if (a + 2 < l.length() && l[a] == ':' && l[a + 1] == '/' && l[a + 2] == '/')	// External freelink
+		else if (a + 2 < (int) l.length() && l[a] == ':' && l[a + 1] == '/' && l[a + 2] == '/')	// External freelink
 		{
 			parse_external_freelink(l, a);
 		}
@@ -626,15 +626,15 @@ void WIKI2XML::parse_line(string & l)
 	}
 	else if (left(l, 4) == "----")	// <hr>
 	{
-		for (a = 0; a < l.length() && l[a] == l[0]; a++);
+		for (a = 0; a < (int) l.length() && l[a] == l[0]; a++);
 		pre += "<hr />";
 		l.erase(0,a);
 	}
 	else if (l[0] == '=')	// Heading
 	{
-		for (a = 0; a < l.length() && l[a] == '=' && l[l.length() - a - 1] == '='; a++);
+		for (a = 0; a < (int) l.length() && l[a] == '=' && l[l.length() - a - 1] == '='; a++);
 		string h = "h0";
-		if (a >= l.length())
+		if (a >= (int) l.length())
 			h.clear();		// No heading
 		else if (a < 1 || a > 9)
 			h.clear();
@@ -649,8 +649,8 @@ void WIKI2XML::parse_line(string & l)
 	}
 	else if (l[0] == ' ')	// Pre-formatted text
 	{
-		for (a = 0; a < l.length() && l[a] == ' '; a++);
-		if (a==l.length())
+		for (a = 0; a < (int) l.length() && l[a] == ' '; a++);
+		if (a== (int) l.length())
 		{
 			l.clear();
 			l += "<pre></pre>";
@@ -695,10 +695,10 @@ void WIKI2XML::parse(string & s)
 	// the rest of the text. These environments are: nowiki, math, pre, source
 	nowiki_contents.clear();
 	a = s.find("<nowiki>");
-	while (a != string::npos)
+	while (a != (int) string::npos)
 	{
 		b = s.find("</nowiki>",a);
-		if (b == string::npos)
+		if (b == (int) string::npos)
 			b = s.length()+1;
 		substring = s.substr(a+8,b-a-8);
 		exchangeSGMLEntities(substring); // &amp; -> &
@@ -718,14 +718,14 @@ void WIKI2XML::parse(string & s)
 
 	math_contents.clear();
 	a = s.find("<math>");
-	while (a != string::npos)
+	while (a != (int) string::npos)
 	{
 		b = s.find("</math>",a);
-		if (b == string::npos)
+		if (b == (int) string::npos)
 			b = s.length()+1;
 		substring = s.substr(a+6,b-a-6);
 		replace_all(substring,"&","&amp;");
-		for (c=0;c<nowiki_contents.size();c++)
+		for (c=0;c< (int) nowiki_contents.size();c++)
 		{
 			replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+c),dswiki_magic_nowiki_open+nowiki_contents[c]+dswiki_magic_nowiki_close);
 		}
@@ -744,22 +744,22 @@ void WIKI2XML::parse(string & s)
 
 	pre_contents.clear();
 	a = s.find("<pre>");
-	while (a != string::npos)
+	while (a != (int) string::npos)
 	{
 		b = s.find("</pre>",a);
-		if (b == string::npos)
+		if (b == (int) string::npos)
 			b = s.length()+1;
 		substring = s.substr(a+5,b-a-5);
 		exchangeSGMLEntities(substring); // &amp; -> &
 		replace_all(substring,"&","&amp;");
-		for (c=0;c<math_contents.size();c++)
+		for (c=0;c< (int) math_contents.size();c++)
 		{
 			replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+c),"<math>"+math_contents[c]+"</math>");
 		}
 		// special treatment for nowiki in math (when both in pre)
 		replace_all(substring,dswiki_magic_nowiki_open,"");
 		replace_all(substring,dswiki_magic_nowiki_close,"");
-		for (c=0;c<nowiki_contents.size();c++)
+		for (c=0;c< (int) nowiki_contents.size();c++)
 		{
 			replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+c),nowiki_contents[c]);
 		}
@@ -777,25 +777,25 @@ void WIKI2XML::parse(string & s)
 	// every '<source ...>' tag we find here, is NOT contained in a nowiki, math or pre environment, that's sure
 	source_contents.clear();
 	a = s.find("<source");
-	while (a != string::npos)
+	while (a != (int) string::npos)
 	{
 		c = s.find(">",a);
-		if (c==string::npos)
+		if (c== (int) string::npos)
 			break;
 		b = s.find("</source>",c);
-		if (b == string::npos)
+		if (b == (int) string::npos)
 			b = s.length()+1;
 		substring = s.substr(c+1,b-c-1);
 		replace_all(substring,"&","&amp;");
-		for (d=0;d<pre_contents.size();d++)
+		for (d=0;d< (int) pre_contents.size();d++)
 		{
 			replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+d),"&lt;pre&gt;"+pre_contents[d]+"&lt;/pre&gt;");
 		}
-		for (d=0;d<math_contents.size();d++)
+		for (d=0;d< (int) math_contents.size();d++)
 		{
 			replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+d),"&lt;math&gt;"+math_contents[d]+"&lt;/math&gt;");
 		}
-		for (d=0;d<nowiki_contents.size();d++)
+		for (d=0;d< (int) nowiki_contents.size();d++)
 		{
 			replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+d),"&lt;nowiki&gt;"+nowiki_contents[d]+"&lt;/nowiki&gt;");
 		}
@@ -817,10 +817,10 @@ void WIKI2XML::parse(string & s)
 
 	// Remove HTML-Comments
 	a = s.find("<!--");
-	while (a != string::npos)
+	while (a != (int) string::npos)
 	{
 		b = s.find("-->",a);
-		if (b == string::npos)
+		if (b == (int) string::npos)
 			b = s.length() - 1;
 		else
 			b += 2;
@@ -834,7 +834,7 @@ void WIKI2XML::parse(string & s)
 
 	// Help 'make_tag_list' and mask literal '&' and '<'
 	a = s.find("&");
-	while (a != string::npos)
+	while (a != (int) string::npos)
 	{
 		for (b=0;b<MAX_NAMED_ENTITIES;b++)
 		{
@@ -848,15 +848,15 @@ void WIKI2XML::parse(string & s)
 		a = s.find("&",a+1);
 	}
 	a = s.find("<");
-	while (a != string::npos)
+	while (a != (int) string::npos)
 	{
-		for (b=0;b<allowed_html.size();b++)
+		for (b=0;b< (int) allowed_html.size();b++)
 		{
 			if ((s.substr(a+1,allowed_html[b].length()) == allowed_html[b])
 						  ||(s.substr(a+1,allowed_html[b].length()+1) == "/"+allowed_html[b]))
 				break;
 		}
-		if (b==allowed_html.size())
+		if (b== (int) allowed_html.size())
 		{
 			s.replace(a,1,"&lt;");
 		}
@@ -873,7 +873,7 @@ void WIKI2XML::parse(string & s)
 	_globals->getPercentIndicator()->update(0);
 	a = -1;
 	b = s.find("\n",a+1);
-	while (b != string::npos)
+	while (b != (int) string::npos)
 	{
 		_globals->getPercentIndicator()->update(b*100/s.length());
 		substring = s.substr(a+1,b-a-1);
@@ -905,23 +905,23 @@ void WIKI2XML::parse(string & s)
 		s += end;
 
 	// recombine
-	for (a=0;a<source_contents.size();a++)
+	for (a=0;a< (int) source_contents.size();a++)
 	{
 		replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+pre_contents.size()+a),
 					"<source"+source_contents[a]+"</source>");
 	}
 	source_contents.clear();
-	for (a=0;a<pre_contents.size();a++)
+	for (a=0;a< (int) pre_contents.size();a++)
 	{
 		replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+a),"<pre>"+pre_contents[a]+"</pre>");
 	}
 	pre_contents.clear();
-	for (a=0;a<math_contents.size();a++)
+	for (a=0;a< (int) math_contents.size();a++)
 	{
 		replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+a),"<math>"+math_contents[a]+"</math>");
 	}
 	math_contents.clear();
-	for (a=0;a<nowiki_contents.size();a++)
+	for (a=0;a< (int) nowiki_contents.size();a++)
 	{
 		replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+a),nowiki_contents[a]);
 	}
@@ -1005,9 +1005,9 @@ void WIKI2XML::replace_part_sync(string & l, int from, int to, string with, vect
 {
 	int a, b;
 	replace_part(l, from, to, with);
-	for (a = 0; a < list.size(); a++)
+	for (a = 0; a < (int) list.size(); a++)
 	{
-		for (b = 0; b < with.length(); b++)
+		for (b = 0; b < (int) with.length(); b++)
 			list[a].insert_at(from);
 		for (b = from; b <= to; b++)
 			list[a].remove_at(from);
@@ -1019,7 +1019,7 @@ void WIKI2XML::make_tag_list(string & s, vector < TXML > &list)
 {
 	list.clear();
 	int a, b;
-	for (a = 0; a < s.length(); a++)
+	for (a = 0; a < (int) s.length(); a++)
 	{
 		if (s[a] == '>')	// Rogue >
 		{
@@ -1045,13 +1045,13 @@ void WIKI2XML::make_tag_list(string & s, vector < TXML > &list)
 void WIKI2XML::sanitize_html(string & s, vector < TXML > &taglist)
 {
 	int a, b;
-	for (a = 0; a < taglist.size(); a++)
+	for (a = 0; a < (int) taglist.size(); a++)
 	{
 		string tag = taglist[a].name;
 
-		for (b = 0; b < allowed_html.size() && tag != allowed_html[b]; b++);
+		for (b = 0; b < (int) allowed_html.size() && tag != allowed_html[b]; b++);
 
-		if (b < allowed_html.size()) // Allowed tag
+		if (b < (int) allowed_html.size()) // Allowed tag
 		{
 			if ((tag=="br") || (tag=="hr"))
 			{
@@ -1088,8 +1088,8 @@ string WIKI2XML::table_markup(string & l)
 	string ret;
 	if (left(l, 2) == "{|")	// Open table
 	{
-		ret = l.substr(2, l.length() - 2);
-		ret = xml_embed("", "table", ret, true);
+// 		ret = xml_embed("", "table", l.substr(2, l.length() - 2), true);
+		ret = xml_embed("", "table", "", true);
 		tables.push_back(TTableInfo());
 	}
 	else if (!tables.empty())
@@ -1101,8 +1101,9 @@ string WIKI2XML::table_markup(string & l)
 		}
 		else if (left(l, 2) == "|-") // New row
 		{
-			for (a = 1; a < l.length() && l[a] == '-'; a++);
-			ret = tables[tables.size() - 1].new_row(l.substr(a, l.length() - a));
+			for (a = 1; a < (int) l.length() && l[a] == '-'; a++);
+// 			ret = tables[tables.size() - 1].new_row(l.substr(a, l.length() - a));
+			ret = tables[tables.size() - 1].new_row("");
 		}
 		else
 		{
@@ -1124,7 +1125,7 @@ string WIKI2XML::table_markup(string & l)
 			}
 
 			vector < string > sublines;
-			for (a = 0; a + 1 < l.length(); a++)
+			for (a = 0; a + 1 < (int) l.length(); a++)
 			{
 				if (l[a] == '|' && l[a + 1] == '|')
 				{
@@ -1136,7 +1137,7 @@ string WIKI2XML::table_markup(string & l)
 			if (!l.empty())
 				sublines.push_back(l);
 
-			for (a = 0; a < sublines.size(); a++)
+			for (a = 0; a < (int) sublines.size(); a++)
 			{
 				l.clear();
 				l += sublines[a];
@@ -1150,17 +1151,20 @@ string WIKI2XML::table_markup(string & l)
 				}
 				if (type == "cell")
 				{
-					ret += tables[tables.size() - 1].new_cell(params);
+// 					ret += tables[tables.size() - 1].new_cell(params);
+					ret += tables[tables.size() - 1].new_cell("");
 					ret += l;
 				}
 				else if (type == "header")
 				{
-					ret += tables[tables.size() - 1].new_headercell(params);
+// 					ret += tables[tables.size() - 1].new_headercell(params);
+					ret += tables[tables.size() - 1].new_headercell("");
 					ret += l;
 				}
 				else if (type == "caption")
 				{
-					ret += tables[tables.size() - 1].new_caption(l,params);
+// 					ret += tables[tables.size() - 1].new_caption(l,params);
+					ret += tables[tables.size() - 1].new_caption(l,"");
 				}
 			}
 		}

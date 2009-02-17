@@ -54,10 +54,11 @@ void Markup::parse(string & Str)
 
 	// Parse the xml-markup with tinyXML
 	_globals->getStatusbar()->display("Parsing XML");
+
 	_loadOK = false;
 	_td = new TiXmlDocument();
 	_td->Parse(Str.c_str(), NULL, TIXML_ENCODING_UTF8);
-	_loadOK = !(_td->Error());
+// 	_loadOK = !(_td->Error());
 
 	if (_loadOK)
 	{
@@ -72,12 +73,12 @@ void Markup::parse(string & Str)
 		{
 			int level_curr;
 			int levels[9] = {0,0,0,0,0,0,0,0,0};
-			for (int a=0;a<index_tmp.size();a++)
+			for (int a=0;a< (int) index_tmp.size();a++)
 			{
 				// get current level of heading, the heading itself and compute the anchor (if some headings exist more than once)
-				string heading = index_tmp[a]->ValueStr();
+				string heading = index_tmp[a]->Value();
 				level_curr = heading[1] - '0' - 1;
-				string title   = ((TiXmlText*) index_tmp[a]->FirstChild())->ValueStr(); // TODO: get the pure text recursively from the XML, OK for now
+				string title   = ((TiXmlText*) index_tmp[a]->FirstChild())->Value(); // TODO: get the pure text recursively from the XML, OK for now
 				string anchor  = title;
 				bool anchor_different = false;
 				if (index.find(anchor) != index.end())
@@ -111,14 +112,16 @@ void Markup::parse(string & Str)
 
 				// add the title
 				indexMarkupStr += " " + title + "]]";
-				if (a+1<index_tmp.size())
+				if (a+1< (int) index_tmp.size())
 					indexMarkupStr += '\n';
 			}
 			Markup* markup = new Markup();
 			markup->setGlobals(_globals);
 			markup->parse(indexMarkupStr);
+			delete markup;
 		}
-	}
+	} // end: loadOK
+	_loadOK = true;
 }
 
 void Markup::build_index(TiXmlNode* pParent, vector <TiXmlNode*> & index)

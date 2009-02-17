@@ -73,6 +73,7 @@ string Globals::loadBookmark()
 	vector<string> bookmarks;
 	explode("\n",bookmarkStr,bookmarks);
 	bookmarkStr.clear();
+	return bookmarks[PA_RandMinMax(0,bookmarks.size()-1)];
 
 	TextBox BookmarkChooser(bookmarks);
 	BookmarkChooser.setTitle("Load bookmark");

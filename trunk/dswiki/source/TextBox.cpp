@@ -68,7 +68,7 @@ string TextBox::run()
 			if (_currentItem != _topItem + lineClicked)
 			{
 				_currentItem = _topItem + lineClicked;
-				if (_currentItem>=_lines.size()-1)
+				if (_currentItem>= (int) _lines.size()-1)
 					_currentItem =_lines.size()-1;
 				update = 1;
 			}
@@ -94,7 +94,7 @@ string TextBox::run()
 			update = 1;
 			PA_Sleep(10);
 		}
-		if (Pad.Held.Down && (_currentItem<_lines.size()-1))
+		if (Pad.Held.Down && (_currentItem< (int) _lines.size()-1))
 		{
 			_currentItem++;
 			if (_currentItem>_topItem+_numlines-1)
@@ -113,7 +113,7 @@ string TextBox::run()
 				CharArea = (BLOCK) {{13,0},{0,0}};
 // 				iPrint("↑",&TextboxOuterBorder,&neu,&CharArea,-1,UTF8);
 			}
-			if (_lines.size()>_numlines+_topItem)
+			if ( (int) _lines.size()>_numlines+_topItem)
 			{
 				CharArea = (BLOCK) {{13,TextboxOuterBorder.Height-14},{0,0}};
 // 				iPrint("↓",&TextboxOuterBorder,&neu,&CharArea,-1,UTF8);
@@ -123,7 +123,7 @@ string TextBox::run()
 		if (update)
 		{
 			CharArea.clear();
-			for (int i=_topItem; (i<_lines.size())&&(i-_topItem<_numlines); i++)
+			for (int i=_topItem; (i< (int) _lines.size())&&(i-_topItem<_numlines); i++)
 			{
 				if (i==_currentItem)
 					iPrint(_lines[i]+"\n",&inner,&SearchResultsCS2,&CharArea,-1,UTF8);

@@ -28,7 +28,7 @@ string left(string & s, int num)
 {
 	if (num <= 0)
 		return "";
-	if (num >= s.length())
+	if (num >= (int) s.length())
 		return s;
 	return s.substr(0, num);
 }
@@ -49,7 +49,7 @@ string right(string & s, int num)
 string upper(string s)		// For internal purposes, will do...
 {
 	int a;
-	for (a = 0; a < s.length(); a++)
+	for (a = 0; a < (int) s.length(); a++)
 	{
 		if (s[a] >= 'a' && s[a] <= 'z')
 			s[a] = s[a] - 'a' + 'A';
@@ -65,7 +65,7 @@ void explode(string pattern, string & s, vector < string > & parts)
 
 	a = 0;
 	b = s.find(pattern,a);
-	while (b != string::npos)
+	while (b != (int) string::npos)
 	{
 		parts.push_back(s.substr(a,b-a));
 		a = b + pattern.length();
@@ -88,7 +88,7 @@ void implode(string pattern, vector < string > & parts, string & s)
 	}
 
 	s += parts[0];
-	for (int a = 1; a < parts.size(); a++)
+	for (int a = 1; a < (int) parts.size(); a++)
 	{
 		s += pattern + parts[a];
 	}
@@ -98,7 +98,7 @@ void implode(string pattern, vector < string > & parts, string & s)
 string unquote(chart quote, string & s)
 {
 	int a;
-	for (a = 0; a < s.length(); a++)
+	for (a = 0; a < (int) s.length(); a++)
 	{
 		if (s[a] == quote && (a == 0 || (a > 0 && s[a - 1] != '\\')))
 		{
@@ -115,7 +115,7 @@ bool submatch(string & main, string & sub, int from)
 	if (from + sub.length() > main.length())
 		return false;
 	int a;
-	for (a = 0; a < sub.length(); a++)
+	for (a = 0; a < (int) sub.length(); a++)
 	{
 		if (sub[a] != main[a + from])
 			return false;
@@ -127,8 +127,8 @@ bool submatch(string & main, string & sub, int from)
 int find_first(chart c, string & s)
 {
 	int a;
-	for (a = 0; a < s.length() && s[a] != c; a++);
-	if (a == s.length())
+	for (a = 0; a < (int) s.length() && s[a] != c; a++);
+	if (a == (int) s.length())
 		return -1;
 	return a;
 }
@@ -137,7 +137,7 @@ int find_first(chart c, string & s)
 int find_last(chart c, string & s)
 {
 	int a, b = -1;
-	for (a = 0; a < s.length(); a++)
+	for (a = 0; a < (int) s.length(); a++)
 	{
 		if (s[a] == c)
 			b = a;
@@ -188,9 +188,9 @@ void replaceLinebreaks(string & s)
 		return;
 	int a, b;
 	a = s.find("\n");
-	while (a != string::npos)
+	while (a != (int) string::npos)
 	{
-		for (b=a;b+1<s.length() && s[b+1]=='\n';b++);
+		for (b=a;b+1< (int) s.length() && s[b+1]=='\n';b++);
 		if (b==a)
 		{
 			s.replace(a,1," ");
@@ -215,9 +215,9 @@ void trimDoubleSpaces(string & s)
 		return;
 	int a, b;
 	a = s.find(" ");
-	while (a != string::npos)
+	while (a != (int) string::npos)
 	{
-		for (b=a+1;b<s.length() && s[b]==' ';b++);
+		for (b=a+1;b< (int) s.length() && s[b]==' ';b++);
 		s.erase(a+1,b-a-1);
 		a = s.find(" ",a+1);
 	}
@@ -230,7 +230,7 @@ void trimSpacesBeforeLinebreaks(string & s)
 		return;
 	int a, b;
 	a = s.find("\n");
-	while (a != string::npos)
+	while (a != (int) string::npos)
 	{
 		if ((a>0) && s[a-1]==' ')
 		{
@@ -253,7 +253,7 @@ void trimLeft(string & s)
 	if (s[0] != ' ')
 		return;
 	int a;
-	for (a = 0; a < s.length() && s[a] == ' '; a++);
+	for (a = 0; a < (int) s.length() && s[a] == ' '; a++);
 	s.erase(0,a);
 }
 
@@ -272,7 +272,7 @@ int find_next_unquoted(chart c, string & s, int start)
 {
 	int a;
 	chart lastquote = ' ';
-	for (a = start; a < s.length(); a++)
+	for (a = start; a < (int) s.length(); a++)
 	{
 		if (s[a] == c && lastquote == ' ')
 			return a;		// Success!

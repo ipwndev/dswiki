@@ -209,6 +209,7 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 								DrawPoint(VScreen ,X , Y, CStat->Color);
 								break;
 							case BACKGR:
+							case SIMULATE:
 								break;
 						}
 					}
