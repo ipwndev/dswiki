@@ -26,7 +26,7 @@ WikiMarkupGetter::WikiMarkupGetter()
 void WikiMarkupGetter::load(string basename)
 {
 	vector<string> wikidbs = _globals->getDumps()->get_dbs(basename);
-	for (int i=0;i<wikidbs.size();i++)
+	for (int i=0;i< (int) wikidbs.size();i++)
 	{
 		FILE* _f = fopen(wikidbs[i].c_str(), "rb");
 		_filepointers.push_back(_f);
@@ -45,7 +45,7 @@ void WikiMarkupGetter::load(string basename)
 
 WikiMarkupGetter::~WikiMarkupGetter()
 {
-	for (int i=0;i<_filepointers.size();i++)
+	for (int i=0;i< (int) _filepointers.size();i++)
 	{
 		fclose(_filepointers[i]);
 	}
@@ -152,7 +152,7 @@ void WikiMarkupGetter::getMarkup(string & markup, string title)
 			articlePos -= read;
 		}
 	}
-
+	delete articleSearchResult;
 	BZ2_bzReadClose ( &bzerror, bzf );
 // 	PA_OutputText(1,5,14,"Nach dem Loop");
 // 	PA_Sleep(60);

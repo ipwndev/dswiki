@@ -75,7 +75,7 @@ void Search::load(string phrase)
 
 string Search::currentHighlightedItem()
 {
-	if ((_list_CurrentArticleNumber<0) || (_list_CurrentArticleNumber>=_list.size()))
+	if ((_list_CurrentArticleNumber<0) || (_list_CurrentArticleNumber>= (int) _list.size()))
 		return "";
 	return _list[_list_CurrentArticleNumber];
 }

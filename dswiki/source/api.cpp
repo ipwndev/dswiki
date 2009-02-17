@@ -34,7 +34,7 @@ BLOCK Intersection(BLOCK Area1,BLOCK Area2)
 
 void DrawPoint(const VirScreen* VScreen, int X, int Y, unsigned short int Color)
 {
-	if((X>=0)&&(Y>=0)&&(X<VScreen->Width)&&(Y<VScreen->Height))
+	if((X>=0)&&(Y>=0) && (X < (int) VScreen->Width)&&(Y< (int) VScreen->Height))
 	{
 		if((VScreen->Left+X>=0)&&(VScreen->Top+Y>=0)&&(VScreen->Left+X<VScreen->Screen->Width)&&(VScreen->Top+Y<VScreen->Screen->Height))
 		{

@@ -11,7 +11,9 @@
 //
 
 #include "CachingFont.h"
+#include <PA9.h>
 #include <fat.h>
+#include "main.h"
 
 Font::Font(char* filename)
 {
@@ -40,14 +42,6 @@ Font::~Font()
 	free(blockImpressions);
 	free(cached);
 	UB.clear();
-}
-
-int Font::MemoryUsed()
-{
-	int size = 0;
-	for (int a=0;a<UB.size();a++)
-		size += UB[a]->MemoryUsed();
-	return size;
 }
 
 unsigned char Font::Height()
@@ -167,6 +161,7 @@ UnicodeBlock::UnicodeBlock(char* filename, unsigned char blockNr)
 				_index[a] = _index[unique[a]];
 			}
 		}
+		free(index_tmp);
 		fclose(f);
 	}
 }
@@ -193,9 +188,4 @@ unsigned char* UnicodeBlock::getCharacterData(unsigned char Uni)
 unsigned char UnicodeBlock::Number()
 {
 	return _blockNr;
-}
-
-int UnicodeBlock::MemoryUsed()
-{
-	return _size_of_data + 256 * sizeof(int);
 }

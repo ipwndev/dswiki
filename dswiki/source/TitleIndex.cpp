@@ -292,7 +292,7 @@ ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle,
 			string previousTitleCopy = previousTitle;
 			int slashPos = string::npos;
 
-			while ( (titleCopy.substr(0,3) == "../") && ( ( slashPos = previousTitleCopy.rfind("/") ) != string::npos ) )
+			while ( (titleCopy.substr(0,3) == "../") && ( ( slashPos = previousTitleCopy.rfind("/") ) != (int) string::npos ) )
 			{
 				previousTitleCopy.erase(slashPos);
 				titleCopy.erase(0,3);
@@ -381,7 +381,7 @@ int TitleIndex::getSuggestedArticleNumber(string title, unsigned char indexNo, u
 		titleAtIndex = getTitle(startIndex-1, indexNo, setPosition);
 		titleAtIndex = preparePhrase(titleAtIndex, indexNo, _indexVersion);
 
-		if ( titleAtIndex.length() > titleLength )
+		if ( (int) titleAtIndex.length() > titleLength )
 			titleAtIndex.resize(titleLength);
 
 		if ( lowercaseTitle!=titleAtIndex )

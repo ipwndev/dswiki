@@ -402,6 +402,44 @@ const char* TiXmlBase::ReadName( const char* p, std::string * name, TiXmlEncodin
 	return 0;
 }
 
+const char* TiXmlBase::ReadName( const char* p, TiXmlString * name, TiXmlEncoding encoding )
+{
+// 	PA_DelayText(0,0,0,"ReadName",0);
+	// Oddly, not supported on some comilers,
+	//name->clear();
+	// So use this:
+	*name = "";
+	assert( p );
+
+	// Names start with letters or underscores.
+	// Of course, in unicode, tinyxml has no idea what a letter *is*. The
+	// algorithm is generous.
+	//
+	// After that, they can be letters, underscores, numbers,
+	// hyphens, or colons. (Colons are valid ony for namespaces,
+	// but tinyxml can't tell namespaces from names.)
+	if (    p && *p
+			   && ( IsAlpha( (unsigned char) *p, encoding ) || *p == '_' ) )
+	{
+		const char* start = p;
+		while(		p && *p
+						  &&	(		IsAlphaNum( (unsigned char ) *p, encoding )
+						  || *p == '_'
+						  || *p == '-'
+						  || *p == '.'
+						  || *p == ':' ) )
+		{
+			//(*name) += *p; // expensive
+			++p;
+		}
+		if ( p-start > 0 ) {
+			name->assign( start, p-start );
+		}
+		return p;
+	}
+	return 0;
+}
+
 const char* TiXmlBase::GetEntity( const char* p, char* value, int* length, TiXmlEncoding encoding )
 {
 	// Presume an entity, and pull it out.
@@ -605,21 +643,27 @@ const char* TiXmlBase::ReadText(	const char* p,
 
 
 const char* TiXmlBase::ReadText(	const char* p,
-									TiXmlString * text,
+									TiXmlString * text, // DSwiki case
 									bool trimWhiteSpace,
 									const char* endTag,
 									bool caseInsensitive,
 									TiXmlEncoding encoding )
 {
+// 	PA_DelayText(0,0,0,"ReadText",0);
 	*text = "";
-	if (    !trimWhiteSpace			// certain tags always keep whitespace
-				|| !condenseWhiteSpace )	// if true, whitespace is always kept
+	if (		!trimWhiteSpace			// certain tags always keep whitespace
+			|| !condenseWhiteSpace )	// if true, whitespace is always kept
 	{
 		// Keep all the white space.
-		const char * a = p;
-		while ( a && *a && !StringEqual( a, endTag, caseInsensitive, encoding ) ) a++;
-		text->append( p, a-p );
-		p = a;
+		while ( p && *p && !StringEqual( p, endTag, caseInsensitive, encoding ) )
+		{
+// 			int len;
+// 			char cArr[4] = { 0, 0, 0, 0 };
+// 			p = GetChar( p, cArr, &len, encoding );
+// 			text->append( cArr, len );
+			text->append( p, 1 );
+			p++;
+		}
 	}
 	else
 	{
@@ -627,8 +671,7 @@ const char* TiXmlBase::ReadText(	const char* p,
 
 		// Remove leading white space:
 		p = SkipWhiteSpace( p, encoding );
-		while (	   p && *p
-						 && !StringEqual( p, endTag, caseInsensitive, encoding ) )
+		while ( p && *p && !StringEqual( p, endTag, caseInsensitive, encoding ) )
 		{
 			if ( *p == '\r' || *p == '\n' )
 			{
@@ -868,6 +911,7 @@ TiXmlNode* TiXmlNode::Identify( const char* p, TiXmlEncoding encoding )
 	return returnNode;
 }
 
+
 const char* TiXmlElement::Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding )
 {
 	p = SkipWhiteSpace( p, encoding );
@@ -904,7 +948,7 @@ const char* TiXmlElement::Parse( const char* p, TiXmlParsingData* data, TiXmlEnc
 	}
 
     std::string endTag ("</");
-	endTag += value;
+	endTag += value.ValueStr();
 	endTag += ">";
 
 	// Check for and read attributes. Also look for an empty
@@ -977,7 +1021,11 @@ const char* TiXmlElement::Parse( const char* p, TiXmlParsingData* data, TiXmlEnc
 			}
 
 			// Handle the strange case of double attributes:
+			#ifdef TIXML_USE_STL
 			TiXmlAttribute* node = attributeSet.Find( attrib->NameTStr() );
+			#else
+			TiXmlAttribute* node = attributeSet.Find( attrib->Name() );
+			#endif
 			if ( node )
 			{
 				node->SetValue( attrib->Value() );
@@ -994,6 +1042,7 @@ const char* TiXmlElement::Parse( const char* p, TiXmlParsingData* data, TiXmlEnc
 
 const char* TiXmlElement::ReadValue( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding )
 {
+// 	PA_DelayText(0,0,0,"%c1TXE::ReadValue",0);
 	TiXmlDocument* document = GetDocument();
 
 	// Read in text and elements in any order.
@@ -1021,7 +1070,7 @@ const char* TiXmlElement::ReadValue( const char* p, TiXmlParsingData* data, TiXm
 			{
 				// Special case: we want to keep the white space
 				// so that leading spaces aren't removed.
-				p = textNode->Parse( pWithWhiteSpace, data, encoding );
+				p = textNode->Parse( pWithWhiteSpace, data, encoding ); // DSwiki case
 			}
 
 			if ( !textNode->Blank() )
@@ -1060,6 +1109,7 @@ const char* TiXmlElement::ReadValue( const char* p, TiXmlParsingData* data, TiXm
 	{
 		if ( document ) document->SetError( TIXML_ERROR_READING_ELEMENT_VALUE, 0, 0, encoding );
 	}
+// 	PA_DelayText(0,0,0,"ended: TXE::ReadValue",0);
 	return p;
 }
 
@@ -1081,11 +1131,11 @@ const char* TiXmlUnknown::Parse( const char* p, TiXmlParsingData* data, TiXmlEnc
 		return 0;
 	}
 	++p;
-    value = "";
 
+    value = "";
 	while ( p && *p && *p != '>' )
 	{
-		value += *p;
+		value.append(p,1);
 		++p;
 	}
 
@@ -1102,7 +1152,6 @@ const char* TiXmlUnknown::Parse( const char* p, TiXmlParsingData* data, TiXmlEnc
 const char* TiXmlComment::Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding )
 {
 	TiXmlDocument* document = GetDocument();
-	value = "";
 
 	p = SkipWhiteSpace( p, encoding );
 
@@ -1121,29 +1170,11 @@ const char* TiXmlComment::Parse( const char* p, TiXmlParsingData* data, TiXmlEnc
 	}
 	p += strlen( startTag );
 
-	// [ 1475201 ] TinyXML parses entities in comments
-	// Oops - ReadText doesn't work, because we don't want to parse the entities.
-	// p = ReadText( p, &value, false, endTag, false, encoding );
-	//
-	// from the XML spec:
-	/*
-	 [Definition: Comments may appear anywhere in a document outside other markup; in addition,
-	              they may appear within the document type declaration at places allowed by the grammar.
-				  They are not part of the document's character data; an XML processor MAY, but need not,
-				  make it possible for an application to retrieve the text of comments. For compatibility,
-				  the string "--" (double-hyphen) MUST NOT occur within comments.] Parameter entity
-				  references MUST NOT be recognized within comments.
-
-				  An example of a comment:
-
-				  <!-- declarations for <head> & <body> -->
-	*/
-
-    value = "";
+	value = "";
 	// Keep all the white space.
 	while (	p && *p && !StringEqual( p, endTag, false, encoding ) )
 	{
-		value.append( p, 1 );
+		value.append(p,1);
 		++p;
 	}
 	if ( p )
@@ -1230,6 +1261,7 @@ const char* TiXmlAttribute::Parse( const char* p, TiXmlParsingData* data, TiXmlE
 	return p;
 }
 
+
 const char* TiXmlText::Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding )
 {
 	value = "";
@@ -1256,11 +1288,9 @@ const char* TiXmlText::Parse( const char* p, TiXmlParsingData* data, TiXmlEncodi
 		p += strlen( startTag );
 
 		// Keep all the white space, ignore the encoding, etc.
-		while (	   p && *p
-				&& !StringEqual( p, endTag, false, encoding )
-			  )
+		while ( p && *p && !StringEqual( p, endTag, false, encoding ) )
 		{
-			value += *p;
+			value.append(p,1);
 			++p;
 		}
 
@@ -1270,6 +1300,7 @@ const char* TiXmlText::Parse( const char* p, TiXmlParsingData* data, TiXmlEncodi
 	}
 	else
 	{
+		// DSwiki case
 		bool ignoreWhite = true;
 
 		const char* end = "<";

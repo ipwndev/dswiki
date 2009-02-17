@@ -14,8 +14,8 @@
 
 #include <vector>
 
-#define UNICODEBLOCKS_STATIC 8
-#define UNICODEBLOCKS_TEMPORARY 4
+#define UNICODEBLOCKS_STATIC 4
+#define UNICODEBLOCKS_TEMPORARY 2
 
 class UnicodeBlock
 {
@@ -24,7 +24,6 @@ class UnicodeBlock
 		~UnicodeBlock();
 		unsigned char* getCharacterData(unsigned char Uni);
 		unsigned char Number();
-		int MemoryUsed();
 	private:
 		int*			_index; // 2 bytes would be OK either
 		unsigned char*	_data;
@@ -40,7 +39,6 @@ class Font
 		unsigned char* getCharacterData(unsigned int Uni);
 		bool initOK();
 		unsigned char Height();
-		int MemoryUsed();
 	private:
 		unsigned char _height;
 		bool _initOK;

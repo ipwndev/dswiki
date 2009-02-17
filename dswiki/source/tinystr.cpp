@@ -1,39 +1,30 @@
 #include "tinystr.h"
 
-// Error value for find primitive
-const size_t TiXmlString::npos = static_cast< size_t >(-1);
-
-
-void TiXmlString::reserve (size_t cap)
-{
-}
-
-
 TiXmlString& TiXmlString::assign(const char* str, size_t len)
 {
+	if (len)
+	{
+		start = (char*) str;
+		int_size = len;
+	}
+	else
+	{
+		start = NULL;
+		int_size = 0;
+	}
 	return *this;
 }
 
 
 TiXmlString& TiXmlString::append(const char* str, size_t len)
 {
-	if (_parts.empty())
+	if (int_size)
 	{
-		Part temp;
-		temp.start = (char*) str;
-		temp.len=len;
-		_parts.push_back(temp);
+		int_size += len;
+		return *this;
 	}
 	else
 	{
-		_parts[_parts.size()-1].len += len;
+		return assign(str,len);
 	}
-	return *this;
 }
-
-
-TiXmlString operator + (const TiXmlString & a, const TiXmlString & b) { }
-
-TiXmlString operator + (const TiXmlString & a, const char* b) { }
-
-TiXmlString operator + (const char* a, const TiXmlString & b) { }

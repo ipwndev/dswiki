@@ -1,13 +1,9 @@
 #ifndef TIXML_STRING_INCLUDED
 #define TIXML_STRING_INCLUDED
 
-
 #include <assert.h>
 #include <string.h>
 #include <string>
-#include <vector>
-#include <PA9.h>
-
 
 /*
    TiXmlString is an emulation of a subset of the std::string template.
@@ -16,150 +12,99 @@
    The buffer allocation is made by a simplistic power of 2 like mechanism : if we increase
    a string and there's no more room, we allocate a buffer twice as big as we need.
 */
-
 class TiXmlString
 {
   public :
-	// Error value for find primitive
-	static const size_t npos; // = -1;
-
 	// TiXmlString empty constructor
-	TiXmlString () { _parts.clear(); }
-
-	// TiXmlString copy constructor
-	TiXmlString ( const TiXmlString & copy) { } // TODO
-
-	// TiXmlString constructor, based on a string
-	TiXmlString ( const char * copy)
+	TiXmlString ()
 	{
-		_parts.clear();
-		Part temp;
-		temp.start = (char*) copy;
-		temp.len=strlen(copy);
-		_parts.push_back(temp);
 	}
 
-	// TiXmlString constructor, based on a string
+	// TiXmlString copy constructor
+	TiXmlString ( const TiXmlString & copy)
+	{
+		start = copy.start;
+		int_size = copy.int_size;
+	}
+
+	// TiXmlString constructor, based on a C-string
+	TiXmlString ( const char * copy)
+	{
+		if (strlen(copy))
+		{
+			start = (char*) copy;
+			int_size = strlen(copy);
+		}
+	}
+
+	// TiXmlString constructor, based on a C-string
 	TiXmlString ( const char * str, size_t len)
 	{
-		_parts.clear();
-		Part temp;
-		temp.start = (char*) str;
-		temp.len=len;
-		_parts.push_back(temp);
+		if (len)
+		{
+			start = (char*) str;
+			int_size = len;
+		}
 	}
 
 	// TiXmlString destructor
 	~TiXmlString ()
 	{
-		_parts.clear();
 	}
 
 	// = operator
 	TiXmlString& operator = (const char * copy)
 	{
-		TiXmlString* tiStr = new TiXmlString(copy);
-		return *tiStr;
+		return assign( copy, (size_t)strlen(copy));
 	}
 
-	// = operator
-	TiXmlString& operator = (const TiXmlString & copy)
+	// += operator. Maps to append
+	TiXmlString& operator += (char single)
 	{
-		TiXmlString* tiStr = new TiXmlString(copy);
-		return *tiStr;
+		return append(&single, 1);
 	}
 
-	// += operator. Maps to append
-	TiXmlString& operator += (const char * suffix) { return append(suffix, static_cast<size_t>( strlen(suffix) )); }
-
-	// += operator. Maps to append
-	TiXmlString& operator += (char single) { return append(&single, 1); }
-
-	// += operator. Maps to append
-	TiXmlString& operator += (const TiXmlString & suffix) { return append(suffix.data(), suffix.length()); }
+	// Convert a TiXmlString into a std::string
+	std::string ValueStr() { std::string tmp; for (int a=0;a<(int)int_size;a++) tmp += start[a]; return tmp; }
 
 	// Convert a TiXmlString into a null-terminated char *
-	const char * c_str () const { }
+	const char * c_str () const { return start; }
 
 	// Convert a TiXmlString into a char * (need not be null terminated).
-	const char * data () const { }
+	const char * data () const { return start; }
 
 	// Return the length of a TiXmlString
-	size_t length () const { }
+	size_t length () const { return int_size; }
 
 	// Alias for length()
-	size_t size () const { }
+	size_t size () const { return int_size; }
 
 	// Checks if a TiXmlString is empty
-	bool empty () const { }
-
-	// Return capacity of string
-	size_t capacity () const { }
+	bool empty () const { return int_size == 0; }
 
 	// single char extraction
-	const char& at (size_t index) const { }
-
-	// [] operator
-	char& operator [] (size_t index) const { }
-
-	// find a char in a string. Return TiXmlString::npos if not found
-	size_t find (char lookup) const { }
-
-	// find a char in a string from an offset. Return TiXmlString::npos if not found
-	size_t find (char tofind, size_t offset) const { }
-
-	void clear ()
+	const char& at (size_t index) const
 	{
-		_parts.clear();
+		assert( index < length() );
+		return start[ index ];
 	}
 
-	/*	Function to reserve a big amount of data when we know we'll need it. Be aware that this
-		function DOES NOT clear the content of the TiXmlString if any exists.
-	*/
-	void reserve (size_t cap);
+	// [] operator
+	char& operator [] (size_t index) const
+	{
+		assert( index < length() );
+		return start[ index ];
+	}
 
 	TiXmlString& assign (const char* str, size_t len);
 
 	TiXmlString& append (const char* str, size_t len);
 
-	void swap (TiXmlString& other) { }
-
-	std::string ValueStr()
-	{
-		std::string str;
-		for (int a=0;a<_parts.size();a++)
-			str.append(_parts[a].start,_parts[a].len);
-		return str;
-	}
-
   private:
 
-	struct Part
-	{
-		char* start;
-		size_t len;
-	};
+	size_t int_size;
+	char* start;
 
-	std::vector < Part > _parts;
-
-};
-
-
-inline bool operator == (const TiXmlString & a, const TiXmlString & b) { }
-inline bool operator <  (const TiXmlString & a, const TiXmlString & b) { }
-
-inline bool operator != (const TiXmlString & a, const TiXmlString & b) { }
-inline bool operator >  (const TiXmlString & a, const TiXmlString & b) { }
-inline bool operator <= (const TiXmlString & a, const TiXmlString & b) { }
-inline bool operator >= (const TiXmlString & a, const TiXmlString & b) { }
-
-inline bool operator == (const TiXmlString & a, const char* b) { }
-inline bool operator == (const char* a, const TiXmlString & b) { }
-inline bool operator != (const TiXmlString & a, const char* b) { }
-inline bool operator != (const char* a, const TiXmlString & b) { }
-
-TiXmlString operator +  (const TiXmlString & a, const TiXmlString & b);
-TiXmlString operator +  (const TiXmlString & a, const char* b);
-TiXmlString operator +  (const char* a, const TiXmlString & b);
+} ;
 
 #endif	// TIXML_STRING_INCLUDED
