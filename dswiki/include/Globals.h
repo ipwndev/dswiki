@@ -13,6 +13,7 @@
 #define GLOBALS_H_
 
 #include <PA9.h>
+#include "chrlib.h"
 #include "struct.h"
 #include <string>
 
@@ -40,12 +41,14 @@ class Globals
 		void setSearch(Search* search);
 		void setPercentIndicator(PercentIndicator* percentIndicator);
 		void setStatusbar(Statusbar* statusbar);
-		void setFont(Font* font);
+		void setFont(Font* font, FontCut type);
 		void setLanguage(int language);
 		void toggleInverted();
 		int backgroundColor();
 		int textColor();
 		int linkColor();
+		int templateColor();
+		int imageColor();
 		Dumps*            getDumps();
 		TitleIndex*       getTitleIndex();
 		WikiMarkupGetter* getWikiMarkupGetter();
@@ -53,7 +56,7 @@ class Globals
 		Search*           getSearch();
 		PercentIndicator* getPercentIndicator();
 		Statusbar*        getStatusbar();
-		Font*             getFont();
+		Font*             getFont(FontCut type);
 		int               getLanguage();
 	private:
 		Dumps*            _dumps;
@@ -63,7 +66,10 @@ class Globals
 		Search*           _search;
 		PercentIndicator* _percentIndicator;
 		Statusbar*        _statusbar;
-		Font*             _font;
+		Font*             _font_r;
+		Font*             _font_b;
+		Font*             _font_o;
+		Font*             _font_bo;
 		int               _language; //0 Japanese, 1 English, 2 Français, 3 Deutsch, 4 Italian, 5 Spanish
 		unsigned char     _isInverted;
 };

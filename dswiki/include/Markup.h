@@ -18,17 +18,24 @@ class Markup
 	public:
 		Markup();
 		~Markup();
-		void 			parse(string & Str);
-		bool			LoadOK();
-		void 			setGlobals(Globals* globals);
+		void	draw();
+		void	parse(string & Str);
+		bool	toggleIndex();
+		bool	LoadOK();
+		void	setGlobals(Globals* globals);
+		string	getFirstLink();
 	private:
-		void build_index(TiXmlNode* pParent, vector <TiXmlNode*> & index);
+		void	build_index(TiXmlNode* pParent, vector <TiXmlNode*> & index);
 		TiXmlDocument*			_td;
 		bool					_loadOK;
+		bool					_showing_index;
 		Globals*				_globals;
-		string					indexMarkupStr;
-		TiXmlNode*				root;
 		map <string,TiXmlNode*>	index;
+		TiXmlNode*				indexRoot;
+		string					indexMarkupStr;
+		Markup*					indexMarkup;
+		void	Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea);
+		void	number_Of_Linebreaks(string & name, int & before, int & after);
 };
 
 #endif

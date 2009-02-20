@@ -17,7 +17,7 @@ public:
 	WikiMarkupGetter();
 	~WikiMarkupGetter();
 
-	void load(string basename);
+	void load(string basename, bool internal = false);
 
 	void   getMarkup(string & markup, string title);
 	string GetLastArticleTitle();

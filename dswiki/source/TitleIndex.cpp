@@ -25,14 +25,30 @@ typedef struct
 	char reserved2[160];
 } FILEHEADER;
 
-void TitleIndex::load(string basename)
+void TitleIndex::load(string basename, bool internal)
 {
-	_f_header    = fopen(_globals->getDumps()->get_ifo(basename).c_str(), "rb");
-	_f_dataindex = fopen(_globals->getDumps()->get_idx(basename).c_str(), "rb");
-	_f_index0    = fopen(_globals->getDumps()->get_ao1(basename).c_str(), "rb");
-	_f_index1    = fopen(_globals->getDumps()->get_ao2(basename).c_str(), "rb");
+	string ifofile = _globals->getDumps()->get_ifo(basename,internal);
+	string idxfile = _globals->getDumps()->get_idx(basename,internal);
+	string ao1file = _globals->getDumps()->get_ao1(basename,internal);
+	string ao2file = _globals->getDumps()->get_ao2(basename,internal);
 
-	if ( _f_header )
+	if (debug)
+	{
+		PA_ClearTextBg(1);
+		PA_OutputText(1,0,2,"Going to load\n%c3%s%c0 from %s",basename.c_str(),(internal)?("efs"):("fat"));
+		PA_OutputText(1,0,5,"%s",ifofile.c_str());
+		PA_OutputText(1,0,6,"%s",idxfile.c_str());
+		PA_OutputText(1,0,7,"%s",ao1file.c_str());
+		PA_OutputText(1,0,8,"%s",ao2file.c_str());
+		PA_WaitFor(Pad.Newpress.Anykey);
+	}
+
+	_f_header    = fopen(ifofile.c_str(), "rb");
+	_f_dataindex = fopen(idxfile.c_str(), "rb");
+	_f_index0    = fopen(ao1file.c_str(), "rb");
+	_f_index1    = fopen(ao2file.c_str(), "rb");
+
+	if ( _f_header && _f_dataindex && _f_index0 && _f_index1 )
 	{
 		FILEHEADER fileheader;
 
@@ -52,6 +68,18 @@ void TitleIndex::load(string basename)
 		_templateNamespace = fileheader.templateNamespace;
 		_indexVersion      = fileheader.version;
 
+		if (debug)
+		{
+			PA_OutputText(1,0,10,"Loading %c2OK");
+			PA_OutputText(1,0,12,"Statistics:");
+			PA_OutputText(1,0,13,"No. of articles : %c3%d",_numberOfArticles);
+			PA_OutputText(1,0,14,"         Images : %c3%s",_imageNamespace.c_str());
+			PA_OutputText(1,0,15,"      Templates : %c3%s",_templateNamespace.c_str());
+			PA_OutputText(1,0,16,"Indexer version : %c3%d",_indexVersion);
+			PA_WaitFor(Pad.Newpress.Anykey);
+		}
+
+
 		if (_indexVersion > MAX_INDEX_VERSION)
 		{
 			PA_Clear16bitBg(0);
@@ -65,7 +93,19 @@ void TitleIndex::load(string basename)
 		{
 			_using_index1 = 1;
 		}
+
 	}
+	else
+	{
+		if (debug)
+		{
+			PA_OutputText(1,0,10,"Loading %c1failed");
+			PA_WaitFor(Pad.Newpress.Anykey);
+		}
+	}
+
+	if (debug)
+		PA_ClearTextBg(1);
 }
 
 TitleIndex::TitleIndex()
@@ -79,7 +119,6 @@ TitleIndex::TitleIndex()
 
 	_imageNamespace = "";
 	_templateNamespace = "";
-
 }
 
 TitleIndex::~TitleIndex()
@@ -393,9 +432,31 @@ int TitleIndex::getSuggestedArticleNumber(string title, unsigned char indexNo, u
 	return startIndex;
 }
 
-ArticleSearchResult* TitleIndex::isRedirect(string markup)
+
+ArticleSearchResult* TitleIndex::isRedirect(string Str)
 {
-	return NULL;
+	if (Str.empty())
+		return NULL;
+
+	string lowercaseMarkup = lowerPhrase(Str.substr(0,9));
+
+	if ( lowercaseMarkup == "#redirect" )
+	{
+		Markup* redir_markup = new Markup();
+		redir_markup->setGlobals(_globals);
+		redir_markup->parse(Str);
+		string first_target = redir_markup->getFirstLink();
+		delete redir_markup;
+		if (first_target.empty())
+			return NULL;
+		else
+			return findArticle(first_target,"");
+
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 ArticleSearchResult* TitleIndex::getRandomArticle()

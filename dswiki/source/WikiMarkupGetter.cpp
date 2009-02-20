@@ -23,23 +23,45 @@ WikiMarkupGetter::WikiMarkupGetter()
 {
 }
 
-void WikiMarkupGetter::load(string basename)
+void WikiMarkupGetter::load(string basename, bool internal)
 {
-	vector<string> wikidbs = _globals->getDumps()->get_dbs(basename);
+	if (debug)
+	{
+		PA_ClearTextBg(1);
+		PA_OutputText(1,0,2,"Going to load\n%c3%s%c0 from %s",basename.c_str(),(internal)?("efs"):("fat"));
+	}
+
+	vector<string> wikidbs = _globals->getDumps()->get_dbs(basename,internal);
 	for (int i=0;i< (int) wikidbs.size();i++)
 	{
 		FILE* _f = fopen(wikidbs[i].c_str(), "rb");
-		_filepointers.push_back(_f);
-		fseek(_f,0,SEEK_END);
-		fpos_t size = ftell(_f);
-		fseek(_f,0,SEEK_SET);
-		_filesizes.push_back(size);
-		u64 absoluteEnd;
-		if (i==0)
-			absoluteEnd = size-1;
+		if (_f)
+		{
+			_filepointers.push_back(_f);
+			fseek(_f,0,SEEK_END);
+			fpos_t size = ftell(_f);
+			fseek(_f,0,SEEK_SET);
+			_filesizes.push_back(size);
+			u64 absoluteEnd;
+			if (i==0)
+				absoluteEnd = size-1;
+			else
+				absoluteEnd = _file_absoluteEnds[i-1] + size;
+			_file_absoluteEnds.push_back(absoluteEnd);
+			if (debug)
+			{
+				PA_OutputText(1,0,5+3*i,"%c3%s\n%c0Loading %c2OK\n%c0size: %c3%d",wikidbs[i].c_str(),size);
+			}
+		}
 		else
-			absoluteEnd = _file_absoluteEnds[i-1] + size;
-		_file_absoluteEnds.push_back(absoluteEnd);
+		{
+		}
+	}
+
+	if (debug)
+	{
+		PA_WaitFor(Pad.Newpress.Anykey);
+		PA_ClearTextBg(1);
 	}
 }
 
@@ -74,11 +96,6 @@ void WikiMarkupGetter::getMarkup(string & markup, string title)
 	int bytesRead = 0;
 	int percent = 0;
 
-// 	PA_OutputText(1,5,6,"0x%x        ",blockPos);
-// 	PA_OutputText(1,5,7,"%d        ",articlePos);
-// 	PA_OutputText(1,5,8,"%d        ",articleLength);
-// 	PA_OutputText(1,5,9,"%s        ",_lastArticleTitle.c_str());
-
 	int fileNo = 0;
 	while (_file_absoluteEnds[fileNo]<blockPos) fileNo++;
 	for (int i=0;i<fileNo;i++)
@@ -86,7 +103,6 @@ void WikiMarkupGetter::getMarkup(string & markup, string title)
 	FILE* _f_data = _filepointers[fileNo];
 
 	if ( !_f_data ) {
-// 		PA_OutputText(1,5,10,"!fdata");
 		return;
 	}
 	// seek to the block
@@ -96,14 +112,10 @@ void WikiMarkupGetter::getMarkup(string & markup, string title)
 	int bzerror;
 	BZFILE *bzf = BZ2_bzReadOpen(&bzerror, _f_data, 0, BZ_DECOMPRESS_SMALL, NULL, 0);
 	if (bzerror != BZ_OK) {
-// 		PA_OutputText(1,5,10,"BZ_ReadOpen failed");
 		BZ2_bzReadClose ( &bzerror, bzf );
 		return;
 	}
 
-// 	PA_OutputText(1,5,11,"Bis kurz vorm Loop");
-// 	PA_Sleep(60);
-// 	PA_OutputText(1,5,11,"                  ");
 	char buffer[BUFFER_SIZE];
 	int read = 0;
 
@@ -114,14 +126,8 @@ void WikiMarkupGetter::getMarkup(string & markup, string title)
 		if (percent>100) percent = 100;
 		_globals->getPercentIndicator()->update(percent);
 
-// 		PA_OutputText(1,5,12,"Read %d       ",read);
-// 		PA_Sleep(10);
-// 		PA_OutputText(1,5,12,"              ",read);
 		if ( articlePos-read<0 )
 		{
-// 			PA_OutputText(1,5,13,"Beginne");
-// 			PA_Sleep(120);
-// 			PA_OutputText(1,5,13,"       ");
 			char* start = buffer + articlePos;
 			int len = (read-articlePos);
 			if ( len>articleLength )
@@ -154,9 +160,6 @@ void WikiMarkupGetter::getMarkup(string & markup, string title)
 	}
 	delete articleSearchResult;
 	BZ2_bzReadClose ( &bzerror, bzf );
-// 	PA_OutputText(1,5,14,"Nach dem Loop");
-// 	PA_Sleep(60);
-// 	PA_OutputText(1,5,14,"             ");
 }
 
 string WikiMarkupGetter::GetLastArticleTitle()
