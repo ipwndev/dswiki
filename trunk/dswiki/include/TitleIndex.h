@@ -37,7 +37,7 @@ public:
 	TitleIndex();
 	~TitleIndex();
 
-	void load(string basename);
+	void load(string basename, bool internal = false);
 
 	string	getTitle(int articleNumber, unsigned char indexNo = 1, unsigned char setPosition = 0);
 

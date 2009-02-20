@@ -15,20 +15,20 @@ typedef enum {UTF,UTF8} Lid;
 typedef enum {NORMALWRAP,HARDWRAP,NOWRAP} ChrWrap;
 typedef enum {DEG0,DEG90,DEG180,DEG270} ChrRot;
 typedef enum {NONE,HOLLOW,SHADOW,BACKGR,SIMULATE} FX;
-
+typedef enum {FONT_R,FONT_B,FONT_O,FONT_BO} FontCut;
 
 typedef struct
 {
-	Font*              FONT;
-	unsigned char      W_Space;
-	unsigned char      H_Space;
-	unsigned short int Color;
-	unsigned short int FxColor;
-	unsigned short int BgColor;
-	ChrRot             Rotate;
-	ChrWrap            Wrap;
-	FX                 Fx;
-	unsigned char      CutChar;
+	Font*				FONT;
+	unsigned char		W_Space;
+	unsigned char		H_Space;
+	unsigned short int	Color;
+	unsigned short int	FxColor;
+	unsigned short int	BgColor;
+	ChrRot				Rotate;
+	ChrWrap				Wrap;
+	FX					Fx;
+	unsigned char		CutChar;
 } CharStat;
 
 // 16c Unicode printing functions

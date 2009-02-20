@@ -21,12 +21,12 @@ using namespace std;
 
 typedef struct
 {
-	string basename;
-	string idxfile;
-	string ao1file;
-	string ao2file;
-	string ifofile;
-	vector<string> dbsfiles;
+	string basename;			// short name of the wiki,     e.g. enwiki-20081024
+	string idxfile;				// long filename of the index, e.g. fat:/dswiki/enwiki-20081024.idx
+	string ao1file;				// ...
+	string ao2file;				// ...
+	string ifofile;				// ...
+	vector<string> dbsfiles;	// vector of all long filenames of the data files
 } WikiDump;
 
 class Dumps
@@ -34,14 +34,15 @@ class Dumps
 	public:
 		Dumps();
 		vector<string> getPossibleWikis();
-		string get_ifo(string basename);
-		string get_idx(string basename);
-		string get_ao1(string basename);
-		string get_ao2(string basename);
-		vector<string> get_dbs(string basename);
+		string get_ifo(string basename, bool internal = false);
+		string get_idx(string basename, bool internal = false);
+		string get_ao1(string basename, bool internal = false);
+		string get_ao2(string basename, bool internal = false);
+		vector<string> get_dbs(string basename, bool internal = false);
 	private:
 		void _gatherPossibleWikis();
-		vector<WikiDump> _possibleWikis;
+		vector<WikiDump> _externalWikis;
+		vector<WikiDump> _internalWikis;
 };
 
 #endif

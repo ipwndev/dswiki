@@ -26,6 +26,8 @@
 #include "WIKI2XML.h"
 #include "WIKI2XML_global.h"
 
+bool debug;
+
 Device UpScreen;
 Device DnScreen;
 CharStat NormalCS;
@@ -79,7 +81,8 @@ int main(int argc, char ** argv)
 	string markupstr;
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
-// 	string suchtitel = "Temp";
+// 	string suchtitel = "Herford";
+// 	string suchtitel = "Redirect-Test 1";
 // 	string suchtitel = "Inka";
 // 	string suchtitel = "Laping";
 	string suchtitel;
@@ -90,9 +93,6 @@ int main(int argc, char ** argv)
 #if DEBUG
 	PA_InitText(0,2);
 #endif
-
-	PA_SetBrightness(0,-31);
-	PA_SetBrightness(1,-31);
 
 	Globals* g = new Globals();
 	g->setLanguage(PA_UserInfo.Language);
@@ -109,7 +109,18 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 
+	debug = (Pad.Held.L || Pad.Held.R);
+	if (debug)
+	{
+		PA_OutputText(1,11,11,"debug-mode");
+		PA_OutputText(1,11,12,"  active  ");
+		PA_Sleep(60);
+		PA_ClearTextBg(1);
+	}
+
 #if !DEBUG
+	PA_SetBrightness(0,-31);
+	PA_SetBrightness(1,-31);
 	// intro screens from EFS
 	unsigned char breakIntro = 0;
 	KT_LoadGif(0, "dswiki/splash/dswiki", 0, 0);
@@ -191,75 +202,64 @@ int main(int argc, char ** argv)
 #if !DEBUG
 	PA_InitKeyboard(2);
 	PA_KeyboardOut();
-#endif
 
 	// visible again
 	PA_SetBrightness(0,0);
 	PA_SetBrightness(1,0);
+#endif
 
 
 	// check important things
-	PA_OutputText(1,0,2,"Checking \"/dswiki/\"...");
 	DIR_ITER* dswikiDir = diropen ("fat:/dswiki/");
-	if (dswikiDir == NULL)
+	if (dswikiDir)
 	{
-		PA_OutputText(1,24,2,"%c1[Failed]");
-		return 1;
-	}
-	else
-	{
-		PA_OutputText(1,28,2,"%c2[OK]");
 		dirclose(dswikiDir);
 	}
-	PA_OutputText(1,0,3,"Checking EFS-fonts...");
-	DIR_ITER* dswikiFontDir = diropen ("efs:/dswiki/fonts/");
-	if (dswikiFontDir == NULL)
+	else
 	{
-		PA_OutputText(1,24,3,"%c1[Failed]");
+		PA_OutputText(1,0,0,"Checking \"/dswiki/\" %c1failed%c0!");
 		return 1;
+	}
+
+	DIR_ITER* dswikiFontDir = diropen ("efs:/dswiki/fonts/");
+	if (dswikiFontDir)
+	{
+		dirclose(dswikiFontDir);
 	}
 	else
 	{
-		PA_OutputText(1,28,3,"%c2[OK]");
-		dirclose(dswikiFontDir);
+		PA_OutputText(1,0,0,"Checking EFS font dir %c1failed%c0!");
+		return 1;
 	}
-	PA_OutputText(1,0,4,"Initializing fonts...");
+
 	Font* frankenstein_r = new Font("efs:/dswiki/fonts/font_r.dat");
 	Font* frankenstein_b = new Font("efs:/dswiki/fonts/font_b.dat");
 	Font* frankenstein_o = new Font("efs:/dswiki/fonts/font_o.dat");
 	Font* frankenstein_bo = new Font("efs:/dswiki/fonts/font_bo.dat");
-	if (frankenstein_r->initOK() && frankenstein_b->initOK() && frankenstein_o->initOK() && frankenstein_bo->initOK())
+	if (!frankenstein_r->initOK() || !frankenstein_b->initOK() || !frankenstein_o->initOK() || !frankenstein_bo->initOK())
 	{
-		PA_OutputText(1,28,4,"%c2[OK]");
-	}
-	else
-	{
-		PA_OutputText(1,24,4,"%c1[Failed]");
+		PA_OutputText(1,0,0,"Initializing fonts %c1failed%c0!");
 		return 1;
 	}
-	PA_OutputText(1,0,5,"Gathering installed wikis...");
+	g->setFont(frankenstein_r, FONT_R);
+	g->setFont(frankenstein_b, FONT_B);
+	g->setFont(frankenstein_o, FONT_O);
+	g->setFont(frankenstein_bo, FONT_BO);
+
 	Dumps* d = new Dumps();
+	g->setDumps(d);
 	vector<string> possibleWikis = d->getPossibleWikis();
 	if (possibleWikis.size()==0)
 	{
-		PA_OutputText(1,26,5,"%c1[None]");
+		PA_OutputText(1,0,0,"%c1No dumps %c0were found!");
 		return 1;
 	}
-	else
-	{
-		if (possibleWikis.size()<10)
-			PA_OutputText(1,29,5,"%c2[%d]",possibleWikis.size());
-		else
-			PA_OutputText(1,28,5,"%c2[%d]",possibleWikis.size());
-		PA_Sleep(60);
-	}
-	PA_ClearTextBg(1);
 
+	// important variables
 	enum {
 		SPRITE_HISTORY, SPRITE_HISTORYX, SPRITE_RELOAD, SPRITE_CANCEL, SPRITE_OK, SPRITE_2UPARROW, SPRITE_1UPARROW, SPRITE_1DOWNARROW, SPRITE_2DOWNARROW, SPRITE_1LEFTARROW, SPRITE_1RIGHTARROW, SPRITE_CLEARLEFT, SPRITE_CONFIGURE,  SPRITE_BOOKMARKADD, SPRITE_BOOKMARK, SPRITE_VIEWMAG
 	};
 
-	// important variables
 	KT_CreateSprite(0, SPRITE_HISTORY,     "dswiki/icons/history",       OBJ_SIZE_16X16, 1, 0, 1, -16, -16);
 	KT_CreateSprite(0, SPRITE_HISTORYX,    "dswiki/icons/history_clear", OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 	KT_CreateSprite(0, SPRITE_RELOAD,      "dswiki/icons/reload",        OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
@@ -278,10 +278,9 @@ int main(int argc, char ** argv)
 	KT_CreateSprite(0, SPRITE_VIEWMAG,     "dswiki/icons/viewmag",       OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 
 	Statusbar* sb = new Statusbar();
-	PercentIndicator* p = new PercentIndicator();
-	g->setDumps(d);
-	g->setFont(frankenstein_r);
 	g->setStatusbar(sb);
+
+	PercentIndicator* p = new PercentIndicator();
 	g->setPercentIndicator(p);
 
 	// Initialization of global variables
@@ -303,8 +302,8 @@ int main(int argc, char ** argv)
 
 	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
-	CharStat       TitlebarCS = { frankenstein_r, 0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
 	CharStat SearchResultsCS3 = { frankenstein_r, 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
+	CharStat       TitlebarCS = { frankenstein_r, 0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
 
 	BLOCK CharArea = {{ 0, 0},{ 0, 0}};
 
@@ -312,12 +311,11 @@ int main(int argc, char ** argv)
 
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
-
-	string currentTitle;
-
 	Markup* markup = NULL;
 
+	string currentTitle = "";
 	string currentSelectedWiki = "";
+
 	TextBox* WikiChooser = new TextBox(possibleWikis);
 	WikiChooser->setTitle("Choose your Wiki");
 	WikiChooser->allowCancel(0);
@@ -362,15 +360,16 @@ int main(int argc, char ** argv)
 	g->setWikiMarkupGetter(wmg);
 	wmg->setGlobals(g);
 	wmg->load(currentSelectedWiki);
+
 	g->getStatusbar()->clearAfter(30);
 
 	History* h = new History();
+
 	Search*  s = new Search();
-
-	g->setSearch(s);
 	s->setGlobals(g);
+	g->setSearch(s);
 
-	PA_SetSpriteXY(0, SPRITE_CONFIGURE,  0, 176);
+	PA_SetSpriteXY(0, SPRITE_CONFIGURE, 0, 176);
 	PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, 32, 176);
 	PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
 	PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
@@ -528,6 +527,10 @@ int main(int argc, char ** argv)
 			PA_SetSpriteXY(0, SPRITE_1LEFTARROW,   31, 39);
 			PA_SetSpriteXY(0, SPRITE_1RIGHTARROW, 209, 39);
 			PA_SetSpriteXY(0, SPRITE_CLEARLEFT,   234, 40);
+			PA_SetSpriteXY(0, SPRITE_CONFIGURE,   -16,-16);
+			PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, -16,-16);
+			PA_SetSpriteXY(0, SPRITE_BOOKMARK,    -16,-16);
+			PA_SetSpriteXY(0, SPRITE_VIEWMAG,     -16,-16);
 
 
 			if (!updateInRealTime)
@@ -846,6 +849,10 @@ int main(int argc, char ** argv)
 			PA_Clear16bitBg(0);
 			for (int i=SPRITE_HISTORY;i<=SPRITE_CLEARLEFT;i++)
 				PA_SetSpriteXY(0,i,-16,-16);
+			PA_SetSpriteXY(0, SPRITE_CONFIGURE, 0, 176);
+			PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, 32, 176);
+			PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
+			PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
 
 			updateTitle = 1;
 			updateContent = 1;
@@ -854,15 +861,12 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Y)
 		{
-			g->getStatusbar()->displayClearAfter("Loading Bookmarks",45);
-			string bookmark = g->loadBookmark();
-			updateContent = 1;
-			if (!bookmark.empty())
+			if (markup)
 			{
-				suchtitel = bookmark;
-				forcedLine = 0;
-				setNewHistoryItem = 1;
-				loadArticle = 1;
+				if (markup->toggleIndex())
+				{
+					updateContent = 1;
+				}
 			}
 		}
 
@@ -942,7 +946,7 @@ int main(int argc, char ** argv)
 				suchergebnis = t->findArticle(suchtitel,currentTitle);
 			}
 
-			if (suchergebnis!=NULL)
+			if (suchergebnis)
 			{
 				if (markup)
 				{
@@ -982,9 +986,7 @@ int main(int argc, char ** argv)
 				markup = new Markup();
 				g->setMarkup(markup);
 				markup->setGlobals(g);
-
 				markup->parse(markupstr);
-
 
 				if (markup->LoadOK())
 				{
@@ -994,7 +996,7 @@ int main(int argc, char ** argv)
 				{
 					PA_OutputText(1,0,2,"%c1XML-Parsing failed");
 
-					string filenamestr = currentTitle ;
+/*					string filenamestr = currentTitle ;
 					replace_all(filenamestr,"\n","");
 					replace_all(filenamestr,"\\","");
 					replace_all(filenamestr,"/","");
@@ -1048,7 +1050,7 @@ int main(int argc, char ** argv)
 					{
 						fprintf(xmlerrorlist,"%s",xmlerrors.c_str());
 						fclose(xmlerrorlist);
-					}
+					}*/
 				}
 
 				g->getStatusbar()->displayClearAfter("Formatting complete",30);
@@ -1089,7 +1091,10 @@ int main(int argc, char ** argv)
 
 		if (updateContent)
 		{
-// 			g->getMarkup()->draw();
+			if (markup->LoadOK())
+			{
+				g->getMarkup()->draw();
+			}
 			updatePercent = 1;
 			updateContent = 0;
 		}

@@ -18,7 +18,8 @@ class TTableInfo
 		bool tr_open, td_open, th_open;
 };
 
-class WIKI2XML {
+class WIKI2XML
+{
 	public:
 		WIKI2XML();
 		void parse(string & s);

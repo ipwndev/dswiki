@@ -8,6 +8,7 @@
 #include "WikiMarkupGetter.h"
 #include "PercentIndicator.h"
 #include "Statusbar.h"
+#include "TitleIndex.h"
 
 TTableInfo::TTableInfo()
 {
@@ -521,16 +522,37 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 	string link = l.substr(from + 2, to - from - 2);
 
 	TXML x;
-	vector < string > parts;
-	explode("|", link, parts);
 	if (mode == 'L')
 	{
-		x.name = "wl";
+		string lowerImageNamespace = lowerPhrase(_globals->getTitleIndex()->ImageNamespace());
+
+		for (a=0; a < (int) link.length() && link[a]==' '; a++);
+		if (lowerPhrase(link.substr(a,lowerImageNamespace.length())) == lowerImageNamespace)
+		{
+			a += lowerImageNamespace.length();
+			for (a=a; a < (int) link.length() && link[a]==' '; a++);
+			if (link[a] == ':')
+			{
+				x.name = "wi";
+				link.erase(0,a+1);
+			}
+			else
+			{
+				x.name = "wl";
+			}
+		}
+		else
+		{
+			x.name = "wl";
+		}
 	}
 	else if (mode == 'T')
 	{
 		x.name = "wt";
 	}
+
+	vector < string > parts;
+	explode("|", link, parts);
 
 	for (a = 0; a < (int) parts.size(); a++)
 	{
@@ -606,12 +628,11 @@ void WIKI2XML::parse_line_sub(string & l)
 
 void WIKI2XML::parse_line(string & l)
 {
-	doQuotes(l); // TODO: Woanders hin
-
 	int a;
 	string pre;
 	string oldlist = list;
 	pre += fix_list(l);
+
 	if ((!list.empty()) && (list == oldlist))
 	{
 		string itemname = "li";
@@ -619,6 +640,8 @@ void WIKI2XML::parse_line(string & l)
 			itemname = "dd";
 		pre = "</" + itemname + "><" + itemname + ">" + pre;
 	}
+
+	doQuotes(l);
 
 	if (l.empty())	// Paragraph
 	{
@@ -664,10 +687,7 @@ void WIKI2XML::parse_line(string & l)
 			l.clear();
 		}
 	}
-	else if ( (left(l, 2) == "{|")
-				  || left(l, 2) == "|}"
-				  || (tables.size() > 0 && (!l.empty()) && (l[0] == '|' || l[0] == '!'))
-			)
+	else if ( (left(l, 2) == "{|") || (left(l, 2) == "|}") || (tables.size() > 0 && (!l.empty()) && (l[0] == '|' || l[0] == '!')) )
 	{
 		pre += table_markup(l);
 		l.clear();
@@ -683,8 +703,6 @@ void WIKI2XML::parse_line(string & l)
 
 void WIKI2XML::parse(string & s)
 {
-	_globals->getStatusbar()->display("WikiMarkup->XML");
-
 	int a,b,c,d;
 	string substring;
 
@@ -813,7 +831,33 @@ void WIKI2XML::parse(string & s)
 	// As, for example, "&apos;" should not be interpretated as wiki-markup, we must exclude it
 	exchangeSGMLEntities(s,true);
 
-	// TODO: Include templates here
+	// remove linebreaks from within multi-line template tags, so that parse_line can process them as a normal tag
+	a = s.find("{{");
+	while (a != (int) string::npos)
+	{
+		int open = 1;
+		for (b=a+2; b+1 < (int) s.length(); b++)
+		{
+			if (s[b] == '{' && s[b+1] == '{')
+			{
+				open++;
+				b+=2;
+			}
+			if (s[b] == '}' && s[b+1] == '}')
+			{
+				open--;
+				b+=2;
+			}
+			if (open==0)
+			{
+				substring = s.substr(a+2,b-a-4);
+				replace_all(substring,"\n"," ");
+				replace_part(s,a+2,b-3,substring);
+				break;
+			}
+		}
+		a = s.find("{{",b);
+	}
 
 	// Remove HTML-Comments
 	a = s.find("<!--");
@@ -863,6 +907,7 @@ void WIKI2XML::parse(string & s)
 		a = s.find("<",a+1);
 	}
 
+    // Now we remove evil HTML
 	vector<TXML> taglist;
 	make_tag_list(s, taglist);
 	sanitize_html(s, taglist);
@@ -871,21 +916,21 @@ void WIKI2XML::parse(string & s)
 
 	// Now evaluate each line
 	_globals->getPercentIndicator()->update(0);
-	a = -1;
-	b = s.find("\n",a+1);
+	a = 0;
+	b = s.find("\n",a);
 	while (b != (int) string::npos)
 	{
 		_globals->getPercentIndicator()->update(b*100/s.length());
-		substring = s.substr(a+1,b-a-1);
+		substring = s.substr(a,b-a);
 		parse_line(substring);
-		replace_part(s,a+1,b,substring+"");
-		a += substring.length()+0;
-		b = s.find("\n",a+1);
+		replace_part(s,a,b,substring+"\n");
+		a += substring.length()+1;
+		b = s.find("\n",a);
 	}
 	_globals->getPercentIndicator()->update(100);
-	substring = s.substr(a+1);
+	substring = s.substr(a);
 	parse_line(substring);
-	replace_part(s,a+1,s.length()-1,substring);
+	replace_part(s,a,s.length()-1,substring);
 
 	string end;
 
@@ -930,7 +975,7 @@ void WIKI2XML::parse(string & s)
 	replace_all(s,dswiki_magic_nowiki_close,"&lt;/nowiki&gt;");
 
 	s.insert(0,"<text>");
-	s.insert(0,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+// 	s.insert(0,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 	s.append("</text>");
 }
 
@@ -939,7 +984,6 @@ WIKI2XML::WIKI2XML()
 {
 	list.clear();
 
-    // Now we remove evil HTML
 	allowed_html.clear();
 
 	allowed_html.push_back("p");

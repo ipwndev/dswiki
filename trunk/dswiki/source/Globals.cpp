@@ -25,7 +25,6 @@ void Globals::setMarkup(Markup* markup) { _markup = markup; }
 void Globals::setSearch(Search* search) { _search = search; }
 void Globals::setPercentIndicator(PercentIndicator* percentIndicator) { _percentIndicator = percentIndicator; }
 void Globals::setStatusbar(Statusbar* statusbar) { _statusbar = statusbar; }
-void Globals::setFont(Font* font) { _font = font; }
 void Globals::setLanguage(int language) { _language = language; }
 
 Dumps*            Globals::getDumps() {	return _dumps; }
@@ -35,7 +34,6 @@ Markup*           Globals::getMarkup() { return _markup; }
 Search*           Globals::getSearch() { return _search; }
 PercentIndicator* Globals::getPercentIndicator() { return _percentIndicator; }
 Statusbar*        Globals::getStatusbar() { return _statusbar; }
-Font*             Globals::getFont() { return _font; }
 int               Globals::getLanguage() { return _language; }
 
 void Globals::setOptions()
@@ -49,6 +47,45 @@ void Globals::setOptions()
 	string choice = Options.run();
 	if (choice == "Invert color scheme")
 		toggleInverted();
+}
+
+void Globals::setFont(Font* font, FontCut type)
+{
+	switch (type)
+	{
+		case FONT_R:
+			_font_r = font;
+			break;
+		case FONT_B:
+			_font_b = font;
+			break;
+		case FONT_O:
+			_font_o = font;
+			break;
+		case FONT_BO:
+			_font_bo = font;
+			break;
+	}
+}
+
+Font* Globals::getFont(FontCut type)
+{
+	switch (type)
+	{
+		case FONT_R:
+			return _font_r;
+			break;
+		case FONT_B:
+			return _font_b;
+			break;
+		case FONT_O:
+			return _font_o;
+			break;
+		case FONT_BO:
+			return _font_bo;
+			break;
+	}
+	return NULL;
 }
 
 string Globals::loadBookmark()
@@ -155,5 +192,29 @@ int Globals::linkColor()
 	else
 	{
 		return PA_RGB(7,7,31);
+	}
+}
+
+int Globals::templateColor()
+{
+	if (!_isInverted)
+	{
+		return PA_RGB(24,0,24);
+	}
+	else
+	{
+		return PA_RGB(24,0,24);
+	}
+}
+
+int Globals::imageColor()
+{
+	if (!_isInverted)
+	{
+		return PA_RGB(0,22,0);
+	}
+	else
+	{
+		return PA_RGB(0,19,0);
 	}
 }
