@@ -138,7 +138,6 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 	short int  X=0, Y=0;
 	CharStat CopyCStat=*CStat;
 	DATA = CStat->FONT->getCharacterData(*Uni);
-	unsigned char  Width = DATA[0];
 
 	idx=0;
 
@@ -146,8 +145,6 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 	yoff = (DATA[2]&0xF);
 	bbx_w = (DATA[1]>>4)+1;
 	bbx_h = (DATA[1]&0xF)+1;
-	CharArea.End.x = CharArea.Start.x + Width-1;
-	CharArea.End.y = CharArea.Start.y + CStat->FONT->Height();
 
 	switch(CStat->Fx)
 	{
@@ -179,6 +176,7 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 							case DEG270:
 								X = CharArea.End.x   -(h + yoff);
 								Y = CharArea.Start.y +(w + xoff);
+								break;
 						}
 						switch(CStat->Fx)
 						{
@@ -311,7 +309,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			{
 				break;
 			}
-			if(Uni==0x0D)
+			else if(Uni==0x0D)
 			{
 				GlyphsPrinted++;
 				SaveSkipLetter = Skip;
@@ -325,7 +323,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 				SwitchNewLine(CStat,CharArea,Origin,Height);
 				continue;
 			}
-			if(Uni==0x0A)
+			else if(Uni==0x0A)
 			{
 				GlyphsPrinted++;
 				SwitchNewLine(CStat,CharArea,Origin,Height);
@@ -333,7 +331,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 				Skip+=ToUTF(&Str[Skip],&Uni);
 				continue;
 			}
-			if(Uni==0x20)
+			else if(Uni==0x20)
 			{
 				GlyphsPrinted++;
 				DATA = CStat->FONT->getCharacterData(Uni);

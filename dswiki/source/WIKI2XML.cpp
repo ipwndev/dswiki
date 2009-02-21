@@ -577,7 +577,9 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 			p = key + value;
 		}
 		else
+		{
 			p = xml_embed(p, "val");
+		}
 
 		x.text += xml_embed(p, "wp");
 	}

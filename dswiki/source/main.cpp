@@ -44,7 +44,7 @@ VirScreen ContentWin1;
 VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
-#define DEBUG 0
+#define DEBUG 1
 #define DEBUG_WIKI_NR 1
 
 int getFreeRAM()
@@ -82,10 +82,10 @@ int main(int argc, char ** argv)
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
 // 	string suchtitel = "Herford";
-// 	string suchtitel = "Redirect-Test 1";
+// 	string suchtitel = "Temp";
 // 	string suchtitel = "Inka";
-// 	string suchtitel = "Laping";
-	string suchtitel;
+	string suchtitel = "Herbert Huber (* 1935)";
+// 	string suchtitel;
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
