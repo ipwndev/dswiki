@@ -649,7 +649,6 @@ const char* TiXmlBase::ReadText(	const char* p,
 									bool caseInsensitive,
 									TiXmlEncoding encoding )
 {
-// 	PA_DelayText(0,0,0,"ReadText",0);
 	*text = "";
 	if (		!trimWhiteSpace			// certain tags always keep whitespace
 			|| !condenseWhiteSpace )	// if true, whitespace is always kept
@@ -1061,7 +1060,6 @@ const char* TiXmlElement::ReadValue( const char* p, TiXmlParsingData* data, TiXm
 				if ( document ) document->SetError( TIXML_ERROR_OUT_OF_MEMORY, 0, 0, encoding );
 				    return 0;
 			}
-
 			if ( TiXmlBase::IsWhiteSpaceCondensed() )
 			{
 				p = textNode->Parse( p, data, encoding );
@@ -1073,10 +1071,10 @@ const char* TiXmlElement::ReadValue( const char* p, TiXmlParsingData* data, TiXm
 				p = textNode->Parse( pWithWhiteSpace, data, encoding ); // DSwiki case
 			}
 
-			if ( !textNode->Blank() )
+// 			if ( !textNode->Blank() )
 				LinkEndChild( textNode );
-			else
-				delete textNode;
+// 			else
+// 				delete textNode;
 		}
 		else
 		{
@@ -1102,7 +1100,10 @@ const char* TiXmlElement::ReadValue( const char* p, TiXmlParsingData* data, TiXm
 			}
 		}
 		pWithWhiteSpace = p;
-		p = SkipWhiteSpace( p, encoding );
+		if ( TiXmlBase::IsWhiteSpaceCondensed() )
+		{
+			p = SkipWhiteSpace( p, encoding );
+		}
 	}
 
 	if ( !p )

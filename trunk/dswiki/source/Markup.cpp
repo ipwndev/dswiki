@@ -178,9 +178,10 @@ void Markup::draw()
 	{
 		FillVS(&ContentWin1,_globals->backgroundColor());
 		FillVS(&ContentWin2,_globals->backgroundColor());
-		BLOCK CharArea = {{0,0},{0,0}};
+		BLOCK CharArea = {{0,0},{251,171}};
 		CharStat CS = ContentCS;
 		CS.Color = _globals->textColor();
+		CS.Rotate = DEG0;
 		Paint(indexRoot,&CS,&CharArea);
 	}
 }
