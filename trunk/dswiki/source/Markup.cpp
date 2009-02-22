@@ -225,6 +225,11 @@ void Markup::Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea)
 			{
 				CopyCS.Color = _globals->imageColor();
 			}
+			else if (text=="pre")
+			{
+				CopyCS.BgColor = PA_RGB(29,29,30);
+				CopyCS.Fx = BACKGR;
+			}
 			else if (text=="wt")
 			{
 				CopyCS.Color = _globals->templateColor();

@@ -128,23 +128,43 @@ unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea
 void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK CharArea)
 {
 	unsigned char*  DATA;
-	unsigned char   idx;
+	unsigned char   idx = 0;
 	unsigned char   ptr;
 	unsigned char   msk;
 	s8   xoff=0;
 	s8   yoff=0;
-	unsigned char   h,w;
-	unsigned char   bbx_w, bbx_h;
+	unsigned char   w, h, bbx_w, bbx_h, Width, Height;
 	short int  X=0, Y=0;
 	CharStat CopyCStat=*CStat;
+
 	DATA = CStat->FONT->getCharacterData(*Uni);
 
-	idx=0;
-
-	xoff = (DATA[2]>>4);
-	yoff = (DATA[2]&0xF);
 	bbx_w = (DATA[1]>>4)+1;
 	bbx_h = (DATA[1]&0xF)+1;
+	xoff = (DATA[2]>>4);
+	yoff = (DATA[2]&0xF);
+	Width = DATA[0];
+	Height = CStat->FONT->Height();
+
+	switch(CStat->Rotate)
+	{
+		case DEG0:
+			CharArea.End.x = CharArea.Start.x + ( (Width - 1) + CStat->W_Space );
+			CharArea.End.y = CharArea.Start.y + ( (Height - 1) + CStat->H_Space );
+			break;
+		case DEG90:
+			CharArea.End.x = CharArea.Start.x + ( (Height - 1) + CStat->H_Space );
+			CharArea.Start.y = CharArea.End.y - ( (Width - 1) + CStat->W_Space );
+			break;
+		case DEG180:
+			CharArea.Start.x = CharArea.End.x - ( (Width - 1) + CStat->W_Space );
+			CharArea.Start.y = CharArea.End.y - ( (Height - 1) + CStat->H_Space );
+			break;
+		case DEG270:
+			CharArea.Start.x = CharArea.End.x - ( (Height - 1) + CStat->H_Space );
+			CharArea.End.y = CharArea.Start.y + ( (Width - 1) + CStat->W_Space );
+			break;
+	}
 
 	switch(CStat->Fx)
 	{
@@ -167,15 +187,15 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 								break;
 							case DEG90:
 								X = CharArea.Start.x + h + yoff;
-								Y = CharArea.End.y   -(w + xoff);
+								Y = CharArea.End.y - ( w + xoff );
 								break;
 							case DEG180:
-								X = CharArea.End.x   -(w + xoff);
-								Y = CharArea.End.y   -(h + yoff);
+								X = CharArea.End.x - ( w + xoff );
+								Y = CharArea.End.y - ( h + yoff );
 								break;
 							case DEG270:
-								X = CharArea.End.x   -(h + yoff);
-								Y = CharArea.Start.y +(w + xoff);
+								X = CharArea.End.x - ( h + yoff );
+								Y = CharArea.Start.y + ( w + xoff );
 								break;
 						}
 						switch(CStat->Fx)
@@ -302,7 +322,8 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 
 	Skip+=ToUTF(&Str[Skip],&Uni);
 
-	while((Limit==-1)||(GlyphsPrinted < Limit)){
+	while((Limit==-1)||(GlyphsPrinted < Limit))
+	{
 		if (ForceInnerWordWrap||HardWrap) // Writing
 		{
 			if(Uni==0x00)
