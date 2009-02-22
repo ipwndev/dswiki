@@ -44,8 +44,8 @@ VirScreen ContentWin1;
 VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
-#define DEBUG 1
-#define DEBUG_WIKI_NR 1
+#define DEBUG 0
+#define DEBUG_WIKI_NR 0
 
 int getFreeRAM()
 {
@@ -84,8 +84,8 @@ int main(int argc, char ** argv)
 // 	string suchtitel = "Herford";
 // 	string suchtitel = "Temp";
 // 	string suchtitel = "Inka";
-	string suchtitel = "Herbert Huber (* 1935)";
-// 	string suchtitel;
+// 	string suchtitel = "Herbert Huber (* 1935)";
+	string suchtitel;
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
@@ -109,6 +109,7 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 
+	PA_Sleep(30);
 	debug = (Pad.Held.L || Pad.Held.R);
 	if (debug)
 	{
