@@ -6,13 +6,12 @@
 
 using namespace std;
 
-unsigned char IsInArea(BLOCK Area, POINT Point);
+bool IsInArea(BLOCK Area, POINT Point);
 BLOCK CreateBlock(int xoff, int yoff, int w, int h);
 BLOCK Intersection(BLOCK Area1,BLOCK Area2);
 
 void DrawPoint (const VirScreen* VScreen, int X, int Y, unsigned short int Color);
-void DrawBlock (const VirScreen* VScreen, BLOCK Area, unsigned short int Color, unsigned char Fill);
-// void DrawBlock (const Device*    Dev,     BLOCK Area, unsigned short int Color, unsigned char Fill);
+void DrawBlock (const VirScreen* VScreen, BLOCK Area, unsigned short int Color, bool Fill);
 void DrawEmboss(const VirScreen* VScreen, BLOCK Area, unsigned short int Color);
 void DrawGroove(const VirScreen* VScreen, BLOCK Area, unsigned short int Color);
 void FillVS (VirScreen* VScreen, unsigned short int Color);

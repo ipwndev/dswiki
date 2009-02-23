@@ -84,7 +84,7 @@ unsigned char CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* Ch
 	return OutScreen;
 }
 
-unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, unsigned char Width, unsigned char Height, unsigned char doWrap)
+unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, unsigned char Width, unsigned char Height, bool doWrap)
 {
 	unsigned char wrap = 0;
 	switch(CStat->Rotate)
@@ -390,7 +390,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 
 			if (CStat->Wrap==NOWRAP)
 			{
-				if (!CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,0))
+				if (!CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,false))
 				{
 					if(CheckLowerBound(CStat,&PrintArea,CharArea,Height))
 						break;
@@ -401,7 +401,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			}
 			else
 			{
-				CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,1);
+				CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,true);
 				if(CheckLowerBound(CStat,&PrintArea,CharArea,Height))
 					break;
 
@@ -442,7 +442,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			DATA = CStat->FONT->getCharacterData(Uni);
 			Width = DATA[0];
 
-			if (CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,1))
+			if (CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,true))
 			{
 				ForceInnerWordWrap = 1;
 				Skip = SaveSkipWord;

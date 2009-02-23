@@ -106,7 +106,7 @@ void Search::display()
 	}
 }
 
-unsigned char Search::scrollLineUp()
+bool Search::scrollLineUp()
 {
 	if (_absolute_CurrentArticleNumber <= 0)
 		return 0;
@@ -159,7 +159,7 @@ unsigned char Search::scrollLineUp()
 	return 1;
 }
 
-unsigned char Search::scrollLineDown()
+bool Search::scrollLineDown()
 {
 	if (_absolute_CurrentArticleNumber >= _globals->getTitleIndex()->NumberOfArticles() - 1)
 		return 0;
@@ -210,7 +210,7 @@ unsigned char Search::scrollLineDown()
 	return 1;
 }
 
-unsigned char Search::scrollPageUp()
+bool Search::scrollPageUp()
 {
 	unsigned char any = 0;
 	unsigned char i;
@@ -224,7 +224,7 @@ unsigned char Search::scrollPageUp()
 	return any;
 }
 
-unsigned char Search::scrollPageDown()
+bool Search::scrollPageDown()
 {
 	unsigned char any = 0;
 	unsigned char i;
@@ -238,14 +238,14 @@ unsigned char Search::scrollPageDown()
 	return any;
 }
 
-unsigned char Search::scrollLongUp()
+bool Search::scrollLongUp()
 {
 	unsigned char change = _absolute_CurrentArticleNumber==0?0:1;
 	load(_absolute_CurrentArticleNumber-25*(SEARCHRESULT_LINES-1));
 	return change;
 }
 
-unsigned char Search::scrollLongDown()
+bool Search::scrollLongDown()
 {
 	unsigned char change = _absolute_CurrentArticleNumber==_globals->getTitleIndex()->NumberOfArticles()-1?0:1;
 	load(_absolute_CurrentArticleNumber+25*(SEARCHRESULT_LINES-1));

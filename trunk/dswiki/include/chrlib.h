@@ -28,13 +28,13 @@ typedef struct
 	ChrRot				Rotate;
 	ChrWrap				Wrap;
 	FX					Fx;
-	unsigned char		CutChar;
+	bool				CutChar;
 } CharStat;
 
 // 16c Unicode printing functions
 void          SwitchNewLine  (const CharStat* CStat,                   BLOCK* CharArea, s16 Origin,                      unsigned char Height);
 unsigned char CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,                                  unsigned char Height);
-unsigned char CheckWrap      (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, unsigned char Width, unsigned char Height, unsigned char doWrap);
+unsigned char CheckWrap      (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, unsigned char Width, unsigned char Height, bool doWrap);
 
 void iDrawChar(unsigned int* Uni,         const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea);
 unsigned int  iPrint   (const char*  Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang);

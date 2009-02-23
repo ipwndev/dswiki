@@ -44,8 +44,8 @@ void Globals::setOptions()
 	TextBox Options(level1);
 	Options.setTitle("Configure DSwiki");
 	Options.allowCancel(1);
-	string choice = Options.run();
-	if (choice == "Invert color scheme")
+	int choice = Options.run();
+	if (choice == 1)
 		toggleInverted();
 }
 
@@ -110,12 +110,15 @@ string Globals::loadBookmark()
 	vector<string> bookmarks;
 	explode("\n",bookmarkStr,bookmarks);
 	bookmarkStr.clear();
-	return bookmarks[PA_RandMinMax(0,bookmarks.size()-1)];
 
 	TextBox BookmarkChooser(bookmarks);
 	BookmarkChooser.setTitle("Load bookmark");
 	BookmarkChooser.allowCancel(1);
-	return BookmarkChooser.run();
+	int chosen = BookmarkChooser.run();
+	if (chosen>=0)
+		return bookmarks[chosen];
+	else
+		return "";
 }
 
 void Globals::saveBookmark(string s)

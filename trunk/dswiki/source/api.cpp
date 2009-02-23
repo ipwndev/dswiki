@@ -1,6 +1,6 @@
 #include "api.h"
 
-unsigned char IsInArea(BLOCK Area, POINT Point)
+bool IsInArea(BLOCK Area, POINT Point)
 {
 	if((Point.x>Area.Start.x)&&(Point.x<Area.End.x))
 	{
@@ -43,7 +43,7 @@ void DrawPoint(const VirScreen* VScreen, int X, int Y, unsigned short int Color)
 	}
 }
 
-void DrawBlock(const VirScreen* VScreen, BLOCK Area, unsigned short int Color, unsigned char Fill)
+void DrawBlock(const VirScreen* VScreen, BLOCK Area, unsigned short int Color, bool Fill)
 {
 	int ASx = Area.Start.x;
 	int AEx = Area.End.x;
@@ -127,7 +127,7 @@ void DrawEmboss(const VirScreen* VScreen, BLOCK Area, unsigned short int Color)
 		B=B*7/10;
 		TempColor=R<<10|G<<5|B;
 
-		DrawBlock(VScreen,Area,Color,1);
+		DrawBlock(VScreen,Area,Color,true);
 		for(W=Area.Start.x+1;W<Area.End.x;W++)
 		{
 			DrawPoint(VScreen,W,Area.Start.y+1,0xFFFF);
@@ -164,7 +164,7 @@ void DrawGroove(const VirScreen* VScreen, BLOCK Area, unsigned short int Color)
 		B>>=1;
 		TempColor=R<<10|G<<5|B;
 
-		DrawBlock(VScreen,Area,Color,1);
+		DrawBlock(VScreen,Area,Color,true);
 		for(W=Area.Start.x+1;W<Area.End.x;W++)
 		{
 			DrawPoint(VScreen,W,Area.Start.y+1,0x8000);
@@ -189,7 +189,7 @@ void DrawGroove(const VirScreen* VScreen, BLOCK Area, unsigned short int Color)
 void FillVS(VirScreen* VScreen, unsigned short int Color)
 {
 	BLOCK fullVS = {{0,0},{VScreen->Width-1,VScreen->Height-1}};
-	DrawBlock(VScreen,fullVS,Color,1);
+	DrawBlock(VScreen,fullVS,Color,true);
 }
 
 void InitVS(VirScreen* VScreen)

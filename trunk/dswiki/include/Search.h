@@ -30,12 +30,12 @@ class Search
 		void load(string phrase);
 		void load(int articleNumber);
 		string currentHighlightedItem();
-		unsigned char	scrollLineDown();
-		unsigned char	scrollLineUp();
-		unsigned char	scrollPageDown();
-		unsigned char	scrollPageUp();
-		unsigned char	scrollLongDown();
-		unsigned char	scrollLongUp();
+		bool scrollLineDown();
+		bool scrollLineUp();
+		bool scrollPageDown();
+		bool scrollPageUp();
+		bool scrollLongDown();
+		bool scrollLongUp();
 		void display();
 		void setGlobals(Globals* globals);
 	private:
@@ -54,7 +54,7 @@ class Search
 		int _absolute_LastDisplayNumber;
 		int _absolute_LastArticleNumber;
 
-		unsigned char	_wasScrolled;
+		bool _wasScrolled;
 
 		Globals* _globals;
 };
