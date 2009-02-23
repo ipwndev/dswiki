@@ -39,12 +39,12 @@ public:
 
 	void load(string basename, bool internal = false);
 
-	string	getTitle(int articleNumber, unsigned char indexNo = 1, unsigned char setPosition = 0);
+	string	getTitle(int articleNumber, unsigned char indexNo = 1, bool setPosition = false);
 
-	ArticleSearchResult*	findArticle(string title, string previousTitle, unsigned char setPosition = 0);
+	ArticleSearchResult*	findArticle(string title, string previousTitle, bool setPosition = false);
 	ArticleSearchResult*	getRandomArticle();
 	ArticleSearchResult*	isRedirect(string markup);
-	int		getSuggestedArticleNumber(string phrase, unsigned char indexNo = 1, unsigned char setPosition = 0);
+	int		getSuggestedArticleNumber(string phrase, unsigned char indexNo = 1, bool setPosition = false);
 	int		NumberOfArticles();
 	string	ImageNamespace();
 	string	TemplateNamespace();
@@ -58,7 +58,7 @@ private:
 
 	int     _numberOfArticles;
 	unsigned char      _indexVersion;
-	unsigned char      _using_index1;
+	bool    _using_index1;
 	bool	isChinese;
 
 	fpos_t	_titlesPos;

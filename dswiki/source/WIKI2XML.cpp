@@ -1,7 +1,6 @@
 #include "WIKI2XML.h"
 #include "main.h"
 #include "char_convert.h"
-#include "TextBox.h"
 #include "fat.h"
 #include "efs_lib.h"
 #include "Globals.h"

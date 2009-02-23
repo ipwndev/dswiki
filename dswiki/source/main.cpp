@@ -44,8 +44,9 @@ VirScreen ContentWin1;
 VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
-#define DEBUG 1
+#define DEBUG 0
 #define DEBUG_WIKI_NR 0
+#define STRESSTEST 0
 
 int getFreeRAM()
 {
@@ -74,9 +75,9 @@ int main(int argc, char ** argv)
 	PA_SetAutoUpdateGHPadTimes(1);
 	PA_SetAutoUpdatePadTimes(1);
 	PA_UpdateUserInfo();
-// 	PA_SRand(0);
 	KT_Init();
 	KT_UseEFS();
+// 	PA_SRand(0);
 
 	string markupstr;
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
@@ -315,7 +316,7 @@ int main(int argc, char ** argv)
 	Markup* markup = NULL;
 
 	string currentTitle = "";
-	string currentSelectedWiki = "";
+	int currentSelectedWiki;
 
 	TextBox* WikiChooser = new TextBox(possibleWikis);
 	WikiChooser->setTitle("Choose your Wiki");
@@ -328,39 +329,39 @@ int main(int argc, char ** argv)
 	}
 	else
 	{
-		currentSelectedWiki = possibleWikis[0];
+		currentSelectedWiki = 0;
 	}
 #else
-	currentSelectedWiki = possibleWikis[DEBUG_WIKI_NR];
+	currentSelectedWiki = DEBUG_WIKI_NR;
 #endif
 
-	unsigned char  updateTitle       = 0;
-	unsigned char  updateContent     = 0;
-	unsigned char  updateStatusbarVS = 0;
-	unsigned char  updatePercent     = 0;
-	unsigned char  updateInRealTime  = 1;
+	bool updateTitle       = false;
+	bool updateContent     = false;
+	bool updateStatusbarVS = false;
+	bool updatePercent     = false;
+	bool updateInRealTime  = true;
 
-	int forcedLine                   = 0;
-	unsigned char  setNewHistoryItem = 1;
-	unsigned char  loadArticle       = 1;
+	int forcedLine         = 0;
+	bool setNewHistoryItem = true;
+	bool loadArticle       = true;
 
 	FillVS(&Titlebar, PA_RGB( 9,16,28));
 
 	g->getStatusbar()->clear();
 	g->getPercentIndicator()->clear();
-	g->getStatusbar()->displayClearAfter("Loading "+currentSelectedWiki+"...",60);
+	g->getStatusbar()->displayClearAfter("Loading "+possibleWikis[currentSelectedWiki]+"...",60);
 
 	TitleIndex* t = new TitleIndex();
 	g->setTitleIndex(t);
 	t->setGlobals(g);
-	t->load(currentSelectedWiki);
+	t->load(possibleWikis[currentSelectedWiki]);
 
 
 	g->getStatusbar()->display("Initializing MarkupGetter...");
 	WikiMarkupGetter* wmg = new WikiMarkupGetter();
 	g->setWikiMarkupGetter(wmg);
 	wmg->setGlobals(g);
-	wmg->load(currentSelectedWiki);
+	wmg->load(possibleWikis[currentSelectedWiki]);
 
 	g->getStatusbar()->clearAfter(30);
 
@@ -377,58 +378,60 @@ int main(int argc, char ** argv)
 
 	while(1) // main loop
 	{
-// 		loadArticle = 1;
-		if (Stylus.Held)
+		if (Stylus.Newpress)
 		{
-			if (Stylus.Newpress)
-			{
-				if (PA_SpriteTouched(SPRITE_CONFIGURE))
-				{
-					g->setOptions();
-					updateContent = 1;
-				};
+		}
+		else if (Stylus.Held)
+		{
+		}
+		else if (Stylus.Released)
+		{
+		}
+		else
+		{
+		}
 
-				if (PA_SpriteTouched(SPRITE_VIEWMAG))
-				{
-					Pad.Newpress.X = 1; // TODO: This is sooo ugly!!!
-				};
-
-				if (PA_SpriteTouched(SPRITE_BOOKMARK))
-				{
-					g->getStatusbar()->displayClearAfter("Loading Bookmarks",45);
-					string bookmark = g->loadBookmark();
-					updateContent = 1;
-					if (!bookmark.empty())
-					{
-						suchtitel = bookmark;
-						forcedLine = 0;
-						setNewHistoryItem = 1;
-						loadArticle = 1;
-					}
-				}
-
-				if (PA_SpriteTouched(SPRITE_BOOKMARKADD))
-				{
-					g->getStatusbar()->displayClearAfter("Adding Bookmark",45);
-					if (!currentTitle.empty())
-					{
-						g->saveBookmark(currentTitle);
-					}
-				}
-
-// 				string markupClick = markup->evaluateClick(Stylus.X,Stylus.Y);
-// 				if (!markupClick.empty())
+// 		if (Stylus.Newpress)
+// 		{
+// 			if (PA_SpriteTouched(SPRITE_CONFIGURE))
+// 			{
+// 				g->setOptions();
+// 				updateContent = 1;
+// 			}
+// 			else if (PA_SpriteTouched(SPRITE_VIEWMAG))
+// 			{
+// 				Pad.Newpress.X = 1; // TODO: This is sooo ugly!!!
+// 			}
+// 			else if (PA_SpriteTouched(SPRITE_BOOKMARK))
+// 			{
+// 				g->getStatusbar()->displayClearAfter("Loading Bookmarks",45);
+// 				string bookmark = g->loadBookmark();
+// 				updateContent = 1;
+// 				if (!bookmark.empty())
 // 				{
-// 					suchtitel = markupClick;
+// 					suchtitel = bookmark;
 // 					forcedLine = 0;
 // 					setNewHistoryItem = 1;
 // 					loadArticle = 1;
 // 				}
-			}
-			else
-			{
-			}
-		}
+// 			}
+// 			else if (PA_SpriteTouched(SPRITE_BOOKMARKADD))
+// 			{
+// 				g->getStatusbar()->displayClearAfter("Adding Bookmark",45);
+// 				if (!currentTitle.empty())
+// 				{
+// 					g->saveBookmark(currentTitle);
+// 				}
+// 			}
+// 			string markupClick = markup->evaluateClick(Stylus.X,Stylus.Y);
+// 			if (!markupClick.empty())
+// 			{
+// 				suchtitel = markupClick;
+// 				forcedLine = 0;
+// 				setNewHistoryItem = 1;
+// 				loadArticle = 1;
+// 			}
+// 		}
 
 		if (Pad.Newpress.Left || Pad.Held.Left || GHPad.Newpress.Blue || GHPad.Held.Blue)
 		{
@@ -480,12 +483,31 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.B)
 		{
+			if (markup)
+			{
+// 				markup->unselect();
+			}
 		}
 
 		if (Pad.Newpress.X)
 		{
 			PA_Clear16bitBg(1);
 			PA_Clear16bitBg(0);
+
+			PA_SetSpriteXY(0, SPRITE_HISTORYX,      3,  3);
+			PA_SetSpriteXY(0, SPRITE_CANCEL,       67,  9);
+			PA_SetSpriteXY(0, SPRITE_OK,          167,  9);
+			PA_SetSpriteXY(0, SPRITE_2UPARROW,    234, 72);
+			PA_SetSpriteXY(0, SPRITE_1UPARROW,    234, 97);
+			PA_SetSpriteXY(0, SPRITE_1DOWNARROW,  234,122);
+			PA_SetSpriteXY(0, SPRITE_2DOWNARROW,  234,147);
+			PA_SetSpriteXY(0, SPRITE_1LEFTARROW,   31, 39);
+			PA_SetSpriteXY(0, SPRITE_1RIGHTARROW, 209, 39);
+			PA_SetSpriteXY(0, SPRITE_CLEARLEFT,   234, 40);
+			PA_SetSpriteXY(0, SPRITE_CONFIGURE,   -16,-16);
+			PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, -16,-16);
+			PA_SetSpriteXY(0, SPRITE_BOOKMARK,    -16,-16);
+			PA_SetSpriteXY(0, SPRITE_VIEWMAG,     -16,-16);
 			PA_ScrollKeyboardXY(24,72);
 
 			FillVS(&StatusbarVS, PA_RGB(18,22,28));
@@ -517,22 +539,6 @@ int main(int argc, char ** argv)
 			}
 
 			int countdown = 0;
-
-			PA_SetSpriteXY(0, SPRITE_HISTORYX,      3,  3);
-			PA_SetSpriteXY(0, SPRITE_CANCEL,       67,  9);
-			PA_SetSpriteXY(0, SPRITE_OK,          167,  9);
-			PA_SetSpriteXY(0, SPRITE_2UPARROW,    234, 72);
-			PA_SetSpriteXY(0, SPRITE_1UPARROW,    234, 97);
-			PA_SetSpriteXY(0, SPRITE_1DOWNARROW,  234,122);
-			PA_SetSpriteXY(0, SPRITE_2DOWNARROW,  234,147);
-			PA_SetSpriteXY(0, SPRITE_1LEFTARROW,   31, 39);
-			PA_SetSpriteXY(0, SPRITE_1RIGHTARROW, 209, 39);
-			PA_SetSpriteXY(0, SPRITE_CLEARLEFT,   234, 40);
-			PA_SetSpriteXY(0, SPRITE_CONFIGURE,   -16,-16);
-			PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, -16,-16);
-			PA_SetSpriteXY(0, SPRITE_BOOKMARK,    -16,-16);
-			PA_SetSpriteXY(0, SPRITE_VIEWMAG,     -16,-16);
-
 
 			if (!updateInRealTime)
 			{
@@ -845,9 +851,10 @@ int main(int argc, char ** argv)
 
 			offsetsUTF.clear();
 
-			PA_ScrollKeyboardXY(24,200);
 			PA_Clear16bitBg(1);
 			PA_Clear16bitBg(0);
+
+			PA_ScrollKeyboardXY(24,200);
 			for (int i=SPRITE_HISTORY;i<=SPRITE_CLEARLEFT;i++)
 				PA_SetSpriteXY(0,i,-16,-16);
 			PA_SetSpriteXY(0, SPRITE_CONFIGURE, 0, 176);
@@ -871,7 +878,17 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if (Pad.Newpress.L)
+		if ( (Pad.Released.R) && (Pad.Downtime.R<75) )
+		{
+			if (h->forward())
+			{
+				suchtitel = h->currentTitle();
+				forcedLine = h->currentLine();
+				setNewHistoryItem = 0;
+				loadArticle = 1;
+			}
+		}
+		else if ( (Pad.Released.L) && (Pad.Downtime.L<75) )
 		{
 			if (h->back())
 			{
@@ -881,16 +898,25 @@ int main(int argc, char ** argv)
 				loadArticle = 1;
 			}
 		}
-
-		if (Pad.Newpress.R)
+		else if ( ( h->size() > 1 ) && ( ( (Pad.Held.R) && (Pad.Downtime.R>=75) ) || ( (Pad.Held.L) && (Pad.Downtime.L>=75) ) ) )
 		{
-			if (h->forward())
+			vector<string> history_vec = h->get();
+			TextBox histChoice(history_vec);
+			histChoice.setGlobals(g);
+			histChoice.setTitle("History of pages");
+			histChoice.allowCancel(1);
+			histChoice.setCurrentPosition(h->getCurrentPosition());
+
+			int chosenHistItem = histChoice.run();
+
+			if ( (chosenHistItem>=0) && (chosenHistItem != h->getCurrentPosition()) )
 			{
-				suchtitel = h->currentTitle();
-				forcedLine = h->currentLine();
+				h->setCurrentPosition(chosenHistItem);
 				setNewHistoryItem = 0;
+				suchtitel = history_vec[chosenHistItem];
 				loadArticle = 1;
 			}
+			updateContent = 1;
 		}
 
 		if (Pad.Newpress.Start)
@@ -901,23 +927,24 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Select && (possibleWikis.size()>1))
 		{
+			int currentSelectedWikiBackup = currentSelectedWiki;
 			WikiChooser->allowCancel(1);
-			string currentSelectedWikiBackup = currentSelectedWiki;
+			WikiChooser->setCurrentPosition(currentSelectedWiki);
 			currentSelectedWiki = WikiChooser->run();
-			if (!currentSelectedWiki.empty() && (currentSelectedWiki != currentSelectedWikiBackup))
+			if ((currentSelectedWiki>=0) && (currentSelectedWiki != currentSelectedWikiBackup))
 			{
-				g->getStatusbar()->displayClearAfter("Loading "+currentSelectedWiki+"...",60);
+				g->getStatusbar()->displayClearAfter("Loading "+possibleWikis[currentSelectedWiki] + "...",60);
 				delete t;
 				t = new TitleIndex();
 				g->setTitleIndex(t);
 				t->setGlobals(g);
-				t->load(currentSelectedWiki);
+				t->load(possibleWikis[currentSelectedWiki]);
 
 				delete wmg;
 				wmg = new WikiMarkupGetter();
 				g->setWikiMarkupGetter(wmg);
 				wmg->setGlobals(g);
-				wmg->load(currentSelectedWiki);
+				wmg->load(possibleWikis[currentSelectedWiki]);
 
 				h->clear();
 
@@ -930,6 +957,10 @@ int main(int argc, char ** argv)
 			updateTitle = 1;
 			updateContent = 1;
 		}
+
+#if STRESSTEST
+		loadArticle = 1;
+#endif
 
 		if (loadArticle)
 		{
@@ -1033,7 +1064,7 @@ int main(int argc, char ** argv)
 					}
 					vector<string> errors1, errors2;
 					explode("\n",xmlerrors,errors1);
-					errors1.push_back(currentSelectedWiki+": "+currentTitle);
+					errors1.push_back(possibleWikis[currentSelectedWiki]+": "+currentTitle);
 					sort(errors1.begin(),errors1.end());
 					if (!errors1[0].empty())
 						errors2.push_back(errors1[0]);

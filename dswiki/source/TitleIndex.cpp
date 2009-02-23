@@ -141,7 +141,7 @@ TitleIndex::~TitleIndex()
 	}
 }
 
-string TitleIndex::getTitle(int articleNumber, unsigned char indexNo, unsigned char setPosition)
+string TitleIndex::getTitle(int articleNumber, unsigned char indexNo, bool setPosition)
 {
 	if ( _numberOfArticles<=0  )
 		return "";
@@ -198,7 +198,7 @@ string TitleIndex::getTitle(int articleNumber, unsigned char indexNo, unsigned c
 }
 
 
-ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle, unsigned char setPosition)
+ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle, bool setPosition)
 {
 	if ( _numberOfArticles<=0  )
 		return NULL;
@@ -363,7 +363,7 @@ ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle,
 	}
 }
 
-int TitleIndex::getSuggestedArticleNumber(string title, unsigned char indexNo, unsigned char setPosition)
+int TitleIndex::getSuggestedArticleNumber(string title, unsigned char indexNo, bool setPosition)
 {
 	if ( _numberOfArticles<=0 )
 		return 0;
@@ -466,7 +466,7 @@ ArticleSearchResult* TitleIndex::getRandomArticle()
 
 	int articleNo = PA_RandMax(_numberOfArticles-1);
 
-	string titleInArchive = getTitle(articleNo, 0, 1);
+	string titleInArchive = getTitle(articleNo, 0, true);
 
 	return new ArticleSearchResult(titleInArchive, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 }

@@ -13,77 +13,109 @@
 #include <PA9.h>
 #include "TextBox.h"
 #include "main.h"
-#include "api.h"
 
-string TextBox::run()
+int TextBox::run()
 {
 	PA_WaitForVBL();
 	if (_lines.empty())
-		return "";
+		return -1;
+	if (_lines.size() == 1)
+		return 0;
 
-	VirScreen TextboxOuterBorder = {18, 10, 220, 156, {{0,0},{0,0}}, &DnScreen};
-	InitVS(&TextboxOuterBorder);
-	FillVS(&TextboxOuterBorder,PA_RGB(28,28,28));
+	CharStat CS = NormalCS;
+	CS.Wrap = NOWRAP;
+	CS.BgColor = PA_RGB(28,28,28);
 
-	BLOCK border = TextboxOuterBorder.RelativeBound(-7);
-	DrawBlock (&TextboxOuterBorder, border, PA_RGB(0,0,0), 0);
+	FillVS(&BoxSpace,PA_RGB(28,28,28));
 
-	CharStat neu = SearchResultsCS1;
-	neu.BgColor = PA_RGB(28,28,28);
-	neu.Fx = BACKGR;
-	BLOCK CharArea = {{23,0},{0,0}};
+	BLOCK CharArea = {{0,0},{0,0}};
+
+	iPrint("┌",&BoxSpace,&CS,&CharArea,-1,UTF8);
+	for (int a=1;a+1<boxDrawingCharsPerLine;a++)
+	{
+		iPrint("─",&BoxSpace,&CS,&CharArea,-1,UTF8);
+	}
+	iPrint("┐",&BoxSpace,&CS,&CharArea,-1,UTF8);
+	for (int a=1;a+1<_numlines+2;a++)
+	{
+		CharArea.Start.x = 0;
+		CharArea.Start.y = a*CS.FONT->Height();
+		iPrint("│",&BoxSpace,&CS,&CharArea,-1,UTF8);
+		CharArea.Start.x = usedWidth-boxDrawingWidth;
+		iPrint("│",&BoxSpace,&CS,&CharArea,-1,UTF8);
+	}
+	CharArea.Start.x = 0;
+	CharArea.Start.y = usedHeight-CS.FONT->Height();
+	iPrint("└",&BoxSpace,&CS,&CharArea,-1,UTF8);
+	for (int a=1;a+1<boxDrawingCharsPerLine;a++)
+	{
+		iPrint("─",&BoxSpace,&CS,&CharArea,-1,UTF8);
+	}
+	iPrint("┘",&BoxSpace,&CS,&CharArea,-1,UTF8);
 	if (!_title.empty())
-		iPrint(" "+_title+" ",&TextboxOuterBorder,&neu,&CharArea,-1,UTF8);
+	{
+		CharArea.Start.x = 4*boxDrawingWidth;
+		CharArea.Start.y = 0;
+		CS.Fx = BACKGR;
+		iPrint(" "+_title+" ",&BoxSpace,&CS,&CharArea,-1,UTF8);
+		CS.Fx = NONE;
+	}
 
-	VirScreen inner = {0,0,0,0, TextboxOuterBorder.AbsoluteBlock(TextboxOuterBorder.RelativeBound(-14)), &DnScreen};
-	InitVS2(&inner);
-	_numlines = inner.Height/SearchResultsCS1.FONT->Height();
-	unsigned char fullupdate = 1;
-	unsigned char update = 1;
+	bool fullupdate = true;
+	bool update = true;
+	bool acceptShoulderbuttons = false;
+
 	while(1)
 	{
+		int lineClicked = (Stylus.Y - ContentSpace.AbsoluteBound.Start.y) / boxDrawingHeight;
+		if (lineClicked < 0)
+			lineClicked = 0;
+		if (lineClicked > _numlines - 1)
+			lineClicked = _numlines - 1;
+
 		if (Stylus.Held)
 		{
-			int y = Stylus.Y;
-			y -= inner.AbsoluteBound.Start.y;
-			int lineClicked = y / SearchResultsCS1.FONT->Height();
 			if (Stylus.Newpress)
 			{
 				if (_allowCancel &&
-					((Stylus.X < TextboxOuterBorder.AbsoluteBound.Start.x-5)
-								|| (Stylus.X > TextboxOuterBorder.AbsoluteBound.End.x+5)
-								|| (Stylus.Y < TextboxOuterBorder.AbsoluteBound.Start.y-5)
-								|| (Stylus.Y > TextboxOuterBorder.AbsoluteBound.End.y+5))
+								  ((Stylus.X < BoxSpace.AbsoluteBound.Start.x-5)
+								|| (Stylus.X > BoxSpace.AbsoluteBound.End.x+5)
+								|| (Stylus.Y < BoxSpace.AbsoluteBound.Start.y-5)
+								|| (Stylus.Y > BoxSpace.AbsoluteBound.End.y+5))
 				   )
 				{
 					PA_WaitForVBL();
-					return "";
+					return -1;
 				}
 				if (_topItem + lineClicked == _currentItem)
 				{
 					PA_WaitForVBL();
-					return _lines[_currentItem];
+					return _currentItem;
 				}
 			}
 			if (_currentItem != _topItem + lineClicked)
 			{
 				_currentItem = _topItem + lineClicked;
-				if (_currentItem>= (int) _lines.size()-1)
-					_currentItem =_lines.size()-1;
 				update = 1;
 			}
 		}
+
 		if (Pad.Newpress.A)
 		{
 			PA_WaitForVBL();
-			return _lines[_currentItem];
+			return _currentItem;
 		}
+
 		if (_allowCancel && (Pad.Newpress.B || Pad.Newpress.Start) )
 		{
 			PA_WaitForVBL();
-			return "";
+			return -1;
 		}
-		if (Pad.Held.Up && (_currentItem>0))
+
+		if (Pad.Newpress.L || Pad.Newpress.R)
+			acceptShoulderbuttons = true;
+
+		if (((acceptShoulderbuttons && Pad.Held.L) || Pad.Held.Up) && (_currentItem>0))
 		{
 			_currentItem--;
 			if (_currentItem<_topItem)
@@ -94,7 +126,8 @@ string TextBox::run()
 			update = 1;
 			PA_Sleep(10);
 		}
-		if (Pad.Held.Down && (_currentItem< (int) _lines.size()-1))
+
+		if (((acceptShoulderbuttons && Pad.Held.R) || Pad.Held.Down) && (_currentItem< (int) _lines.size()-1))
 		{
 			_currentItem++;
 			if (_currentItem>_topItem+_numlines-1)
@@ -105,30 +138,49 @@ string TextBox::run()
 			update = 1;
 			PA_Sleep(10);
 		}
+
 		if (fullupdate)
 		{
-			FillVS(&inner,PA_RGB(28,28,28));
+			FillVS(&ContentSpace,PA_RGB(28,28,28));
+			CharArea.Start.x = 2*boxDrawingWidth;
+			CharArea.Start.y = 0;
+			CS.Fx = BACKGR;
 			if (_topItem>0)
 			{
-				CharArea = (BLOCK) {{13,0},{0,0}};
-// 				iPrint("↑",&TextboxOuterBorder,&neu,&CharArea,-1,UTF8);
+				iPrint("↑",&BoxSpace,&CS,&CharArea,-1,UTF8);
 			}
+			else
+			{
+				iPrint("─",&BoxSpace,&CS,&CharArea,-1,UTF8);
+			}
+			CharArea.Start.x = 2*boxDrawingWidth;
+			CharArea.Start.y = usedHeight-boxDrawingHeight;
 			if ( (int) _lines.size()>_numlines+_topItem)
 			{
-				CharArea = (BLOCK) {{13,TextboxOuterBorder.Height-14},{0,0}};
-// 				iPrint("↓",&TextboxOuterBorder,&neu,&CharArea,-1,UTF8);
+				iPrint("↓",&BoxSpace,&CS,&CharArea,-1,UTF8);
 			}
+			else
+			{
+				iPrint("─",&BoxSpace,&CS,&CharArea,-1,UTF8);
+			}
+			CS.Fx = NONE;
 			fullupdate = 0;
 		}
 		if (update)
 		{
 			CharArea.clear();
-			for (int i=_topItem; (i< (int) _lines.size())&&(i-_topItem<_numlines); i++)
+			for (int i=_topItem; (i < (int) _lines.size())&&(i-_topItem<_numlines); i++)
 			{
 				if (i==_currentItem)
-					iPrint(_lines[i]+"\n",&inner,&SearchResultsCS2,&CharArea,-1,UTF8);
+				{
+					CS.Color = PA_RGB(31, 0, 0);
+					iPrint(_lines[i]+"\n",&ContentSpace,&SearchResultsCS2,&CharArea,-1,UTF8);
+					CS.Color = PA_RGB(0, 0, 0);
+				}
 				else
-					iPrint(_lines[i]+"\n",&inner,&SearchResultsCS1,&CharArea,-1,UTF8);
+				{
+					iPrint(_lines[i]+"\n",&ContentSpace,&SearchResultsCS1,&CharArea,-1,UTF8);
+				}
 			}
 			update = 0;
 		}
@@ -137,16 +189,55 @@ string TextBox::run()
 	}
 
 	PA_WaitForVBL();
-	return "";
+	return -1;
 }
 
-void TextBox::allowCancel(unsigned char allowCancel)
+void TextBox::allowCancel(bool allowCancel)
 {
 	_allowCancel = allowCancel;
 }
 
-void TextBox::reset()
+
+void TextBox::setCurrentPosition(int pos)
 {
-	_currentItem = 0;
+	_currentItem = pos;
+	if (_numlines == (int) _lines.size())
+	{
+		// the only case where we can see both ends
+		_topItem = 0;
+	}
+	else
+	{
+		// center it the best way possible
+		_topItem = pos - _numlines/2;
+		if (_topItem<0)
+			_topItem = 0;
+		if (_topItem > (int) _lines.size()-_numlines)
+			_topItem = _lines.size()-_numlines;
+	}
+}
+
+TextBox::TextBox(vector<string> lines)
+{
+	_lines = lines;
 	_topItem = 0;
+	_currentItem = 0;
+
+	VirScreen MaxPossibleSpace = {18, 10, 220, 156, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&MaxPossibleSpace);
+
+	boxDrawingWidth = NormalCS.FONT->getCharacterWidth(0x2500);
+	boxDrawingHeight = NormalCS.FONT->Height();
+	boxDrawingCharsPerLine = MaxPossibleSpace.Width / boxDrawingWidth;
+	usedWidth = boxDrawingCharsPerLine * boxDrawingWidth;
+	_numlines = _lines.size();
+	while ((2+_numlines)*boxDrawingHeight > (int) MaxPossibleSpace.Height)
+		_numlines--;
+	usedHeight = (2+_numlines)*boxDrawingHeight;
+
+	BoxSpace = (VirScreen) {MaxPossibleSpace.Left+(MaxPossibleSpace.Width-usedWidth)/2, MaxPossibleSpace.Top+(MaxPossibleSpace.Height-usedHeight)/2, usedWidth, usedHeight, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&BoxSpace);
+
+	ContentSpace = (VirScreen) {BoxSpace.Left+boxDrawingWidth, BoxSpace.Top+boxDrawingHeight, usedWidth-2*boxDrawingWidth, usedHeight-2*boxDrawingHeight, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&ContentSpace);
 }

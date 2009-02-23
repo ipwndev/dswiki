@@ -37,6 +37,7 @@ class Font
 		Font(char* filename);
 		~Font();
 		unsigned char* getCharacterData(unsigned int Uni);
+		unsigned char getCharacterWidth(unsigned int Uni) { return (getCharacterData(Uni)[0]); };
 		bool initOK();
 		unsigned char Height();
 	private:

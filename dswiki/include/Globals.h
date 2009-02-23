@@ -71,7 +71,7 @@ class Globals
 		Font*             _font_o;
 		Font*             _font_bo;
 		int               _language; //0 Japanese, 1 English, 2 Français, 3 Deutsch, 4 Italian, 5 Spanish
-		unsigned char     _isInverted;
+		bool              _isInverted;
 };
 
 

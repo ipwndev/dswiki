@@ -10,20 +10,20 @@ using namespace std;
 
 typedef struct
 {
-	unsigned int UTF32_from;
-	unsigned int UTF32_to;
+	int UTF32_from;
+	int UTF32_to;
 } UTF32ReplacementRule;
 
 typedef struct
 {
-	unsigned int UTF32_from;
-	unsigned int UTF32_tos[5];
+	int UTF32_from;
+	int UTF32_tos[5];
 } UTF32ReplacementRule2;
 
 typedef struct
 {
 	string entity;
-	unsigned int codepoint;
+	int codepoint;
 } NamedEntity;
 
 string exchangeDiacriticChars(string phrase, unsigned char indexVersion = 0);

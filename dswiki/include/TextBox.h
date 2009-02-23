@@ -16,6 +16,7 @@
 #include <PA9.h>
 #include <vector>
 #include <string>
+#include "api.h"
 
 using namespace std;
 
@@ -24,21 +25,31 @@ class Globals;
 class TextBox
 {
 	public:
-		TextBox(vector<string> lines) { _lines = lines; _topItem = 0; _currentItem = 0; };
-		TextBox(string oneliner) { _lines.push_back(oneliner); _topItem = 0; _currentItem = 0; };
-		void allowCancel(unsigned char allowCancel);
+		TextBox(vector<string> lines);
+		void allowCancel(bool allowCancel);
 		void setGlobals(Globals* globals) { _globals = globals; }
 		void setTitle(string title) {_title = title; };
+		void highlight(string title);
 		void reset();
-		string run();
+		int run();
+		void setCurrentPosition(int pos);
 	private:
 		vector<string> _lines;
 		string _title;
 		int _topItem;
 		int _currentItem;
-		int _numlines;
 		Globals* _globals;
-		unsigned char _allowCancel;
+		bool _allowCancel;
+		VirScreen MaxPossibleSpace;
+		VirScreen BoxSpace;
+		VirScreen ContentSpace;
+
+		int boxDrawingWidth;
+		int boxDrawingHeight;
+		int boxDrawingCharsPerLine;
+		int usedWidth;
+		int _numlines;
+		int usedHeight;
 };
 
 #endif
