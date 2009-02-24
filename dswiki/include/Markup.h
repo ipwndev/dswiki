@@ -13,6 +13,23 @@ class Globals;
 
 using namespace std;
 
+class MarkupLineElement
+{
+	public:
+		TiXmlNode*			linkedWith;
+		string				text;
+		unsigned short int	color;
+		unsigned short int	bgcolor;
+		int					left;
+		int					width;
+};
+
+class MarkupLine
+{
+	public:
+		vector<MarkupLineElement> elements;
+};
+
 class Markup
 {
 	public:
@@ -26,12 +43,13 @@ class Markup
 		string	getFirstLink();
 	private:
 		void	build_index(TiXmlNode* pParent, vector <TiXmlNode*> & index);
+		string	getFirstLink(TiXmlNode* pParent);
 		TiXmlDocument*			_td;
+		TiXmlNode*				_root;
 		bool					_loadOK;
 		bool					_showing_index;
 		Globals*				_globals;
 		map <string,TiXmlNode*>	index;
-		TiXmlNode*				indexRoot;
 		string					indexMarkupStr;
 		Markup*					indexMarkup;
 		void	Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea);

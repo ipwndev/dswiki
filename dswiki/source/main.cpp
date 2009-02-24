@@ -45,7 +45,7 @@ VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
 #define DEBUG 0
-#define DEBUG_WIKI_NR 0
+#define DEBUG_WIKI_NR 1
 #define STRESSTEST 0
 
 int getFreeRAM()
@@ -85,7 +85,7 @@ int main(int argc, char ** argv)
 // 	string suchtitel = "Herford";
 // 	string suchtitel = "Temp";
 // 	string suchtitel = "Inka";
-// 	string suchtitel = "Herbert Huber (* 1935)";
+// 	string suchtitel = "Redirect-Test 2";
 	string suchtitel;
 
 	PA_Init16bitBg(0, 3);
@@ -878,7 +878,7 @@ int main(int argc, char ** argv)
 			}
 		}
 
-		if ( (Pad.Released.R) && (Pad.Downtime.R<75) )
+		if ( (Pad.Released.R) && (Pad.Downtime.R<60) )
 		{
 			if (h->forward())
 			{
@@ -888,7 +888,7 @@ int main(int argc, char ** argv)
 				loadArticle = 1;
 			}
 		}
-		else if ( (Pad.Released.L) && (Pad.Downtime.L<75) )
+		else if ( (Pad.Released.L) && (Pad.Downtime.L<60) )
 		{
 			if (h->back())
 			{
@@ -898,7 +898,7 @@ int main(int argc, char ** argv)
 				loadArticle = 1;
 			}
 		}
-		else if ( ( h->size() > 1 ) && ( ( (Pad.Held.R) && (Pad.Downtime.R>=75) ) || ( (Pad.Held.L) && (Pad.Downtime.L>=75) ) ) )
+		else if ( ( h->size() > 1 ) && ( ( (Pad.Held.R) && (Pad.Downtime.R>=60) ) || ( (Pad.Held.L) && (Pad.Downtime.L>=60) ) ) )
 		{
 			vector<string> history_vec = h->get();
 			TextBox histChoice(history_vec);

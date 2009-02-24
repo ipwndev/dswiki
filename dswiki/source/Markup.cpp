@@ -18,9 +18,10 @@ using namespace std;
 Markup::Markup()
 {
 	_td = NULL;
+	_root = NULL;
+
 	_showing_index = false;
 	index.clear();
-	indexRoot = NULL;
 	indexMarkup = NULL;
 	indexMarkupStr.clear();
 
@@ -66,7 +67,7 @@ void Markup::parse(string & Str)
 
 	if (_loadOK)
 	{
-		indexRoot = _td->LastChild();
+		_root = _td->LastChild();
 
 		vector <TiXmlNode*>	index_tmp;
 		build_index(_td, index_tmp);
@@ -182,7 +183,7 @@ void Markup::draw()
 		CharStat CS = ContentCS;
 		CS.Color = _globals->textColor();
 		CS.Rotate = DEG0;
-		Paint(indexRoot,&CS,&CharArea);
+		Paint(_root,&CS,&CharArea);
 	}
 }
 
@@ -256,7 +257,47 @@ void Markup::Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea)
 
 string Markup::getFirstLink()
 {
-	return "";
+	string ret = getFirstLink(_root);
+	ret = ret.substr(0,ret.find("#"));
+	return ret;
+}
+
+string Markup::getFirstLink(TiXmlNode* pParent)
+{
+	string ret = "";
+	string val = pParent->ValueStr();
+	if (val=="wl")
+	{
+		TiXmlNode* child = pParent->FirstChild();
+		if (child)
+		{
+			if (child->ValueStr()=="wp")
+			{
+				child = child->FirstChild();
+				if (child)
+				{
+					if (child->ValueStr()=="val")
+					{
+						child = child->FirstChild();
+						if (child)
+							return child->ValueStr();
+					}
+				}
+			}
+		}
+	}
+
+	if (ret.empty())
+	{
+		TiXmlNode* child;
+		for (child=pParent->FirstChild(); child; child = child->NextSibling() )
+		{
+			ret = getFirstLink(child);
+			if (!ret.empty())
+				break;
+		}
+	}
+	return ret;
 }
 
 void Markup::number_Of_Linebreaks(string & name, int & before, int & after)
