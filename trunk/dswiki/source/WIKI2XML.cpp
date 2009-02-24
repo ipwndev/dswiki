@@ -1036,6 +1036,9 @@ WIKI2XML::WIKI2XML()
 	allowed_html.push_back("h8");
 	allowed_html.push_back("h9");
 
+	allowed_html.push_back("noinclude");
+	allowed_html.push_back("includeonly");
+
 	allowed_html.push_back("!--");
 }
 

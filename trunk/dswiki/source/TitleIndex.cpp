@@ -451,7 +451,6 @@ ArticleSearchResult* TitleIndex::isRedirect(string Str)
 			return NULL;
 		else
 			return findArticle(first_target,"");
-
 	}
 	else
 	{
