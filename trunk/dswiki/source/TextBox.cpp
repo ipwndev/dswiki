@@ -67,36 +67,65 @@ int TextBox::run()
 
 	while(1)
 	{
-		int lineClicked = (Stylus.Y - ContentSpace.AbsoluteBound.Start.y) / boxDrawingHeight;
-		if (lineClicked < 0)
-			lineClicked = 0;
-		if (lineClicked > _numlines - 1)
-			lineClicked = _numlines - 1;
+		int lineClicked = (Stylus.Y - ContentSpace.AbsoluteBound.Start.y + 100 * boxDrawingHeight) / boxDrawingHeight - 100;
 
-		if (Stylus.Held)
+		if (Stylus.Newpress)
 		{
-			if (Stylus.Newpress)
+			if (_allowCancel &&
+						 ((Stylus.X < BoxSpace.AbsoluteBound.Start.x-5)
+						 || (Stylus.X > BoxSpace.AbsoluteBound.End.x+5)
+						 || (Stylus.Y < BoxSpace.AbsoluteBound.Start.y-5)
+						 || (Stylus.Y > BoxSpace.AbsoluteBound.End.y+5))
+			   )
 			{
-				if (_allowCancel &&
-								  ((Stylus.X < BoxSpace.AbsoluteBound.Start.x-5)
-								|| (Stylus.X > BoxSpace.AbsoluteBound.End.x+5)
-								|| (Stylus.Y < BoxSpace.AbsoluteBound.Start.y-5)
-								|| (Stylus.Y > BoxSpace.AbsoluteBound.End.y+5))
-				   )
+				PA_WaitForVBL();
+				return -1;
+			}
+
+			if (_topItem + lineClicked == _currentItem)
+			{
+				PA_WaitForVBL();
+				return _currentItem;
+			}
+		}
+		else if (Stylus.Held)
+		{
+			if (lineClicked < 0)
+			{
+				if (_topItem>0)
 				{
-					PA_WaitForVBL();
-					return -1;
+					_topItem--;
+					_currentItem = _topItem;
+					update = true;
+					fullupdate = true;
+					PA_Sleep(5);
 				}
-				if (_topItem + lineClicked == _currentItem)
+				else if (_currentItem != _topItem)
 				{
-					PA_WaitForVBL();
-					return _currentItem;
+					_currentItem = _topItem;
+					update = true;
 				}
 			}
-			if (_currentItem != _topItem + lineClicked)
+			else if (lineClicked > _numlines - 1)
+			{
+				if (_topItem + _numlines < (int) _lines.size())
+				{
+					_topItem++;
+					_currentItem = _topItem + _numlines - 1;
+					update = true;
+					fullupdate = true;
+					PA_Sleep(5);
+				}
+				else if (_currentItem != _topItem + _numlines)
+				{
+					_currentItem = _topItem + _numlines - 1;
+					update = true;
+				}
+			}
+			else if (_currentItem != _topItem + lineClicked)
 			{
 				_currentItem = _topItem + lineClicked;
-				update = 1;
+				update = true;
 			}
 		}
 
@@ -115,27 +144,69 @@ int TextBox::run()
 		if (Pad.Newpress.L || Pad.Newpress.R)
 			acceptShoulderbuttons = true;
 
-		if (((acceptShoulderbuttons && Pad.Held.L) || Pad.Held.Up) && (_currentItem>0))
+		if ((acceptShoulderbuttons && Pad.Held.L) || Pad.Held.Up)
 		{
-			_currentItem--;
-			if (_currentItem<_topItem)
+			if (_currentItem>0)
 			{
-				_topItem--;
-				fullupdate = 1;
+				_currentItem--;
+				if (_currentItem<_topItem)
+				{
+					_topItem--;
+					fullupdate = true;
+				}
+				update = true;
+				PA_Sleep(10);
 			}
-			update = 1;
+		}
+
+		if ( (acceptShoulderbuttons && Pad.Held.R) || Pad.Held.Down)
+		{
+			if (_currentItem< (int) _lines.size()-1)
+			{
+				_currentItem++;
+				if (_currentItem>_topItem+_numlines-1)
+				{
+					_topItem++;
+					fullupdate = true;
+				}
+				update = true;
+				PA_Sleep(10);
+			}
+		}
+
+		if (Pad.Held.Left)
+		{
+			for (int a=0;a+1<_numlines;a++)
+			{
+				if (_currentItem>0)
+				{
+					_currentItem--;
+					if (_currentItem<_topItem)
+					{
+						_topItem--;
+						fullupdate = true;
+					}
+					update = true;
+				}
+			}
 			PA_Sleep(10);
 		}
 
-		if (((acceptShoulderbuttons && Pad.Held.R) || Pad.Held.Down) && (_currentItem< (int) _lines.size()-1))
+		if (Pad.Held.Right)
 		{
-			_currentItem++;
-			if (_currentItem>_topItem+_numlines-1)
+			for (int a=0;a+1<_numlines;a++)
 			{
-				_topItem++;
-				fullupdate = 1;
+				if (_currentItem < (int) _lines.size()-1)
+				{
+					_currentItem++;
+					if (_currentItem>_topItem+_numlines-1)
+					{
+						_topItem++;
+						fullupdate = true;
+					}
+					update = true;
+				}
 			}
-			update = 1;
 			PA_Sleep(10);
 		}
 
@@ -164,7 +235,7 @@ int TextBox::run()
 				iPrint("─",&BoxSpace,&CS,&CharArea,-1,UTF8);
 			}
 			CS.Fx = NONE;
-			fullupdate = 0;
+			fullupdate = false;
 		}
 		if (update)
 		{
@@ -182,7 +253,7 @@ int TextBox::run()
 					iPrint(_lines[i]+"\n",&ContentSpace,&SearchResultsCS1,&CharArea,-1,UTF8);
 				}
 			}
-			update = 0;
+			update = false;
 		}
 
 		PA_WaitForVBL();
@@ -222,6 +293,7 @@ TextBox::TextBox(vector<string> lines)
 	_lines = lines;
 	_topItem = 0;
 	_currentItem = 0;
+	_allowCancel = false;
 
 	VirScreen MaxPossibleSpace = {18, 10, 220, 156, {{0,0},{0,0}}, &DnScreen};
 	InitVS(&MaxPossibleSpace);

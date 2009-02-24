@@ -340,6 +340,7 @@ int main(int argc, char ** argv)
 	bool updateStatusbarVS = false;
 	bool updatePercent     = false;
 	bool updateInRealTime  = true;
+	bool search            = false;
 
 	int forcedLine         = 0;
 	bool setNewHistoryItem = true;
@@ -355,7 +356,6 @@ int main(int argc, char ** argv)
 	g->setTitleIndex(t);
 	t->setGlobals(g);
 	t->load(possibleWikis[currentSelectedWiki]);
-
 
 	g->getStatusbar()->display("Initializing MarkupGetter...");
 	WikiMarkupGetter* wmg = new WikiMarkupGetter();
@@ -391,38 +391,38 @@ int main(int argc, char ** argv)
 		{
 		}
 
-// 		if (Stylus.Newpress)
-// 		{
-// 			if (PA_SpriteTouched(SPRITE_CONFIGURE))
-// 			{
-// 				g->setOptions();
-// 				updateContent = 1;
-// 			}
-// 			else if (PA_SpriteTouched(SPRITE_VIEWMAG))
-// 			{
-// 				Pad.Newpress.X = 1; // TODO: This is sooo ugly!!!
-// 			}
-// 			else if (PA_SpriteTouched(SPRITE_BOOKMARK))
-// 			{
-// 				g->getStatusbar()->displayClearAfter("Loading Bookmarks",45);
-// 				string bookmark = g->loadBookmark();
-// 				updateContent = 1;
-// 				if (!bookmark.empty())
-// 				{
-// 					suchtitel = bookmark;
-// 					forcedLine = 0;
-// 					setNewHistoryItem = 1;
-// 					loadArticle = 1;
-// 				}
-// 			}
-// 			else if (PA_SpriteTouched(SPRITE_BOOKMARKADD))
-// 			{
-// 				g->getStatusbar()->displayClearAfter("Adding Bookmark",45);
-// 				if (!currentTitle.empty())
-// 				{
-// 					g->saveBookmark(currentTitle);
-// 				}
-// 			}
+		if (Stylus.Newpress)
+		{
+			if (PA_SpriteTouched(SPRITE_CONFIGURE))
+			{
+				g->setOptions();
+				updateContent = 1;
+			}
+			else if (PA_SpriteTouched(SPRITE_VIEWMAG))
+			{
+				search = true;
+			}
+			else if (PA_SpriteTouched(SPRITE_BOOKMARK))
+			{
+				g->getStatusbar()->displayClearAfter("Loading Bookmarks",45);
+				string bookmark = g->loadBookmark();
+				updateContent = 1;
+				if (!bookmark.empty())
+				{
+					suchtitel = bookmark;
+					forcedLine = 0;
+					setNewHistoryItem = 1;
+					loadArticle = 1;
+				}
+			}
+			else if (PA_SpriteTouched(SPRITE_BOOKMARKADD))
+			{
+				g->getStatusbar()->displayClearAfter("Adding Bookmark",45);
+				if (!currentTitle.empty())
+				{
+					g->saveBookmark(currentTitle);
+				}
+			}
 // 			string markupClick = markup->evaluateClick(Stylus.X,Stylus.Y);
 // 			if (!markupClick.empty())
 // 			{
@@ -431,7 +431,7 @@ int main(int argc, char ** argv)
 // 				setNewHistoryItem = 1;
 // 				loadArticle = 1;
 // 			}
-// 		}
+		}
 
 		if (Pad.Newpress.Left || Pad.Held.Left || GHPad.Newpress.Blue || GHPad.Held.Blue)
 		{
@@ -488,9 +488,285 @@ int main(int argc, char ** argv)
 // 				markup->unselect();
 			}
 		}
-
 		if (Pad.Newpress.X)
 		{
+			search = true;
+		}
+
+		if (Pad.Newpress.Y)
+		{
+			if (markup)
+			{
+				if (markup->toggleIndex())
+				{
+					updateContent = 1;
+				}
+			}
+		}
+
+		if ( (Pad.Released.R) && (Pad.Downtime.R<60) )
+		{
+			if (h->forward())
+			{
+				suchtitel = h->currentTitle();
+				forcedLine = h->currentLine();
+				setNewHistoryItem = 0;
+				loadArticle = 1;
+			}
+		}
+		else if ( (Pad.Released.L) && (Pad.Downtime.L<60) )
+		{
+			if (h->back())
+			{
+				suchtitel = h->currentTitle();
+				forcedLine = h->currentLine();
+				setNewHistoryItem = 0;
+				loadArticle = 1;
+			}
+		}
+		else if ( ( h->size() > 1 ) && ( ( (Pad.Held.R) && (Pad.Downtime.R>=60) ) || ( (Pad.Held.L) && (Pad.Downtime.L>=60) ) ) )
+		{
+			vector<string> history_vec = h->get();
+			TextBox histChoice(history_vec);
+			histChoice.setGlobals(g);
+			histChoice.setTitle("History of pages");
+			histChoice.allowCancel(1);
+			histChoice.setCurrentPosition(h->getCurrentPosition());
+
+			int chosenHistItem = histChoice.run();
+
+			if ( (chosenHistItem>=0) && (chosenHistItem != h->getCurrentPosition()) )
+			{
+				h->setCurrentPosition(chosenHistItem);
+				setNewHistoryItem = 0;
+				suchtitel = history_vec[chosenHistItem];
+				loadArticle = 1;
+			}
+			updateContent = 1;
+		}
+
+		if (Pad.Newpress.Start)
+		{
+			g->setOptions();
+			updateContent = 1;
+		}
+
+		if (Pad.Newpress.Select && (possibleWikis.size()>1))
+		{
+			int currentSelectedWikiBackup = currentSelectedWiki;
+			WikiChooser->allowCancel(1);
+			WikiChooser->setCurrentPosition(currentSelectedWiki);
+			currentSelectedWiki = WikiChooser->run();
+			if ((currentSelectedWiki>=0) && (currentSelectedWiki != currentSelectedWikiBackup))
+			{
+				g->getStatusbar()->displayClearAfter("Loading "+possibleWikis[currentSelectedWiki] + "...",60);
+				delete t;
+				t = new TitleIndex();
+				g->setTitleIndex(t);
+				t->setGlobals(g);
+				t->load(possibleWikis[currentSelectedWiki]);
+
+				delete wmg;
+				wmg = new WikiMarkupGetter();
+				g->setWikiMarkupGetter(wmg);
+				wmg->setGlobals(g);
+				wmg->load(possibleWikis[currentSelectedWiki]);
+
+				h->clear();
+
+				loadArticle = 1;
+			}
+			else
+			{
+				currentSelectedWiki = currentSelectedWikiBackup;
+			}
+			updateTitle = 1;
+			updateContent = 1;
+		}
+
+#if STRESSTEST
+		loadArticle = 1;
+#endif
+
+		if (loadArticle)
+		{
+			delete suchergebnis;
+			suchergebnis = NULL;
+
+			if (suchtitel.empty())
+			{
+				g->getStatusbar()->display("Searching random article...");
+				suchergebnis = t->getRandomArticle();
+			}
+			else
+			{
+				g->getStatusbar()->display("Searching "+suchtitel+"...");
+				suchergebnis = t->findArticle(suchtitel,currentTitle);
+			}
+
+			if (suchergebnis)
+			{
+				if (markup)
+				{
+					delete markup;
+					markup = NULL;
+				}
+
+				suchtitel.clear();
+				g->getStatusbar()->display("Loading \""+suchergebnis->TitleInArchive()+"\"");
+
+				markupstr.clear();
+				g->getStatusbar()->display("Getting markup...");
+				g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
+
+				string redirectMessage = "";
+				unsigned char numberOfRedirections = 0;
+				while ((numberOfRedirections<MAX_NUMBER_OF_REDIRECTIONS) && (redirection = t->isRedirect(markupstr)))
+				{
+					numberOfRedirections++;
+					ArticleSearchResult* temp = suchergebnis;
+					redirectMessage += "(\u2192 "+temp->TitleInArchive()+")\n";
+					suchergebnis = redirection;
+
+					markupstr.clear();
+					g->getStatusbar()->display("Following redirection...");
+					g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
+				}
+
+				currentTitle = suchergebnis->TitleInArchive();
+				markupstr.insert(0,redirectMessage);
+
+				FillVS(&Titlebar, PA_RGB( 16,16,16));
+				CharArea = (BLOCK) {{5,2},{0,0}};
+				iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
+				g->getStatusbar()->display("Formatting \""+currentTitle+"\"...");
+
+				markup = new Markup();
+				g->setMarkup(markup);
+				markup->setGlobals(g);
+				markup->parse(markupstr);
+
+				if (markup->LoadOK())
+				{
+					PA_OutputText(1,0,2,"%c2XML-Parsing OK    ");
+				}
+				else
+				{
+					PA_OutputText(1,0,2,"%c1XML-Parsing failed");
+
+/*					string filenamestr = currentTitle ;
+					replace_all(filenamestr,"\n","");
+					replace_all(filenamestr,"\\","");
+					replace_all(filenamestr,"/","");
+					replace_all(filenamestr,"*","");
+					replace_all(filenamestr,"<","");
+					replace_all(filenamestr,">","");
+					replace_all(filenamestr,":","");
+					replace_all(filenamestr,"?","");
+					replace_all(filenamestr,"\"","");
+					replace_all(filenamestr,"|","");
+					replace_all(filenamestr,"'","");
+					filenamestr = "fat:/dswiki/parseerror_" + filenamestr + ".xml";
+					FILE* xmlerror = fopen(filenamestr.c_str(),"wb");
+					if (xmlerror != NULL)
+					{
+						fprintf(xmlerror,"%s",markupstr.c_str());
+						fclose(xmlerror);
+					}
+
+					string xmlerrors;
+					FILE* xmlerrorlist = fopen("fat:/dswiki/xml_parsing_errors.txt","rb");
+					if (xmlerrorlist!=NULL)
+					{
+						fseek(xmlerrorlist,0,SEEK_END);
+						int size = ftell(xmlerrorlist);
+						fseek(xmlerrorlist,0,SEEK_SET);
+						char* buffer = (char*) malloc(size+1);
+						fread(buffer,size,1,xmlerrorlist);
+						buffer[size] = '\0';
+						fclose(xmlerrorlist);
+						xmlerrors = string(buffer);
+						free(buffer);
+					}
+					vector<string> errors1, errors2;
+					explode("\n",xmlerrors,errors1);
+					errors1.push_back(possibleWikis[currentSelectedWiki]+": "+currentTitle);
+					sort(errors1.begin(),errors1.end());
+					if (!errors1[0].empty())
+						errors2.push_back(errors1[0]);
+					for (int a=1;a< (int) errors1.size();a++)
+					{
+						if ((!errors1[a].empty()) && (errors1[a]!=errors1[a-1]))
+						{
+							errors2.push_back(errors1[a]);
+						}
+					}
+					implode("\n",errors2,xmlerrors);
+					xmlerrors += "\n";
+					xmlerrorlist = fopen("fat:/dswiki/xml_parsing_errors.txt","wb");
+					if (xmlerrorlist!=NULL)
+					{
+						fprintf(xmlerrorlist,"%s",xmlerrors.c_str());
+						fclose(xmlerrorlist);
+					}*/
+				}
+
+				g->getStatusbar()->displayClearAfter("Formatting complete",30);
+
+// 				markup->setCurrentLine(forcedLine);
+
+				if (setNewHistoryItem)
+				{
+					h->insert(currentTitle,0);
+				}
+
+				updateTitle = 1;
+				updateContent = 1;
+			}
+			else
+			{
+				g->getStatusbar()->displayErrorClearAfter("\""+suchtitel+"\" not found...",90);
+				updatePercent = 1;
+			}
+
+			loadArticle = 0;
+		}
+
+		if (updateTitle)
+		{
+			FillVS(&Titlebar, PA_RGB( 9,16,28));
+			CharArea = (BLOCK) {{5,2},{0,0}};
+			iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
+			updateTitle = 0;
+		}
+
+		if (updateStatusbarVS)
+		{
+			g->getStatusbar()->clear();
+			updatePercent = 1;
+			updateStatusbarVS = 0;
+		}
+
+		if (updateContent)
+		{
+			if (markup->LoadOK())
+			{
+				g->getMarkup()->draw();
+			}
+			updatePercent = 1;
+			updateContent = 0;
+		}
+
+		if (updatePercent)
+		{
+// 			g->getPercentIndicator()->update(markup->currentPercent());
+			g->getPercentIndicator()->redraw();
+			updatePercent = 0;
+		}
+
+		if (search)
+		{
+			search = false;
 			PA_Clear16bitBg(1);
 			PA_Clear16bitBg(0);
 
@@ -865,277 +1141,6 @@ int main(int argc, char ** argv)
 			updateTitle = 1;
 			updateContent = 1;
 			updateStatusbarVS = 1;
-		}
-
-		if (Pad.Newpress.Y)
-		{
-			if (markup)
-			{
-				if (markup->toggleIndex())
-				{
-					updateContent = 1;
-				}
-			}
-		}
-
-		if ( (Pad.Released.R) && (Pad.Downtime.R<60) )
-		{
-			if (h->forward())
-			{
-				suchtitel = h->currentTitle();
-				forcedLine = h->currentLine();
-				setNewHistoryItem = 0;
-				loadArticle = 1;
-			}
-		}
-		else if ( (Pad.Released.L) && (Pad.Downtime.L<60) )
-		{
-			if (h->back())
-			{
-				suchtitel = h->currentTitle();
-				forcedLine = h->currentLine();
-				setNewHistoryItem = 0;
-				loadArticle = 1;
-			}
-		}
-		else if ( ( h->size() > 1 ) && ( ( (Pad.Held.R) && (Pad.Downtime.R>=60) ) || ( (Pad.Held.L) && (Pad.Downtime.L>=60) ) ) )
-		{
-			vector<string> history_vec = h->get();
-			TextBox histChoice(history_vec);
-			histChoice.setGlobals(g);
-			histChoice.setTitle("History of pages");
-			histChoice.allowCancel(1);
-			histChoice.setCurrentPosition(h->getCurrentPosition());
-
-			int chosenHistItem = histChoice.run();
-
-			if ( (chosenHistItem>=0) && (chosenHistItem != h->getCurrentPosition()) )
-			{
-				h->setCurrentPosition(chosenHistItem);
-				setNewHistoryItem = 0;
-				suchtitel = history_vec[chosenHistItem];
-				loadArticle = 1;
-			}
-			updateContent = 1;
-		}
-
-		if (Pad.Newpress.Start)
-		{
-			g->setOptions();
-			updateContent = 1;
-		}
-
-		if (Pad.Newpress.Select && (possibleWikis.size()>1))
-		{
-			int currentSelectedWikiBackup = currentSelectedWiki;
-			WikiChooser->allowCancel(1);
-			WikiChooser->setCurrentPosition(currentSelectedWiki);
-			currentSelectedWiki = WikiChooser->run();
-			if ((currentSelectedWiki>=0) && (currentSelectedWiki != currentSelectedWikiBackup))
-			{
-				g->getStatusbar()->displayClearAfter("Loading "+possibleWikis[currentSelectedWiki] + "...",60);
-				delete t;
-				t = new TitleIndex();
-				g->setTitleIndex(t);
-				t->setGlobals(g);
-				t->load(possibleWikis[currentSelectedWiki]);
-
-				delete wmg;
-				wmg = new WikiMarkupGetter();
-				g->setWikiMarkupGetter(wmg);
-				wmg->setGlobals(g);
-				wmg->load(possibleWikis[currentSelectedWiki]);
-
-				h->clear();
-
-				loadArticle = 1;
-			}
-			else
-			{
-				currentSelectedWiki = currentSelectedWikiBackup;
-			}
-			updateTitle = 1;
-			updateContent = 1;
-		}
-
-#if STRESSTEST
-		loadArticle = 1;
-#endif
-
-		if (loadArticle)
-		{
-			delete suchergebnis;
-			suchergebnis = NULL;
-
-			if (suchtitel.empty())
-			{
-				g->getStatusbar()->display("Searching random article...");
-				suchergebnis = t->getRandomArticle();
-			}
-			else
-			{
-				g->getStatusbar()->display("Searching "+suchtitel+"...");
-				suchergebnis = t->findArticle(suchtitel,currentTitle);
-			}
-
-			if (suchergebnis)
-			{
-				if (markup)
-				{
-					delete markup;
-					markup = NULL;
-				}
-
-				suchtitel.clear();
-				g->getStatusbar()->display("Loading \""+suchergebnis->TitleInArchive()+"\"");
-
-				markupstr.clear();
-				g->getStatusbar()->display("Getting markup...");
-				g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
-
-				string redirectMessage = "";
-				unsigned char numberOfRedirections = 0;
-				while ((numberOfRedirections<MAX_NUMBER_OF_REDIRECTIONS) && (redirection = t->isRedirect(markupstr)))
-				{
-					numberOfRedirections++;
-					ArticleSearchResult* temp = suchergebnis;
-					redirectMessage += "(\u2192 "+temp->TitleInArchive()+")\n";
-					suchergebnis = redirection;
-
-					markupstr.clear();
-					g->getStatusbar()->display("Following redirection...");
-					g->getWikiMarkupGetter()->getMarkup(markupstr, suchergebnis->TitleInArchive());
-				}
-
-				currentTitle = suchergebnis->TitleInArchive();
-				markupstr.insert(0,redirectMessage);
-
-				FillVS(&Titlebar, PA_RGB( 16,16,16));
-				CharArea = (BLOCK) {{5,2},{0,0}};
-				iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
-				g->getStatusbar()->display("Formatting \""+currentTitle+"\"...");
-
-				markup = new Markup();
-				g->setMarkup(markup);
-				markup->setGlobals(g);
-				markup->parse(markupstr);
-
-				if (markup->LoadOK())
-				{
-					PA_OutputText(1,0,2,"%c2XML-Parsing OK    ");
-				}
-				else
-				{
-					PA_OutputText(1,0,2,"%c1XML-Parsing failed");
-
-/*					string filenamestr = currentTitle ;
-					replace_all(filenamestr,"\n","");
-					replace_all(filenamestr,"\\","");
-					replace_all(filenamestr,"/","");
-					replace_all(filenamestr,"*","");
-					replace_all(filenamestr,"<","");
-					replace_all(filenamestr,">","");
-					replace_all(filenamestr,":","");
-					replace_all(filenamestr,"?","");
-					replace_all(filenamestr,"\"","");
-					replace_all(filenamestr,"|","");
-					replace_all(filenamestr,"'","");
-					filenamestr = "fat:/dswiki/parseerror_" + filenamestr + ".xml";
-					FILE* xmlerror = fopen(filenamestr.c_str(),"wb");
-					if (xmlerror != NULL)
-					{
-						fprintf(xmlerror,"%s",markupstr.c_str());
-						fclose(xmlerror);
-					}
-
-					string xmlerrors;
-					FILE* xmlerrorlist = fopen("fat:/dswiki/xml_parsing_errors.txt","rb");
-					if (xmlerrorlist!=NULL)
-					{
-						fseek(xmlerrorlist,0,SEEK_END);
-						int size = ftell(xmlerrorlist);
-						fseek(xmlerrorlist,0,SEEK_SET);
-						char* buffer = (char*) malloc(size+1);
-						fread(buffer,size,1,xmlerrorlist);
-						buffer[size] = '\0';
-						fclose(xmlerrorlist);
-						xmlerrors = string(buffer);
-						free(buffer);
-					}
-					vector<string> errors1, errors2;
-					explode("\n",xmlerrors,errors1);
-					errors1.push_back(possibleWikis[currentSelectedWiki]+": "+currentTitle);
-					sort(errors1.begin(),errors1.end());
-					if (!errors1[0].empty())
-						errors2.push_back(errors1[0]);
-					for (int a=1;a< (int) errors1.size();a++)
-					{
-						if ((!errors1[a].empty()) && (errors1[a]!=errors1[a-1]))
-						{
-							errors2.push_back(errors1[a]);
-						}
-					}
-					implode("\n",errors2,xmlerrors);
-					xmlerrors += "\n";
-					xmlerrorlist = fopen("fat:/dswiki/xml_parsing_errors.txt","wb");
-					if (xmlerrorlist!=NULL)
-					{
-						fprintf(xmlerrorlist,"%s",xmlerrors.c_str());
-						fclose(xmlerrorlist);
-					}*/
-				}
-
-				g->getStatusbar()->displayClearAfter("Formatting complete",30);
-
-// 				markup->setCurrentLine(forcedLine);
-
-				if (setNewHistoryItem)
-				{
-					h->insert(currentTitle,0);
-				}
-
-				updateTitle = 1;
-				updateContent = 1;
-			}
-			else
-			{
-				g->getStatusbar()->displayErrorClearAfter("\""+suchtitel+"\" not found...",90);
-				updatePercent = 1;
-			}
-
-			loadArticle = 0;
-		}
-
-		if (updateTitle)
-		{
-			FillVS(&Titlebar, PA_RGB( 9,16,28));
-			CharArea = (BLOCK) {{5,2},{0,0}};
-			iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
-			updateTitle = 0;
-		}
-
-		if (updateStatusbarVS)
-		{
-			g->getStatusbar()->clear();
-			updatePercent = 1;
-			updateStatusbarVS = 0;
-		}
-
-		if (updateContent)
-		{
-			if (markup->LoadOK())
-			{
-				g->getMarkup()->draw();
-			}
-			updatePercent = 1;
-			updateContent = 0;
-		}
-
-		if (updatePercent)
-		{
-// 			g->getPercentIndicator()->update(markup->currentPercent());
-			g->getPercentIndicator()->redraw();
-			updatePercent = 0;
 		}
 
 		PA_CheckLid();
