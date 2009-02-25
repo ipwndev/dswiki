@@ -44,8 +44,8 @@ VirScreen ContentWin1;
 VirScreen ContentWin2;
 VirScreen StatusbarVS;
 
-#define DEBUG 0
-#define DEBUG_WIKI_NR 1
+#define DEBUG 1
+#define DEBUG_WIKI_NR 0
 #define STRESSTEST 0
 
 int getFreeRAM()
@@ -83,10 +83,10 @@ int main(int argc, char ** argv)
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
 // 	string suchtitel = "Herford";
-// 	string suchtitel = "Temp";
+	string suchtitel = "Temp";
 // 	string suchtitel = "Inka";
 // 	string suchtitel = "Redirect-Test 2";
-	string suchtitel;
+// 	string suchtitel;
 
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
@@ -258,9 +258,6 @@ int main(int argc, char ** argv)
 	}
 
 	// important variables
-	enum {
-		SPRITE_HISTORY, SPRITE_HISTORYX, SPRITE_RELOAD, SPRITE_CANCEL, SPRITE_OK, SPRITE_2UPARROW, SPRITE_1UPARROW, SPRITE_1DOWNARROW, SPRITE_2DOWNARROW, SPRITE_1LEFTARROW, SPRITE_1RIGHTARROW, SPRITE_CLEARLEFT, SPRITE_CONFIGURE,  SPRITE_BOOKMARKADD, SPRITE_BOOKMARK, SPRITE_VIEWMAG
-	};
 
 	KT_CreateSprite(0, SPRITE_HISTORY,     "dswiki/icons/history",       OBJ_SIZE_16X16, 1, 0, 1, -16, -16);
 	KT_CreateSprite(0, SPRITE_HISTORYX,    "dswiki/icons/history_clear", OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
@@ -372,25 +369,12 @@ int main(int argc, char ** argv)
 	g->setSearch(s);
 
 	PA_SetSpriteXY(0, SPRITE_CONFIGURE, 0, 176);
-	PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, 32, 176);
+// 	PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, 32, 176);
 	PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
 	PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
 
 	while(1) // main loop
 	{
-		if (Stylus.Newpress)
-		{
-		}
-		else if (Stylus.Held)
-		{
-		}
-		else if (Stylus.Released)
-		{
-		}
-		else
-		{
-		}
-
 		if (Stylus.Newpress)
 		{
 			if (PA_SpriteTouched(SPRITE_CONFIGURE))
@@ -415,14 +399,27 @@ int main(int argc, char ** argv)
 					loadArticle = 1;
 				}
 			}
-			else if (PA_SpriteTouched(SPRITE_BOOKMARKADD))
-			{
-				g->getStatusbar()->displayClearAfter("Adding Bookmark",45);
-				if (!currentTitle.empty())
-				{
-					g->saveBookmark(currentTitle);
-				}
-			}
+// 			else if (PA_SpriteTouched(SPRITE_BOOKMARKADD))
+// 			{
+// 				g->getStatusbar()->displayClearAfter("Adding Bookmark",45);
+// 				if (!currentTitle.empty())
+// 				{
+// 					g->saveBookmark(currentTitle);
+// 				}
+// 			}
+		}
+		else if (Stylus.Held)
+		{
+		}
+		else if (Stylus.Released)
+		{
+		}
+		else
+		{
+		}
+
+// 		if (Stylus.Newpress)
+// 		{
 // 			string markupClick = markup->evaluateClick(Stylus.X,Stylus.Y);
 // 			if (!markupClick.empty())
 // 			{
@@ -431,7 +428,7 @@ int main(int argc, char ** argv)
 // 				setNewHistoryItem = 1;
 // 				loadArticle = 1;
 // 			}
-		}
+// 		}
 
 		if (Pad.Newpress.Left || Pad.Held.Left || GHPad.Newpress.Blue || GHPad.Held.Blue)
 		{
@@ -781,7 +778,7 @@ int main(int argc, char ** argv)
 			PA_SetSpriteXY(0, SPRITE_1RIGHTARROW, 209, 39);
 			PA_SetSpriteXY(0, SPRITE_CLEARLEFT,   234, 40);
 			PA_SetSpriteXY(0, SPRITE_CONFIGURE,   -16,-16);
-			PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, -16,-16);
+// 			PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, -16,-16);
 			PA_SetSpriteXY(0, SPRITE_BOOKMARK,    -16,-16);
 			PA_SetSpriteXY(0, SPRITE_VIEWMAG,     -16,-16);
 			PA_ScrollKeyboardXY(24,72);
@@ -1134,7 +1131,7 @@ int main(int argc, char ** argv)
 			for (int i=SPRITE_HISTORY;i<=SPRITE_CLEARLEFT;i++)
 				PA_SetSpriteXY(0,i,-16,-16);
 			PA_SetSpriteXY(0, SPRITE_CONFIGURE, 0, 176);
-			PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, 32, 176);
+// 			PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, 32, 176);
 			PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
 			PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
 

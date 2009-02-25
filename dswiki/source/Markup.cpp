@@ -58,10 +58,12 @@ void Markup::parse(string & Str)
 	w2x = NULL;
 	_globals->getStatusbar()->display("WikiMarkup->XML done");
 
+// 	PA_OutputText(1,0,3,"%s",Str.c_str());
+
 	// Parse the xml-markup with tinyXML
 	_globals->getStatusbar()->display("Parsing XML");
 	_td = new TiXmlDocument();
-	_td->Parse(Str.c_str(), NULL, TIXML_ENCODING_UTF8);
+	_td->Parse( Str, Str.c_str(), NULL, TIXML_ENCODING_UTF8);
 	_loadOK = !(_td->Error());
 	_globals->getStatusbar()->display("Parsing XML done");
 
