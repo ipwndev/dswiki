@@ -198,7 +198,8 @@ public:
 	// in the UTF-8 sequence.
 	static const int utf8ByteTable[256];
 
-	virtual const char* Parse(	const char* p,
+	virtual const char* Parse(	std::string & Str,
+								const char* p,
 								TiXmlParsingData* data,
 								TiXmlEncoding encoding /*= TIXML_ENCODING_UNKNOWN */ ) = 0;
 
@@ -254,13 +255,15 @@ protected:
 	/*	Reads text. Returns a pointer past the given end tag.
 		Wickedly complex options, but it keeps the (sensitive) code in one place.
 	*/
-	static const char* ReadText(	const char* in,				// where to start
+	static const char* ReadText(	std::string& Str,
+									const char* in,				// where to start
 									std::string* text,			// the string read
 									bool ignoreWhiteSpace,		// whether to keep the white space
 									const char* endTag,			// what ends this text
 									bool ignoreCase,			// whether to ignore case in the end tag
 									TiXmlEncoding encoding );	// the current encoding
-	static const char* ReadText(	const char* in,				// where to start
+	static const char* ReadText(	std::string& Str,
+									const char* in,				// where to start
 									TiXmlString* text,			// the string read
 									bool ignoreWhiteSpace,		// whether to keep the white space
 									const char* endTag,			// what ends this text
@@ -778,7 +781,7 @@ public:
 	/*	Attribute parsing starts: first letter of the name
 						 returns: the next char after the value end quote
 	*/
-	virtual const char* Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
+	virtual const char* Parse( std::string & Str, const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
 
 	// [internal use]
 	// Set the document pointer so the attribute can report errors.
@@ -986,7 +989,7 @@ public:
 	/*	Attribtue parsing starts: next char past '<'
 						 returns: next char past '>'
 	*/
-	virtual const char* Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
+	virtual const char* Parse( std::string & Str, const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
 
 	virtual const TiXmlElement*     ToElement()     const { return this; } ///< Cast to a more defined type. Will return null not of the requested type.
 	virtual TiXmlElement*           ToElement()	          { return this; } ///< Cast to a more defined type. Will return null not of the requested type.
@@ -1004,7 +1007,7 @@ protected:
 		Reads the "value" of the element -- another element, or text.
 		This should terminate with the current end tag.
 	*/
-	const char* ReadValue( const char* in, TiXmlParsingData* prevData, TiXmlEncoding encoding );
+	const char* ReadValue( std::string & Str, const char* in, TiXmlParsingData* prevData, TiXmlEncoding encoding );
 
 private:
 
@@ -1034,7 +1037,7 @@ public:
 	/*	Attribtue parsing starts: at the ! of the !--
 						 returns: next char past '>'
 	*/
-	virtual const char* Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
+	virtual const char* Parse( std::string & Str, const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
 
 	virtual const TiXmlComment*  ToComment() const { return this; } ///< Cast to a more defined type. Will return null not of the requested type.
 	virtual TiXmlComment*  ToComment() { return this; } ///< Cast to a more defined type. Will return null not of the requested type.
@@ -1079,7 +1082,7 @@ public:
 	/// Turns on or off a CDATA representation of text.
 	void SetCDATA( bool _cdata )	{ cdata = _cdata; }
 
-	virtual const char* Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
+	virtual const char* Parse( std::string & Str, const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
 
 	virtual const TiXmlText* ToText() const { return this; } ///< Cast to a more defined type. Will return null not of the requested type.
 	virtual TiXmlText*       ToText()       { return this; } ///< Cast to a more defined type. Will return null not of the requested type.
@@ -1147,7 +1150,7 @@ public:
 	/// Creates a copy of this Declaration and returns it.
 	virtual TiXmlNode* Clone() const;
 
-	virtual const char* Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
+	virtual const char* Parse( std::string & Str, const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
 
 	virtual const TiXmlDeclaration* ToDeclaration() const { return this; } ///< Cast to a more defined type. Will return null not of the requested type.
 	virtual TiXmlDeclaration*       ToDeclaration()       { return this; } ///< Cast to a more defined type. Will return null not of the requested type.
@@ -1187,7 +1190,7 @@ public:
 	/// Creates a copy of this Unknown and returns it.
 	virtual TiXmlNode* Clone() const;
 
-	virtual const char* Parse( const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
+	virtual const char* Parse( std::string & Str, const char* p, TiXmlParsingData* data, TiXmlEncoding encoding );
 
 	virtual const TiXmlUnknown*     ToUnknown()     const { return this; } ///< Cast to a more defined type. Will return null not of the requested type.
 	virtual TiXmlUnknown*           ToUnknown()	    { return this; } ///< Cast to a more defined type. Will return null not of the requested type.
@@ -1230,7 +1233,7 @@ public:
 		method (either TIXML_ENCODING_LEGACY or TIXML_ENCODING_UTF8 will force TinyXml
 		to use that encoding, regardless of what TinyXml might otherwise try to detect.
 	*/
-	virtual const char* Parse( const char* p, TiXmlParsingData* data = 0, TiXmlEncoding encoding = TIXML_DEFAULT_ENCODING );
+	virtual const char* Parse( std::string & Str, const char* p, TiXmlParsingData* data = 0, TiXmlEncoding encoding = TIXML_DEFAULT_ENCODING );
 
 	/** Get the root element -- the only top level element -- of the document.
 		In well formed XML, there should only be one. TinyXml is tolerant of

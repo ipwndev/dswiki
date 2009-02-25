@@ -39,13 +39,15 @@ int               Globals::getLanguage() { return _language; }
 void Globals::setOptions()
 {
 	vector<string> level1;
-	level1.push_back("Help/Manual");
-	level1.push_back("Invert color scheme");
+	level1.push_back("Add Bookmark");			// 0
+	level1.push_back("Help/Manual");			// 1
+	level1.push_back("Invert color scheme");	// 2
+
 	TextBox Options(level1);
-	Options.setTitle("Configure DSwiki");
-	Options.allowCancel(1);
+	Options.setTitle("Options");
+	Options.allowCancel(true);
 	int choice = Options.run();
-	if (choice == 1)
+	if (choice == 2)
 		toggleInverted();
 }
 
@@ -156,10 +158,9 @@ void Globals::saveBookmark(string s)
 
 void Globals::toggleInverted()
 {
-	_isInverted = 1 - _isInverted;
+	_isInverted = !_isInverted;
 	PA_SetBgPalCol(0, 0, backgroundColor());
 	PA_SetBgPalCol(1, 0, backgroundColor());
-
 }
 
 int Globals::backgroundColor()
@@ -182,7 +183,7 @@ int Globals::textColor()
 	}
 	else
 	{
-		return PA_RGB(31,31,31);
+		return PA_RGB(26,26,26);
 	}
 }
 
