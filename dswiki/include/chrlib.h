@@ -31,11 +31,13 @@ typedef struct
 	bool				CutChar;
 } CharStat;
 
-// 16c Unicode printing functions
-void          SwitchNewLine  (const CharStat* CStat,                   BLOCK* CharArea, s16 Origin,                      unsigned char Height);
-unsigned char CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,                                  unsigned char Height);
-unsigned char CheckWrap      (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, unsigned char Width, unsigned char Height, bool doWrap);
+// functions to hide the details of different rotations from the user
+void advanceCharWidth(const CharStat* CStat, BLOCK* CharArea,                               unsigned char Width);
+void SwitchNewLine   (const CharStat* CStat,                   BLOCK* CharArea, int Origin,                      unsigned char Height);
+bool CheckLowerBound (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea,                                  unsigned char Height);
+bool CheckWrap       (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, int Origin, unsigned char Width, unsigned char Height, bool doWrap);
 
+// 16c Unicode printing functions
 void iDrawChar(unsigned int* Uni,         const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea);
 unsigned int  iPrint   (const char*  Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang);
 unsigned int  iPrint   (const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang);
