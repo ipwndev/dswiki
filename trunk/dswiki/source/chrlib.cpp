@@ -2,8 +2,26 @@
 #include "chrlib.h"
 #include "char_convert.h"
 
+void advanceCharWidth(const CharStat* CStat, BLOCK* CharArea, unsigned char Width)
+{
+	switch(CStat->Rotate)
+	{
+		case DEG0:
+			CharArea->Start.x += Width + CStat->W_Space;
+			break;
+		case DEG90:
+			CharArea->End.y   -= Width + CStat->W_Space;
+			break;
+		case DEG180:
+			CharArea->End.x   -= Width + CStat->W_Space;
+			break;
+		case DEG270:
+			CharArea->Start.y += Width + CStat->W_Space;
+			break;
+	}
+}
 
-void SwitchNewLine(const CharStat* CStat, BLOCK* CharArea, s16 Origin, unsigned char Height)
+void SwitchNewLine(const CharStat* CStat, BLOCK* CharArea, int Origin, unsigned char Height)
 {
 	switch(CStat->Rotate)
 	{
@@ -26,67 +44,64 @@ void SwitchNewLine(const CharStat* CStat, BLOCK* CharArea, s16 Origin, unsigned 
 	}
 }
 
-unsigned char CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, unsigned char Height)
+bool CheckLowerBound(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, unsigned char Height)
 {
-	unsigned char OutScreen=0;
-
 	switch(CStat->Rotate)
 	{
 		case DEG0:
 			if(CStat->CutChar)
 			{
 				if(CharArea->Start.y > PrintArea->End.y)
-					OutScreen=1;
+					return true;
 			}
 			else
 			{
 				if(CharArea->Start.y + Height - 1 > PrintArea->End.y)
-					OutScreen=1;
+					return true;
 			}
 			break;
 		case DEG90:
 			if(CStat->CutChar)
 			{
 				if(CharArea->Start.x > PrintArea->End.x)
-					OutScreen= 1;
+					return true;
 			}
 			else
 			{
 				if(CharArea->Start.x + Height - 1 > PrintArea->End.x)
-					OutScreen=1;
+					return true;
 			}
 			break;
 		case DEG180:
 			if(CStat->CutChar)
 			{
 				if(CharArea->End.y < PrintArea->Start.y)
-					OutScreen= 1;
+					return true;
 			}
 			else
 			{
 				if(CharArea->End.y - Height + 1 < PrintArea->Start.y)
-					OutScreen=1;
+					return true;
 			}
 			break;
 		case DEG270:
 			if(CStat->CutChar)
 			{
 				if(CharArea->End.x < PrintArea->Start.x)
-					OutScreen= 1;
+					return true;
 			}
 			else
 			{
 				if(CharArea->End.x - Height + 1 < PrintArea->Start.x)
-					OutScreen=1;
+					return true;
 			}
 			break;
 	}
-	return OutScreen;
+	return false;
 }
 
-unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, s16 Origin, unsigned char Width, unsigned char Height, bool doWrap)
+bool CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, int Origin, unsigned char Width, unsigned char Height, bool doWrap)
 {
-	unsigned char wrap = 0;
 	switch(CStat->Rotate)
 	{
 		case DEG0:
@@ -94,7 +109,7 @@ unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea
 			{
 				if (doWrap)
 					SwitchNewLine(CStat,CharArea,Origin,Height);
-				wrap = 1;
+				return true;
 			}
 			break;
 		case DEG90:
@@ -102,7 +117,7 @@ unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea
 			{
 				if (doWrap)
 					SwitchNewLine(CStat,CharArea,Origin,Height);
-				wrap = 1;
+				return true;
 			}
 			break;
 		case DEG180:
@@ -110,7 +125,7 @@ unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea
 			{
 				if (doWrap)
 					SwitchNewLine(CStat,CharArea,Origin,Height);
-				wrap = 1;
+				return true;
 			}
 			break;
 		case DEG270:
@@ -118,11 +133,11 @@ unsigned char CheckWrap(const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea
 			{
 				if (doWrap)
 					SwitchNewLine(CStat,CharArea,Origin,Height);
-				wrap = 1;
+				return true;
 			}
 			break;
 	}
-	return wrap;
+	return false;
 }
 
 void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CStat, BLOCK CharArea)
@@ -255,30 +270,30 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 	}
 }
 
-// TODO: auch ein geprintetes '\n' außerhalb des Screens soll Abbruch verursachen
 unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang)
 {
-	unsigned char* Str                = (unsigned char*) St;
+	unsigned char*	Str                = (unsigned char*) St;
 	// 	global
-	unsigned char  Height             = CStat->FONT->Height();
-	s16            Origin             = 0;
+	unsigned char	Height             = CStat->FONT->Height();
+	int				Origin             = 0;
 	// 	per character
-	unsigned char* DATA;
-	unsigned int   Uni                = 0;
-	unsigned char  Width              = 0;
+	unsigned char*	DATA;
+	unsigned int	Uni                = 0;
+	unsigned char	Width              = 0;
 	// 	local variables
-	unsigned int   Skip               = 0;
-	unsigned int   SaveSkipWord       = 0;
-	unsigned int   SaveSkipLetter     = 0;
-	int            GlyphsPrinted      = 0;
-	unsigned char  ForceInnerWordWrap = 0;
-	unsigned char  HardWrap           = 0;
+	unsigned int	Skip               = 0;
+	unsigned int	SaveSkipWord       = 0;
+	unsigned int	SaveSkipLetter     = 0;
+	int				GlyphsPrinted      = 0;
+	bool			ForceInnerWordWrap = false;
+	bool			HardWrap           = false;
+	bool			hadNonSpaceChar    = false;
 
 	if ((CStat->Wrap==HARDWRAP)||(CStat->Wrap==NOWRAP))
-		HardWrap = 1;
+		HardWrap = true;
 
 	BLOCK    PrintArea = {{0,0},{0,0}};
-	BLOCK SaveCharArea = {{CharArea->Start.x,CharArea->Start.y},{CharArea->End.x,CharArea->End.y}};
+	BLOCK SaveCharArea = *CharArea;
 
 	switch(CStat->Rotate)
 	{
@@ -289,7 +304,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.Start.x;
 			if (CharArea->Start.x == Origin)
-				ForceInnerWordWrap = 1;
+				ForceInnerWordWrap = true;
 			break;
 		case DEG90:
 			PrintArea.Start.x = 0;
@@ -298,7 +313,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.End.y;
 			if (CharArea->End.y == Origin)
-				ForceInnerWordWrap = 1;
+				ForceInnerWordWrap = true;
 			break;
 		case DEG180:
 			PrintArea.Start.x = 0;
@@ -307,7 +322,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.End.x;
 			if (CharArea->End.x == Origin)
-				ForceInnerWordWrap = 1;
+				ForceInnerWordWrap = true;
 			break;
 		case DEG270:
 			PrintArea.Start.x = 0;
@@ -316,13 +331,13 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.Start.y;
 			if (CharArea->Start.y == Origin)
-				ForceInnerWordWrap = 1;
+				ForceInnerWordWrap = true;
 			break;
 	}
 
-	Skip+=ToUTF(&Str[Skip],&Uni);
+	Skip += ToUTF(&Str[Skip],&Uni);
 
-	while((Limit==-1)||(GlyphsPrinted < Limit))
+	while( (Limit==-1) || (GlyphsPrinted < Limit) )
 	{
 		if (ForceInnerWordWrap||HardWrap) // Writing
 		{
@@ -330,102 +345,83 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			{
 				break;
 			}
-			else if(Uni==0x0D)
+			else if(Uni==0x0D) // CR(+LF)
 			{
 				GlyphsPrinted++;
 				SaveSkipLetter = Skip;
-				Skip+=ToUTF(&Str[Skip],&Uni);
+				Skip += ToUTF(&Str[Skip],&Uni);
 				if(Uni==0x0A)
 				{
 					GlyphsPrinted++;
 					SaveSkipLetter = Skip;
-					Skip+=ToUTF(&Str[Skip],&Uni);
+					Skip += ToUTF(&Str[Skip],&Uni);
 				}
 				SwitchNewLine(CStat,CharArea,Origin,Height);
+				if(CheckLowerBound(CStat,&PrintArea,CharArea,Height))
+					break;
+				hadNonSpaceChar = false;
 				continue;
 			}
-			else if(Uni==0x0A)
+			else if(Uni==0x0A) // "\n"
 			{
 				GlyphsPrinted++;
-				SwitchNewLine(CStat,CharArea,Origin,Height);
 				SaveSkipLetter = Skip;
-				Skip+=ToUTF(&Str[Skip],&Uni);
+				SwitchNewLine(CStat,CharArea,Origin,Height);
+				if(CheckLowerBound(CStat,&PrintArea,CharArea,Height))
+					break;
+				Skip += ToUTF(&Str[Skip],&Uni);
+				hadNonSpaceChar = false;
 				continue;
 			}
-			else if(Uni==0x20)
+			else if(Uni==0x20) // Space
 			{
 				GlyphsPrinted++;
 				DATA = CStat->FONT->getCharacterData(Uni);
 				Width = DATA[0];
 				iDrawChar(&Uni,VScreen,CStat,*CharArea);
-				switch(CStat->Rotate)
+				advanceCharWidth(CStat,CharArea,Width);
+				if (hadNonSpaceChar)
 				{
-					case DEG0:
-						CharArea->Start.x += Width + CStat->W_Space;
-						break;
-					case DEG90:
-						CharArea->End.y   -= Width + CStat->W_Space;
-						break;
-					case DEG180:
-						CharArea->End.x   -= Width + CStat->W_Space;
-						break;
-					case DEG270:
-						CharArea->Start.y += Width + CStat->W_Space;
-						break;
+					ForceInnerWordWrap = false;
 				}
-				ForceInnerWordWrap = 0;
 				SaveSkipLetter = Skip;
 				SaveSkipWord = Skip;
-				SaveCharArea.Start.x = CharArea->Start.x;
-				SaveCharArea.Start.y = CharArea->Start.y;
-				SaveCharArea.End.x   = CharArea->End.x;
-				SaveCharArea.End.y   = CharArea->End.y;
-				Skip+=ToUTF(&Str[Skip],&Uni);
+				SaveCharArea = *CharArea;
+				Skip += ToUTF(&Str[Skip],&Uni);
 				continue;
 			}
-
-			// writing a normal character
-			DATA = CStat->FONT->getCharacterData(Uni);
-			Width = DATA[0];
-
-			if (CStat->Wrap==NOWRAP)
+			else
 			{
-				if (!CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,false))
+				// writing a normal character
+				hadNonSpaceChar = true;
+				DATA = CStat->FONT->getCharacterData(Uni);
+				Width = DATA[0];
+
+				if (CStat->Wrap==NOWRAP)
 				{
+					if (!CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,false))
+					{
+						if(CheckLowerBound(CStat,&PrintArea,CharArea,Height))
+							break;
+
+						iDrawChar(&Uni,VScreen,CStat,*CharArea);
+						GlyphsPrinted++;
+					}
+				}
+				else
+				{
+					CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,true);
 					if(CheckLowerBound(CStat,&PrintArea,CharArea,Height))
 						break;
 
 					iDrawChar(&Uni,VScreen,CStat,*CharArea);
 					GlyphsPrinted++;
 				}
-			}
-			else
-			{
-				CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,true);
-				if(CheckLowerBound(CStat,&PrintArea,CharArea,Height))
-					break;
+				advanceCharWidth(CStat,CharArea,Width);
 
-				iDrawChar(&Uni,VScreen,CStat,*CharArea);
-				GlyphsPrinted++;
+				SaveSkipLetter = Skip;
+				Skip += ToUTF(&Str[Skip],&Uni);
 			}
-
-			switch(CStat->Rotate)
-			{
-				case DEG0:
-					CharArea->Start.x += Width + CStat->W_Space;
-					break;
-				case DEG90:
-					CharArea->End.y   -= Width + CStat->W_Space;
-					break;
-				case DEG180:
-					CharArea->End.x   -= Width + CStat->W_Space;
-					break;
-				case DEG270:
-					CharArea->Start.y += Width + CStat->W_Space;
-					break;
-			}
-			SaveSkipLetter = Skip;
-			Skip+=ToUTF(&Str[Skip],&Uni);
 		}
 		else // Collecting
 		{
@@ -433,8 +429,8 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			{
 				Skip = SaveSkipWord;
 				*CharArea = SaveCharArea;
-				Skip+=ToUTF(&Str[Skip],&Uni);
-				ForceInnerWordWrap = 1;
+				Skip += ToUTF(&Str[Skip],&Uni);
+				ForceInnerWordWrap = true;
 				continue;
 			}
 
@@ -444,28 +440,14 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 
 			if (CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,true))
 			{
-				ForceInnerWordWrap = 1;
+				ForceInnerWordWrap = true;
 				Skip = SaveSkipWord;
 			}
 			else
 			{
-				switch(CStat->Rotate)
-				{
-					case DEG0:
-						CharArea->Start.x += Width + CStat->W_Space;
-						break;
-					case DEG90:
-						CharArea->End.y   -= Width + CStat->W_Space;
-						break;
-					case DEG180:
-						CharArea->End.x   -= Width + CStat->W_Space;
-						break;
-					case DEG270:
-						CharArea->Start.y += Width + CStat->W_Space;
-						break;
-				}
+				advanceCharWidth(CStat, CharArea, Width);
 			}
-			Skip+=ToUTF(&Str[Skip],&Uni);
+			Skip += ToUTF(&Str[Skip],&Uni);
 		}
 	}
 	return SaveSkipLetter;
