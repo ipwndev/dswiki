@@ -937,6 +937,8 @@ const char* TiXmlElement::Parse( std::string & Str, const char* p, TiXmlParsingD
 	p = SkipWhiteSpace( p, encoding );
 	TiXmlDocument* document = GetDocument();
 
+	document->getGlobals()->getPercentIndicator()->update((p-Str.c_str())*100/Str.length());
+
 	if ( !p || !*p )
 	{
 		if ( document ) document->SetError( TIXML_ERROR_PARSING_ELEMENT, 0, 0, encoding );

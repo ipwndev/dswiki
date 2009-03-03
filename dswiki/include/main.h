@@ -23,12 +23,7 @@ extern bool debug;
 extern Device UpScreen;
 extern Device DnScreen;
 extern CharStat NormalCS;
-extern CharStat ErrorCS;
-extern CharStat ContentCS;
-extern CharStat StatusbarCS;
-extern CharStat StatErrorCS;
-extern CharStat SearchResultsCS1;
-extern CharStat SearchResultsCS2;
+
 extern VirScreen PercentArea;
 extern VirScreen Titlebar;
 extern VirScreen ContentWin1;

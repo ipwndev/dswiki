@@ -270,7 +270,7 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 	}
 }
 
-unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang)
+unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang, bool forceInnerWordWrap)
 {
 	unsigned char*	Str                = (unsigned char*) St;
 	// 	global
@@ -285,7 +285,6 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 	unsigned int	SaveSkipWord       = 0;
 	unsigned int	SaveSkipLetter     = 0;
 	int				GlyphsPrinted      = 0;
-	bool			ForceInnerWordWrap = false;
 	bool			HardWrap           = false;
 	bool			hadNonSpaceChar    = false;
 
@@ -304,7 +303,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.Start.x;
 			if (CharArea->Start.x == Origin)
-				ForceInnerWordWrap = true;
+				forceInnerWordWrap = true;
 			break;
 		case DEG90:
 			PrintArea.Start.x = 0;
@@ -313,7 +312,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.End.y;
 			if (CharArea->End.y == Origin)
-				ForceInnerWordWrap = true;
+				forceInnerWordWrap = true;
 			break;
 		case DEG180:
 			PrintArea.Start.x = 0;
@@ -322,7 +321,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.End.x;
 			if (CharArea->End.x == Origin)
-				ForceInnerWordWrap = true;
+				forceInnerWordWrap = true;
 			break;
 		case DEG270:
 			PrintArea.Start.x = 0;
@@ -331,7 +330,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.End.y   = VScreen->Height-1;
 			Origin            = PrintArea.Start.y;
 			if (CharArea->Start.y == Origin)
-				ForceInnerWordWrap = true;
+				forceInnerWordWrap = true;
 			break;
 	}
 
@@ -339,7 +338,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 
 	while( (Limit==-1) || (GlyphsPrinted < Limit) )
 	{
-		if (ForceInnerWordWrap||HardWrap) // Writing
+		if (forceInnerWordWrap||HardWrap) // Writing
 		{
 			if(Uni==0x00)
 			{
@@ -382,7 +381,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 				advanceCharWidth(CStat,CharArea,Width);
 				if (hadNonSpaceChar)
 				{
-					ForceInnerWordWrap = false;
+					forceInnerWordWrap = false;
 				}
 				SaveSkipLetter = Skip;
 				SaveSkipWord = Skip;
@@ -430,7 +429,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 				Skip = SaveSkipWord;
 				*CharArea = SaveCharArea;
 				Skip += ToUTF(&Str[Skip],&Uni);
-				ForceInnerWordWrap = true;
+				forceInnerWordWrap = true;
 				continue;
 			}
 
@@ -440,7 +439,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 
 			if (CheckWrap(CStat,&PrintArea,CharArea,Origin,Width,Height,true))
 			{
-				ForceInnerWordWrap = true;
+				forceInnerWordWrap = true;
 				Skip = SaveSkipWord;
 			}
 			else
@@ -462,10 +461,10 @@ unsigned int SimPrint(const char* Str, Device* Dev, unsigned short int Color, Li
 	return iPrint(Str, &VScreen, &CharStat, &CharArea, -1, Lang);
 }
 
-unsigned int iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang)
+unsigned int iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang, bool forceInnerWordWrap)
 {
 	if (!Str.empty())
-		return iPrint(Str.c_str(), VScreen, CStat, CharArea, Limit, Lang);
+		return iPrint(Str.c_str(), VScreen, CStat, CharArea, Limit, Lang, forceInnerWordWrap);
 	else
 		return 0;
 }

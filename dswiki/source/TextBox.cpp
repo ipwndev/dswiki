@@ -245,12 +245,12 @@ int TextBox::run()
 				if (i==_currentItem)
 				{
 					CS.Color = PA_RGB(31, 0, 0);
-					iPrint(_lines[i]+"\n",&ContentSpace,&SearchResultsCS2,&CharArea,-1,UTF8);
+					iPrint(_lines[i]+"\n",&ContentSpace,&LineEmphCS,&CharArea,-1,UTF8);
 					CS.Color = PA_RGB(0, 0, 0);
 				}
 				else
 				{
-					iPrint(_lines[i]+"\n",&ContentSpace,&SearchResultsCS1,&CharArea,-1,UTF8);
+					iPrint(_lines[i]+"\n",&ContentSpace,&LineCS,&CharArea,-1,UTF8);
 				}
 			}
 			update = false;
@@ -297,6 +297,12 @@ TextBox::TextBox(vector<string> lines)
 
 	VirScreen MaxPossibleSpace = {18, 10, 220, 156, {{0,0},{0,0}}, &DnScreen};
 	InitVS(&MaxPossibleSpace);
+
+	LineCS = NormalCS;
+	LineCS.Wrap = NOWRAP;
+	LineEmphCS = NormalCS;
+	LineEmphCS.Color = PA_RGB(31,0,0);
+	LineEmphCS.Wrap = NOWRAP;
 
 	boxDrawingWidth = NormalCS.FONT->getCharacterWidth(0x2500);
 	boxDrawingHeight = NormalCS.FONT->Height();

@@ -39,8 +39,8 @@ bool CheckWrap       (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, 
 
 // 16c Unicode printing functions
 void iDrawChar(unsigned int* Uni,         const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea);
-unsigned int  iPrint   (const char*  Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang);
-unsigned int  iPrint   (const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang);
+unsigned int  iPrint   (const char*  Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang, bool forceInnerWordWrap = false);
+unsigned int  iPrint   (const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang, bool forceInnerWordWrap = false);
 unsigned int  SimPrint (const char*  Str, Device* Dev, unsigned short int Color, Lid Lang);
 unsigned int  SimPrint (const string Str, Device* Dev, unsigned short int Color, Lid Lang);
 

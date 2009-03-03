@@ -35,6 +35,8 @@ distribution.
 #include <string>
 #include <assert.h>
 #include "tinystr.h"
+#include "Globals.h"
+#include "PercentIndicator.h"
 
 #define TIXML_SSCANF   sscanf
 
@@ -46,6 +48,7 @@ class TiXmlAttribute;
 class TiXmlText;
 class TiXmlDeclaration;
 class TiXmlParsingData;
+class PercentIndicator;
 
 const int TIXML_MAJOR_VERSION = 2;
 const int TIXML_MINOR_VERSION = 5;
@@ -1315,6 +1318,9 @@ public:
 	*/
 	virtual bool Accept( TiXmlVisitor* content ) const;
 
+	void setGlobals(Globals* globals) { _globals = globals;	}
+	Globals* getGlobals() { return _globals; }
+
 protected :
 	// [internal use]
 	virtual TiXmlNode* Clone() const;
@@ -1327,6 +1333,7 @@ private:
 	int tabsize;
 	TiXmlCursor errorLocation;
 	bool useMicrosoftBOM;		// the UTF-8 BOM were found when read. Note this, and try to write.
+	Globals* _globals;
 };
 
 

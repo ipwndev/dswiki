@@ -24,12 +24,18 @@ Dumps::Dumps()
 	_gatherPossibleWikis();
 }
 
-vector<string> Dumps::getPossibleWikis()
+vector<string> Dumps::getPossibleWikis(bool internal)
 {
+	vector<WikiDump> * list;
+	if (internal)
+		list = &_internalWikis;
+	else
+		list = &_externalWikis;
+
 	vector<string> possibleWikis;
-	for (int i=0;i< (int) _externalWikis.size();i++)
+	for (int i=0;i< (int) (*list).size();i++)
 	{
-		possibleWikis.push_back(_externalWikis[i].basename);
+		possibleWikis.push_back((*list)[i].basename);
 	}
 	sort(possibleWikis.begin(),possibleWikis.end());
 	return possibleWikis;

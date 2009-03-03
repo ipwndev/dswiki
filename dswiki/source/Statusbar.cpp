@@ -29,6 +29,12 @@ void Statusbar::display(string message)
 // 	PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, -16, -16);
 	PA_SetSpriteXY(0, SPRITE_BOOKMARK, -16, -16);
 	PA_SetSpriteXY(0, SPRITE_VIEWMAG, -16, -16);
+
+	CharStat StatusbarCS = NormalCS;
+	StatusbarCS.W_Space = 1;
+	StatusbarCS.Color = PA_RGB( 5, 5, 5);
+	StatusbarCS.Wrap = HARDWRAP;
+
 	iPrint(message,&StatusbarVS,&StatusbarCS,&CharArea,-1,UTF8);
 }
 
@@ -40,6 +46,10 @@ void Statusbar::displayError(string message)
 // 	PA_SetSpriteXY(0, SPRITE_BOOKMARKADD, -16, -16);
 	PA_SetSpriteXY(0, SPRITE_BOOKMARK, -16, -16);
 	PA_SetSpriteXY(0, SPRITE_VIEWMAG, -16, -16);
+	CharStat StatErrorCS = NormalCS;
+	StatErrorCS.Color = PA_RGB(27, 4, 4);
+	StatErrorCS.Wrap = HARDWRAP;
+	StatErrorCS.W_Space = 1;
 	iPrint(message,&StatusbarVS,&StatErrorCS,&CharArea,-1,UTF8);
 }
 

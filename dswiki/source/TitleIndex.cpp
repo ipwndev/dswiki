@@ -83,8 +83,8 @@ void TitleIndex::load(string basename, bool internal)
 		if (_indexVersion > MAX_INDEX_VERSION)
 		{
 			PA_Clear16bitBg(0);
-			BLOCK CharArea = {{0,0},{0,0}};
-			iPrint("'''Warning:''' The index version of this dump is higher than the maximal supported version. Loading/searching ''may'' fail. Please upgrade to the latest release of DSwiki, to get the best browsing experience.", &ContentWin2, &ErrorCS, &CharArea, -1, UTF8);
+// 			BLOCK CharArea = {{0,0},{0,0}};
+// 			iPrint("'''Warning:''' The index version of this dump is higher than the maximal supported version. Loading/searching ''may'' fail. Please upgrade to the latest release of DSwiki, to get the best browsing experience.", &ContentWin2, &ErrorCS, &CharArea, -1, UTF8);
 			PA_WaitFor(Pad.Newpress.Anykey || Stylus.Newpress);
 			PA_Clear16bitBg(0);
 		}
