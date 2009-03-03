@@ -85,7 +85,7 @@ void Markup::parse(string & Str)
 	_globals->getStatusbar()->display("WikiMarkup->XML done");
 
 // 	PA_Clear16bitBg(0);
-// 	SimPrint(Str,&DnScreen,PA_RGB(0,0,0),UTF8);
+// 	SimPrint(Str,&DnScreen,PA_RGB(0,0,0));
 // 	PA_WaitFor(Pad.Newpress.Anykey);
 
 	// Parse the xml-markup with tinyXML
@@ -174,6 +174,8 @@ void Markup::postProcessDOM()
 	CharArea.clear();
 	int indent = 0;
 	int lineNumber = 0;
+	bool reallyPrint;
+	string alternativeText;
 
 	int numNodes = 0;
 	for (TiXmlNode* currentNode = _root; currentNode; currentNode = NextNode(currentNode) )
@@ -184,21 +186,22 @@ void Markup::postProcessDOM()
 	{
 		numCurrentNode++;
 		_globals->getPercentIndicator()->update(numCurrentNode*100/numNodes);
+
 		if (currentNode->Type() == TiXmlNode::TEXT)
 		{
-			getElementStyle(CopyCS, indent, currentNode);
+			getElementStyle(CopyCS, indent, reallyPrint, alternativeText, currentNode);
 			CopyCS.Fx = SIMULATE;
 
 			string text = currentNode->ValueStr();
 			int length = text.length();
 
-			int numOut = iPrint(text,&oneLayoutLine,&CopyCS,&CharArea,-1,UTF8);
+			int numOut = iPrint(text,&oneLayoutLine,&CopyCS,&CharArea);
 			while (numOut < length)
 			{
 				lineNumber++;
 				CharArea.clear();
 				CharArea.Start.x = indent;
-				numOut += iPrint(text.substr(numOut),&oneLayoutLine,&CopyCS,&CharArea,-1,UTF8,true);
+				numOut += iPrint(text.substr(numOut),&oneLayoutLine,&CopyCS,&CharArea,-1,true);
 			}
 		}
 		else if (currentNode->Type() == TiXmlNode::ELEMENT)
@@ -206,24 +209,39 @@ void Markup::postProcessDOM()
 			TiXmlElement* currentElement = (TiXmlElement*) currentNode;
 			currentElement->SetAttribute("l",lineNumber);
 			currentElement->SetAttribute("s",CharArea.Start.x);
+
+			getElementStyle(CopyCS, indent, reallyPrint, alternativeText, currentNode);
+			CopyCS.Fx = SIMULATE;
+
+			int length = alternativeText.length();
+
+			int numOut = iPrint(alternativeText,&oneLayoutLine,&CopyCS,&CharArea);
+			while (numOut < length)
+			{
+				lineNumber++;
+				CharArea.clear();
+				CharArea.Start.x = indent;
+				numOut += iPrint(alternativeText.substr(numOut),&oneLayoutLine,&CopyCS,&CharArea,-1,true);
+			}
+
 		}
 	}
 }
 
 
-void Markup::getElementStyle(CharStat & CStat, int & indent, /*bool & reallyPrint, string & alternativeText,*/TiXmlNode* current)
+void Markup::getElementStyle(CharStat & CStat, int & indent, bool & reallyPrint, string & alternativeText, TiXmlNode* current)
 {
 	if (current == _root)
 	{
 		CStat = NormalCS;
 		indent = 0;
-// 		reallyPrint = true; // TODO in the morning
-// 		alternativeText = "";
+		reallyPrint = true;
+		alternativeText = "";
 	}
 	else
 	{
 		TiXmlNode* parent = current->Parent();
-		getElementStyle(CStat, indent, parent);
+		getElementStyle(CStat, indent, reallyPrint, alternativeText, parent);
 		if (current->Type() == TiXmlNode::ELEMENT)
 		{
 			string name = current->ValueStr();
@@ -257,10 +275,11 @@ void Markup::getElementStyle(CharStat & CStat, int & indent, /*bool & reallyPrin
 			else if (name=="wt")
 			{
 				CStat.Color = _globals->templateColor();
+				alternativeText = "<Template snipped>";
 			}
-			else if (name=="li" || name=="dd")
+			else if (name=="li")
 			{
-				indent += 20;
+				alternativeText = "*\u00a0";
 			}
 			else if (name=="h2"||name=="h3"||name=="h4"||name=="h5"||name=="h6"||name=="h7"||name=="h8"||name=="h9")
 			{
@@ -374,11 +393,11 @@ void Markup::Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea)
 	switch (parent->Type())
 	{
 		case TiXmlNode::TEXT :
-			iPrint(text,&ContentWin2,&CopyCS,CharArea,-1,UTF8);
+			iPrint(text,&ContentWin2,&CopyCS,CharArea);
 			break;
 		case TiXmlNode::ELEMENT :
 			for (int a=0;a<linebreaksBefore;a++)
-				iPrint("\n",&ContentWin2,&CopyCS,CharArea,-1,UTF8);
+				iPrint("\n",&ContentWin2,&CopyCS,CharArea);
 
 			if (text=="i")
 			{
@@ -410,12 +429,12 @@ void Markup::Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea)
 			else if (text=="wt")
 			{
 				CopyCS.Color = _globals->templateColor();
-				iPrint("<Template snipped>",&ContentWin2,&CopyCS,CharArea,-1,UTF8);
+				iPrint("<Template snipped>",&ContentWin2,&CopyCS,CharArea);
 				return;
 			}
 			else if (text=="li")
 			{
-				iPrint("* ",&ContentWin2,&CopyCS,CharArea,-1,UTF8);
+				iPrint("* ",&ContentWin2,&CopyCS,CharArea);
 			}
 			else if (text=="h2"||text=="h3"||text=="h4"||text=="h5"||text=="h6"||text=="h7"||text=="h8"||text=="h9")
 			{
@@ -429,7 +448,7 @@ void Markup::Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea)
 			}
 
 			for (int a=0;a<linebreaksAfter;a++)
-				iPrint("\n",&ContentWin2,&CopyCS,CharArea,-1,UTF8);
+				iPrint("\n",&ContentWin2,&CopyCS,CharArea);
 
 			break;
 	}
@@ -475,10 +494,10 @@ string Markup::getFirstLink(TiXmlNode* pParent)
 	return ret;
 }
 
-TiXmlNode* Markup::NextNode(TiXmlNode* current)
+TiXmlNode* Markup::NextNode(TiXmlNode* current, bool skipChildren, bool skipSiblings)
 {
 	TiXmlNode* child = current->FirstChild();
-	if (child)
+	if (child && (!skipChildren) )
 	{
 		return child;
 	}
@@ -500,11 +519,6 @@ TiXmlNode* Markup::NextNode(TiXmlNode* current)
 
 TiXmlNode* Markup::PreviousNode(TiXmlNode* current)
 {
-	if (current == _root)
-	{
-		return NULL;
-	}
-
 	TiXmlNode* sibling = current->PreviousSibling();
 	if (sibling)
 	{

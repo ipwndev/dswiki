@@ -11,7 +11,6 @@
 
 using namespace std;
 
-typedef enum {UTF,UTF8} Lid;
 typedef enum {NORMALWRAP,HARDWRAP,NOWRAP} ChrWrap;
 typedef enum {DEG0,DEG90,DEG180,DEG270} ChrRot;
 typedef enum {NONE,HOLLOW,SHADOW,BACKGR,SIMULATE} FX;
@@ -39,9 +38,9 @@ bool CheckWrap       (const CharStat* CStat, BLOCK* PrintArea, BLOCK* CharArea, 
 
 // 16c Unicode printing functions
 void iDrawChar(unsigned int* Uni,         const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea);
-unsigned int  iPrint   (const char*  Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang, bool forceInnerWordWrap = false);
-unsigned int  iPrint   (const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang, bool forceInnerWordWrap = false);
-unsigned int  SimPrint (const char*  Str, Device* Dev, unsigned short int Color, Lid Lang);
-unsigned int  SimPrint (const string Str, Device* Dev, unsigned short int Color, Lid Lang);
+unsigned int  iPrint   (const char*  Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit = -1, bool forceInnerWordWrap = false);
+unsigned int  iPrint   (const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit = -1, bool forceInnerWordWrap = false);
+unsigned int  SimPrint (const char*  Str, Device* Dev, unsigned short int Color);
+unsigned int  SimPrint (const string Str, Device* Dev, unsigned short int Color);
 
 #endif

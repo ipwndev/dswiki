@@ -30,34 +30,34 @@ int TextBox::run()
 
 	BLOCK CharArea = {{0,0},{0,0}};
 
-	iPrint("┌",&BoxSpace,&CS,&CharArea,-1,UTF8);
+	iPrint("┌",&BoxSpace,&CS,&CharArea);
 	for (int a=1;a+1<boxDrawingCharsPerLine;a++)
 	{
-		iPrint("─",&BoxSpace,&CS,&CharArea,-1,UTF8);
+		iPrint("─",&BoxSpace,&CS,&CharArea);
 	}
-	iPrint("┐",&BoxSpace,&CS,&CharArea,-1,UTF8);
+	iPrint("┐",&BoxSpace,&CS,&CharArea);
 	for (int a=1;a+1<_numlines+2;a++)
 	{
 		CharArea.Start.x = 0;
 		CharArea.Start.y = a*CS.FONT->Height();
-		iPrint("│",&BoxSpace,&CS,&CharArea,-1,UTF8);
+		iPrint("│",&BoxSpace,&CS,&CharArea);
 		CharArea.Start.x = usedWidth-boxDrawingWidth;
-		iPrint("│",&BoxSpace,&CS,&CharArea,-1,UTF8);
+		iPrint("│",&BoxSpace,&CS,&CharArea);
 	}
 	CharArea.Start.x = 0;
 	CharArea.Start.y = usedHeight-CS.FONT->Height();
-	iPrint("└",&BoxSpace,&CS,&CharArea,-1,UTF8);
+	iPrint("└",&BoxSpace,&CS,&CharArea);
 	for (int a=1;a+1<boxDrawingCharsPerLine;a++)
 	{
-		iPrint("─",&BoxSpace,&CS,&CharArea,-1,UTF8);
+		iPrint("─",&BoxSpace,&CS,&CharArea);
 	}
-	iPrint("┘",&BoxSpace,&CS,&CharArea,-1,UTF8);
+	iPrint("┘",&BoxSpace,&CS,&CharArea);
 	if (!_title.empty())
 	{
 		CharArea.Start.x = 4*boxDrawingWidth;
 		CharArea.Start.y = 0;
 		CS.Fx = BACKGR;
-		iPrint(" "+_title+" ",&BoxSpace,&CS,&CharArea,-1,UTF8);
+		iPrint(" "+_title+" ",&BoxSpace,&CS,&CharArea);
 		CS.Fx = NONE;
 	}
 
@@ -218,21 +218,21 @@ int TextBox::run()
 			CS.Fx = BACKGR;
 			if (_topItem>0)
 			{
-				iPrint("↑",&BoxSpace,&CS,&CharArea,-1,UTF8);
+				iPrint("↑",&BoxSpace,&CS,&CharArea);
 			}
 			else
 			{
-				iPrint("─",&BoxSpace,&CS,&CharArea,-1,UTF8);
+				iPrint("─",&BoxSpace,&CS,&CharArea);
 			}
 			CharArea.Start.x = 2*boxDrawingWidth;
 			CharArea.Start.y = usedHeight-boxDrawingHeight;
 			if ( (int) _lines.size()>_numlines+_topItem)
 			{
-				iPrint("↓",&BoxSpace,&CS,&CharArea,-1,UTF8);
+				iPrint("↓",&BoxSpace,&CS,&CharArea);
 			}
 			else
 			{
-				iPrint("─",&BoxSpace,&CS,&CharArea,-1,UTF8);
+				iPrint("─",&BoxSpace,&CS,&CharArea);
 			}
 			CS.Fx = NONE;
 			fullupdate = false;
@@ -245,12 +245,12 @@ int TextBox::run()
 				if (i==_currentItem)
 				{
 					CS.Color = PA_RGB(31, 0, 0);
-					iPrint(_lines[i]+"\n",&ContentSpace,&LineEmphCS,&CharArea,-1,UTF8);
+					iPrint(_lines[i]+"\n",&ContentSpace,&LineEmphCS,&CharArea);
 					CS.Color = PA_RGB(0, 0, 0);
 				}
 				else
 				{
-					iPrint(_lines[i]+"\n",&ContentSpace,&LineCS,&CharArea,-1,UTF8);
+					iPrint(_lines[i]+"\n",&ContentSpace,&LineCS,&CharArea);
 				}
 			}
 			update = false;

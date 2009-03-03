@@ -35,7 +35,7 @@ void Statusbar::display(string message)
 	StatusbarCS.Color = PA_RGB( 5, 5, 5);
 	StatusbarCS.Wrap = HARDWRAP;
 
-	iPrint(message,&StatusbarVS,&StatusbarCS,&CharArea,-1,UTF8);
+	iPrint(message,&StatusbarVS,&StatusbarCS,&CharArea);
 }
 
 void Statusbar::displayError(string message)
@@ -50,7 +50,7 @@ void Statusbar::displayError(string message)
 	StatErrorCS.Color = PA_RGB(27, 4, 4);
 	StatErrorCS.Wrap = HARDWRAP;
 	StatErrorCS.W_Space = 1;
-	iPrint(message,&StatusbarVS,&StatErrorCS,&CharArea,-1,UTF8);
+	iPrint(message,&StatusbarVS,&StatErrorCS,&CharArea);
 }
 
 void Statusbar::displayClearAfter(string message, int delay)
