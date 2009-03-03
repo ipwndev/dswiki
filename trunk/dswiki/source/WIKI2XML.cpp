@@ -575,10 +575,6 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 			}
 			p = key + value;
 		}
-		else
-		{
-			p = xml_embed(p, "val");
-		}
 
 		x.text += xml_embed(p, "wp");
 	}
@@ -976,7 +972,7 @@ void WIKI2XML::parse(string & s)
 	replace_all(s,dswiki_magic_nowiki_close,"&lt;/nowiki&gt;");
 
 	s.insert(0,"<text>");
-// 	s.insert(0,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+	s.insert(0,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 	s.append("</text>");
 }
 

@@ -90,7 +90,8 @@ void Search::display()
 	}
 	BLOCK CharArea = {{0,0},{0,0}};
 	int i;
-	CharStat CS = SearchResultsCS2;
+	CharStat CS = NormalCS;
+	CS.Wrap = NOWRAP;
 	for (i=_list_FirstDisplayNumber;i<=_list_LastDisplayNumber;i++)  // TODO: Only paint necessary lines, not all
 	{
 		if (i!=_list_CurrentArticleNumber)

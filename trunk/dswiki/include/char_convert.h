@@ -10,14 +10,14 @@ using namespace std;
 
 typedef struct
 {
-	int UTF32_from;
-	int UTF32_to;
+	unsigned int UTF32_from;
+	unsigned int UTF32_to;
 } UTF32ReplacementRule;
 
 typedef struct
 {
-	int UTF32_from;
-	int UTF32_tos[5];
+	unsigned int UTF32_from;
+	unsigned int UTF32_tos[5];
 } UTF32ReplacementRule2;
 
 typedef struct

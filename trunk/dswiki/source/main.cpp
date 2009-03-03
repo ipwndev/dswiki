@@ -28,24 +28,18 @@
 
 bool debug;
 
-Device UpScreen;
-Device DnScreen;
+Device   UpScreen;
+Device   DnScreen;
 CharStat NormalCS;
-CharStat ContentCS;
-CharStat ErrorCS;
-CharStat StatusbarCS;
-CharStat StatErrorCS;
-CharStat SearchResultsCS1;
-CharStat SearchResultsCS2;
 
-VirScreen PercentArea;
 VirScreen Titlebar;
 VirScreen ContentWin1;
 VirScreen ContentWin2;
 VirScreen StatusbarVS;
+VirScreen PercentArea;
 
-#define DEBUG 1
-#define DEBUG_WIKI_NR 0
+#define DEBUG 0
+#define DEBUG_WIKI_NR 1
 #define STRESSTEST 0
 
 int getFreeRAM()
@@ -77,15 +71,11 @@ int main(int argc, char ** argv)
 	PA_UpdateUserInfo();
 	KT_Init();
 	KT_UseEFS();
-// 	PA_SRand(0);
 
 	string markupstr;
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
-// 	string suchtitel = "Herford";
-	string suchtitel = "Temp";
-// 	string suchtitel = "Inka";
-// 	string suchtitel = "Redirect-Test 2";
+	string suchtitel = "Chester W. Nimitz";
 // 	string suchtitel;
 
 	PA_Init16bitBg(0, 3);
@@ -124,7 +114,7 @@ int main(int argc, char ** argv)
 	PA_SetBrightness(0,-31);
 	PA_SetBrightness(1,-31);
 	// intro screens from EFS
-	unsigned char breakIntro = 0;
+	bool breakIntro = false;
 	KT_LoadGif(0, "dswiki/splash/dswiki", 0, 0);
 	KT_LoadGif(1, "dswiki/splash/neo", 0, 0);
 	for (int i=-31;i<=0;i++)
@@ -132,14 +122,14 @@ int main(int argc, char ** argv)
 		PA_SetBrightness(0,i);
 		PA_SetBrightness(1,i);
 		if (Pad.Newpress.Anykey || Stylus.Newpress)
-			breakIntro = 1;
+			breakIntro = true;
 		PA_WaitForVBL();
 		PA_WaitForVBL();
 	}
 	for (int i=0;i<120;i++)
 	{
 		if (Pad.Newpress.Anykey || Stylus.Newpress)
-			breakIntro = 1;
+			breakIntro = true;
 		if ((i>30) && breakIntro)
 			break;
 		PA_WaitForVBL();
@@ -147,25 +137,31 @@ int main(int argc, char ** argv)
 	for (int i=0;i<32;i++)
 	{
 		PA_SetBrightness(1,i);
+		if (Pad.Newpress.Anykey || Stylus.Newpress)
+			breakIntro = true;
 		PA_WaitForVBL();
 	}
 	KT_LoadGif(1, "dswiki/splash/splash1", 0, 0);
 	for (int i=31;i>=0;i--)
 	{
 		PA_SetBrightness(1,i);
+		if (Pad.Newpress.Anykey || Stylus.Newpress)
+			breakIntro = true;
 		PA_WaitForVBL();
 	}
 	for (int i=0;i<90;i++)
 	{
 		if (Pad.Newpress.Anykey || Stylus.Newpress)
-			breakIntro = 1;
-		if ((i>30) && breakIntro)
+			breakIntro = true;
+		if ((i>15) && breakIntro)
 			break;
 		PA_WaitForVBL();
 	}
 	for (int i=0;i<32;i++)
 	{
 		PA_SetBrightness(1,i);
+		if (Pad.Newpress.Anykey || Stylus.Newpress)
+			breakIntro = true;
 		PA_WaitForVBL();
 	}
 	KT_LoadGif(1, "dswiki/splash/splash2_l",   0, 0);
@@ -173,13 +169,15 @@ int main(int argc, char ** argv)
 	for (int i=31;i>=0;i--)
 	{
 		PA_SetBrightness(1,i);
+		if (Pad.Newpress.Anykey || Stylus.Newpress)
+			breakIntro = true;
 		PA_WaitForVBL();
 	}
 	for (int i=0;i<90;i++)
 	{
 		if (Pad.Newpress.Anykey || Stylus.Newpress)
-			breakIntro = 1;
-		if ((i>30) && breakIntro)
+			breakIntro = true;
+		if ((i>15) && breakIntro)
 			break;
 		PA_WaitForVBL();
 	}
@@ -187,6 +185,8 @@ int main(int argc, char ** argv)
 	{
 		PA_SetBrightness(0,i);
 		PA_SetBrightness(1,i);
+		if (Pad.Newpress.Anykey || Stylus.Newpress)
+			breakIntro = true;
 		PA_WaitForVBL();
 		PA_WaitForVBL();
 	}
@@ -234,9 +234,9 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 
-	Font* frankenstein_r = new Font("efs:/dswiki/fonts/font_r.dat");
-	Font* frankenstein_b = new Font("efs:/dswiki/fonts/font_b.dat");
-	Font* frankenstein_o = new Font("efs:/dswiki/fonts/font_o.dat");
+	Font* frankenstein_r  = new Font("efs:/dswiki/fonts/font_r.dat");
+	Font* frankenstein_b  = new Font("efs:/dswiki/fonts/font_b.dat");
+	Font* frankenstein_o  = new Font("efs:/dswiki/fonts/font_o.dat");
 	Font* frankenstein_bo = new Font("efs:/dswiki/fonts/font_bo.dat");
 	if (!frankenstein_r->initOK() || !frankenstein_b->initOK() || !frankenstein_o->initOK() || !frankenstein_bo->initOK())
 	{
@@ -254,7 +254,8 @@ int main(int argc, char ** argv)
 	if (possibleWikis.size()==0)
 	{
 		PA_OutputText(1,0,0,"%c1No dumps %c0were found!");
-		return 1;
+		PA_Sleep(120);
+		PA_ClearTextBg(1);
 	}
 
 	// important variables
@@ -283,26 +284,18 @@ int main(int argc, char ** argv)
 	g->setPercentIndicator(p);
 
 	// Initialization of global variables
-	UpScreen         = (Device)   { "U", 1, (unsigned short int*)PA_DrawBg[1], 256, 192};
-	DnScreen         = (Device)   { "D", 0, (unsigned short int*)PA_DrawBg[0], 256, 192};
-	NormalCS         = (CharStat) { g->getFont(FONT_R), 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
-	ContentCS        = (CharStat) { g->getFont(FONT_R), 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
-	ErrorCS          = (CharStat) { g->getFont(FONT_R), 0, 0, PA_RGB(27, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0, NORMALWRAP, NONE, 0 };
-	StatusbarCS      = (CharStat) { g->getFont(FONT_R), 1, 1, PA_RGB( 5, 5, 5), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
-	StatErrorCS      = (CharStat) { g->getFont(FONT_R), 1, 1, PA_RGB(27, 4, 4), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP, NONE, 0 };
-	SearchResultsCS1 = (CharStat) { g->getFont(FONT_R), 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
-	SearchResultsCS2 = (CharStat) { g->getFont(FONT_R), 0, 0, PA_RGB(31, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, NONE, 0 };
-	PercentArea = (VirScreen) { 229, 176,  27,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&PercentArea);
+	UpScreen = (Device)   { "U", 1, (unsigned short int*)PA_DrawBg[1], 256, 192};
+	DnScreen = (Device)   { "D", 0, (unsigned short int*)PA_DrawBg[0], 256, 192};
+	NormalCS = (CharStat) { g->getFont(FONT_R), 0, 0, g->textColor(), PA_RGB( 0, 0, 0), g->backgroundColor(), DEG0, NORMALWRAP, NONE, 0 };
+
 	Titlebar    = (VirScreen) {   0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
 	ContentWin1 = (VirScreen) {   2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
 	ContentWin2 = (VirScreen) {   2,   2, 252, 172, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
-	StatusbarVS = (VirScreen) {   0, 176, 229,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&StatusbarVS);
+	StatusbarVS = (VirScreen) {   0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&StatusbarVS);
+	PercentArea = (VirScreen) { 229, 176,  27,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&PercentArea);
 	// End of global variables
 
-	VirScreen  Searchbar   = {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
-
-	CharStat SearchResultsCS3 = { g->getFont(FONT_R), 0, 0, PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,     NOWRAP, SIMULATE, 0 };
-	CharStat       TitlebarCS = { g->getFont(FONT_B), 0, 0, PA_RGB(31,31,31), PA_RGB( 0, 0, 0), PA_RGB( 0, 0, 0), DEG0,   HARDWRAP,     NONE, 0 };
+	VirScreen  Searchbar   =  {  47,  37, 162,  22, {{0,0},{0,0}}, &DnScreen}; InitVS(&Searchbar);
 
 	BLOCK CharArea = {{ 0, 0},{ 0, 0}};
 
@@ -319,14 +312,31 @@ int main(int argc, char ** argv)
 	WikiChooser->setTitle("Choose your Wiki");
 	WikiChooser->allowCancel(0);
 
+	bool loadInternalWiki = false;
+
 #if !DEBUG
-	if ( possibleWikis.size() > 1 )
+	if ( 0 && possibleWikis.size() > 1 )
 	{
 		currentSelectedWiki = WikiChooser->run();
 	}
-	else
+	else if ( 0 && possibleWikis.size() == 1 )
 	{
 		currentSelectedWiki = 0;
+	}
+	else
+	{
+		loadInternalWiki = true;
+		possibleWikis = d->getPossibleWikis(true);
+		vector<string>::iterator pos_it = find(possibleWikis.begin(), possibleWikis.end(), "manual");
+		if (pos_it != possibleWikis.end())
+		{
+			currentSelectedWiki = pos_it - possibleWikis.begin();
+			suchtitel = "Test";
+		}
+		else
+		{
+			return 1;
+		}
 	}
 #else
 	currentSelectedWiki = DEBUG_WIKI_NR;
@@ -338,10 +348,9 @@ int main(int argc, char ** argv)
 	bool updatePercent     = false;
 	bool updateInRealTime  = true;
 	bool search            = false;
-
-	int forcedLine         = 0;
 	bool setNewHistoryItem = true;
 	bool loadArticle       = true;
+	int forcedLine         = 0;
 
 	FillVS(&Titlebar, PA_RGB( 9,16,28));
 
@@ -352,13 +361,13 @@ int main(int argc, char ** argv)
 	TitleIndex* t = new TitleIndex();
 	g->setTitleIndex(t);
 	t->setGlobals(g);
-	t->load(possibleWikis[currentSelectedWiki]);
+	t->load(possibleWikis[currentSelectedWiki],loadInternalWiki);
 
 	g->getStatusbar()->display("Initializing MarkupGetter...");
 	WikiMarkupGetter* wmg = new WikiMarkupGetter();
 	g->setWikiMarkupGetter(wmg);
 	wmg->setGlobals(g);
-	wmg->load(possibleWikis[currentSelectedWiki]);
+	wmg->load(possibleWikis[currentSelectedWiki],loadInternalWiki);
 
 	g->getStatusbar()->clearAfter(30);
 
@@ -380,7 +389,7 @@ int main(int argc, char ** argv)
 			if (PA_SpriteTouched(SPRITE_CONFIGURE))
 			{
 				g->setOptions();
-				updateContent = 1;
+				updateContent = true;
 			}
 			else if (PA_SpriteTouched(SPRITE_VIEWMAG))
 			{
@@ -390,13 +399,13 @@ int main(int argc, char ** argv)
 			{
 				g->getStatusbar()->displayClearAfter("Loading Bookmarks",45);
 				string bookmark = g->loadBookmark();
-				updateContent = 1;
+				updateContent = true;
 				if (!bookmark.empty())
 				{
 					suchtitel = bookmark;
 					forcedLine = 0;
-					setNewHistoryItem = 1;
-					loadArticle = 1;
+					setNewHistoryItem = true;
+					loadArticle = true;
 				}
 			}
 // 			else if (PA_SpriteTouched(SPRITE_BOOKMARKADD))
@@ -425,8 +434,8 @@ int main(int argc, char ** argv)
 // 			{
 // 				suchtitel = markupClick;
 // 				forcedLine = 0;
-// 				setNewHistoryItem = 1;
-// 				loadArticle = 1;
+// 				setNewHistoryItem = true;
+// 				loadArticle = true;
 // 			}
 // 		}
 
@@ -435,7 +444,7 @@ int main(int argc, char ** argv)
 // 			if (markup->scrollPageUp())
 // 			{
 // 				h->updateCurrentLine(markup->currentLine());
-// 				updateContent = 1;
+// 				updateContent = true;
 // 				PA_Sleep(10);
 // 			}
 		}
@@ -445,7 +454,7 @@ int main(int argc, char ** argv)
 // 			if (markup->scrollPageDown())
 // 			{
 // 				h->updateCurrentLine(markup->currentLine());
-// 				updateContent = 1;
+// 				updateContent = true;
 // 				PA_Sleep(10);
 // 			}
 		}
@@ -455,7 +464,7 @@ int main(int argc, char ** argv)
 // 			if (markup->scrollLineUp())
 // 			{
 // 				h->updateCurrentLine(markup->currentLine());
-// 				updateContent = 1;
+// 				updateContent = true;
 // 				PA_Sleep(10);
 // 			}
 		}
@@ -465,7 +474,7 @@ int main(int argc, char ** argv)
 // 			if (markup->scrollLineDown())
 // 			{
 // 				h->updateCurrentLine(markup->currentLine());
-// 				updateContent = 1;
+// 				updateContent = true;
 // 				PA_Sleep(10);
 // 			}
 		}
@@ -474,17 +483,22 @@ int main(int argc, char ** argv)
 		{
 			suchtitel.clear();
 			forcedLine = 0;
-			setNewHistoryItem = 1;
-			loadArticle = 1;
+			setNewHistoryItem = true;
+			loadArticle = true;
 		}
 
-		if (Pad.Newpress.B)
+		if ( Pad.Released.B && (Pad.Downtime.B<60) ) // TODO in the morning
 		{
 			if (markup)
 			{
 // 				markup->unselect();
 			}
 		}
+		else if ( Pad.Held.B && ( Pad.Downtime.B >= 60 ) )
+		{
+			// TODO switch scrolling type
+		}
+
 		if (Pad.Newpress.X)
 		{
 			search = true;
@@ -496,7 +510,7 @@ int main(int argc, char ** argv)
 			{
 				if (markup->toggleIndex())
 				{
-					updateContent = 1;
+					updateContent = true;
 				}
 			}
 		}
@@ -507,8 +521,8 @@ int main(int argc, char ** argv)
 			{
 				suchtitel = h->currentTitle();
 				forcedLine = h->currentLine();
-				setNewHistoryItem = 0;
-				loadArticle = 1;
+				setNewHistoryItem = false;
+				loadArticle = true;
 			}
 		}
 		else if ( (Pad.Released.L) && (Pad.Downtime.L<60) )
@@ -517,8 +531,8 @@ int main(int argc, char ** argv)
 			{
 				suchtitel = h->currentTitle();
 				forcedLine = h->currentLine();
-				setNewHistoryItem = 0;
-				loadArticle = 1;
+				setNewHistoryItem = false;
+				loadArticle = true;
 			}
 		}
 		else if ( ( h->size() > 1 ) && ( ( (Pad.Held.R) && (Pad.Downtime.R>=60) ) || ( (Pad.Held.L) && (Pad.Downtime.L>=60) ) ) )
@@ -535,17 +549,17 @@ int main(int argc, char ** argv)
 			if ( (chosenHistItem>=0) && (chosenHistItem != h->getCurrentPosition()) )
 			{
 				h->setCurrentPosition(chosenHistItem);
-				setNewHistoryItem = 0;
+				setNewHistoryItem = false;
 				suchtitel = history_vec[chosenHistItem];
-				loadArticle = 1;
+				loadArticle = true;
 			}
-			updateContent = 1;
+			updateContent = true;
 		}
 
 		if (Pad.Newpress.Start)
 		{
 			g->setOptions();
-			updateContent = 1;
+			updateContent = true;
 		}
 
 		if (Pad.Newpress.Select && (possibleWikis.size()>1))
@@ -571,18 +585,18 @@ int main(int argc, char ** argv)
 
 				h->clear();
 
-				loadArticle = 1;
+				loadArticle = true;
 			}
 			else
 			{
 				currentSelectedWiki = currentSelectedWikiBackup;
 			}
-			updateTitle = 1;
-			updateContent = 1;
+			updateTitle = true;
+			updateContent = true;
 		}
 
 #if STRESSTEST
-		loadArticle = 1;
+		loadArticle = true;
 #endif
 
 		if (loadArticle)
@@ -635,6 +649,10 @@ int main(int argc, char ** argv)
 
 				FillVS(&Titlebar, PA_RGB( 16,16,16));
 				CharArea = (BLOCK) {{5,2},{0,0}};
+				CharStat TitlebarCS = NormalCS;
+				TitlebarCS.Color = PA_RGB(31,31,31);
+				TitlebarCS.Wrap = NOWRAP;
+
 				iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
 				g->getStatusbar()->display("Formatting \""+currentTitle+"\"...");
 
@@ -645,67 +663,12 @@ int main(int argc, char ** argv)
 
 				if (markup->LoadOK())
 				{
-					PA_OutputText(1,0,2,"%c2XML-Parsing OK    ");
+// 					PA_OutputText(1,0,2,"%c2XML-Parsing OK    ");
+					PA_OutputText(1,0,2,"%c2                  ");
 				}
 				else
 				{
 					PA_OutputText(1,0,2,"%c1XML-Parsing failed");
-
-/*					string filenamestr = currentTitle ;
-					replace_all(filenamestr,"\n","");
-					replace_all(filenamestr,"\\","");
-					replace_all(filenamestr,"/","");
-					replace_all(filenamestr,"*","");
-					replace_all(filenamestr,"<","");
-					replace_all(filenamestr,">","");
-					replace_all(filenamestr,":","");
-					replace_all(filenamestr,"?","");
-					replace_all(filenamestr,"\"","");
-					replace_all(filenamestr,"|","");
-					replace_all(filenamestr,"'","");
-					filenamestr = "fat:/dswiki/parseerror_" + filenamestr + ".xml";
-					FILE* xmlerror = fopen(filenamestr.c_str(),"wb");
-					if (xmlerror != NULL)
-					{
-						fprintf(xmlerror,"%s",markupstr.c_str());
-						fclose(xmlerror);
-					}
-
-					string xmlerrors;
-					FILE* xmlerrorlist = fopen("fat:/dswiki/xml_parsing_errors.txt","rb");
-					if (xmlerrorlist!=NULL)
-					{
-						fseek(xmlerrorlist,0,SEEK_END);
-						int size = ftell(xmlerrorlist);
-						fseek(xmlerrorlist,0,SEEK_SET);
-						char* buffer = (char*) malloc(size+1);
-						fread(buffer,size,1,xmlerrorlist);
-						buffer[size] = '\0';
-						fclose(xmlerrorlist);
-						xmlerrors = string(buffer);
-						free(buffer);
-					}
-					vector<string> errors1, errors2;
-					explode("\n",xmlerrors,errors1);
-					errors1.push_back(possibleWikis[currentSelectedWiki]+": "+currentTitle);
-					sort(errors1.begin(),errors1.end());
-					if (!errors1[0].empty())
-						errors2.push_back(errors1[0]);
-					for (int a=1;a< (int) errors1.size();a++)
-					{
-						if ((!errors1[a].empty()) && (errors1[a]!=errors1[a-1]))
-						{
-							errors2.push_back(errors1[a]);
-						}
-					}
-					implode("\n",errors2,xmlerrors);
-					xmlerrors += "\n";
-					xmlerrorlist = fopen("fat:/dswiki/xml_parsing_errors.txt","wb");
-					if (xmlerrorlist!=NULL)
-					{
-						fprintf(xmlerrorlist,"%s",xmlerrors.c_str());
-						fclose(xmlerrorlist);
-					}*/
 				}
 
 				g->getStatusbar()->displayClearAfter("Formatting complete",30);
@@ -717,31 +680,33 @@ int main(int argc, char ** argv)
 					h->insert(currentTitle,0);
 				}
 
-				updateTitle = 1;
-				updateContent = 1;
+				updateTitle = true;
+				updateContent = true;
 			}
 			else
 			{
 				g->getStatusbar()->displayErrorClearAfter("\""+suchtitel+"\" not found...",90);
-				updatePercent = 1;
+				updatePercent = true;
 			}
 
-			loadArticle = 0;
+			loadArticle = false;
 		}
 
 		if (updateTitle)
 		{
 			FillVS(&Titlebar, PA_RGB( 9,16,28));
 			CharArea = (BLOCK) {{5,2},{0,0}};
+			CharStat TitlebarCS = NormalCS;
+			TitlebarCS.Color = PA_RGB(31,31,31);
 			iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
-			updateTitle = 0;
+			updateTitle = false;
 		}
 
 		if (updateStatusbarVS)
 		{
 			g->getStatusbar()->clear();
-			updatePercent = 1;
-			updateStatusbarVS = 0;
+			updatePercent = true;
+			updateStatusbarVS = false;
 		}
 
 		if (updateContent)
@@ -750,15 +715,15 @@ int main(int argc, char ** argv)
 			{
 				g->getMarkup()->draw();
 			}
-			updatePercent = 1;
-			updateContent = 0;
+			updatePercent = true;
+			updateContent = false;
 		}
 
 		if (updatePercent)
 		{
 // 			g->getPercentIndicator()->update(markup->currentPercent());
 			g->getPercentIndicator()->redraw();
-			updatePercent = 0;
+			updatePercent = false;
 		}
 
 		if (search)
@@ -788,10 +753,10 @@ int main(int argc, char ** argv)
 			iPrint(currentTitle,&StatusbarVS,&NormalCS,&CharArea,-1,UTF8);
 
 			char letter = 0;
-			unsigned char updateSearchbar   = 1;
-			unsigned char updateSuggestions = 1;
-			unsigned char searchSuggestions = 1;
-			unsigned char updateCursor      = 1;
+			bool updateSearchbar   = true;
+			bool updateSuggestions = true;
+			bool searchSuggestions = true;
+			bool updateCursor      = true;
 			int cursorPosition = 0;
 			unsigned char* Str;
 			unsigned int Skip;
@@ -801,7 +766,7 @@ int main(int argc, char ** argv)
 			offsetsUTF.push_back(0);
 			if (!suchtitel.empty())
 			{
-				Str = (unsigned char*) &suchtitel.at(0);
+				Str = (unsigned char*) suchtitel.c_str();
 				Skip = 0;
 				while(Str[Skip])
 				{
@@ -834,7 +799,7 @@ int main(int argc, char ** argv)
 					offsetsUTF.push_back(0);
 					if (!suchtitel.empty())
 					{
-						Str = (unsigned char*) &suchtitel.at(0);
+						Str = (unsigned char*) suchtitel.c_str();
 						Skip = 0;
 						while(Str[Skip])
 						{
@@ -843,10 +808,10 @@ int main(int argc, char ** argv)
 						}
 					}
 
-					updateSearchbar = 1;
+					updateSearchbar = true;
 					if (updateInRealTime)
 					{
-						searchSuggestions = 1;
+						searchSuggestions = true;
 					}
 					else
 					{
@@ -862,7 +827,7 @@ int main(int argc, char ** argv)
 					offsetsUTF.push_back(0);
 					if (!suchtitel.empty())
 					{
-						Str = (unsigned char*) &suchtitel.at(0);
+						Str = (unsigned char*) suchtitel.c_str();
 						Skip = 0;
 						while(Str[Skip])
 						{
@@ -870,10 +835,10 @@ int main(int argc, char ** argv)
 							offsetsUTF.push_back(Skip);
 						}
 					}
-					updateSearchbar = 1;
+					updateSearchbar = true;
 					if (updateInRealTime)
 					{
-						searchSuggestions = 1;
+						searchSuggestions = true;
 					}
 					else
 					{
@@ -885,8 +850,8 @@ int main(int argc, char ** argv)
 				{
 					suchtitel = s->currentHighlightedItem();
 					forcedLine = 0;
-					setNewHistoryItem = 1;
-					loadArticle = 1;
+					setNewHistoryItem = true;
+					loadArticle = true;
 					break;
 				}
 				if (Stylus.Held)
@@ -900,10 +865,10 @@ int main(int argc, char ** argv)
 							offsetsUTF.clear();
 							offsetsUTF.push_back(0);
 							cursorPosition = 0;
-							updateSearchbar = 1;
+							updateSearchbar = true;
 							if (updateInRealTime)
 							{
-								searchSuggestions = 1;
+								searchSuggestions = true;
 							}
 							else
 							{
@@ -914,8 +879,8 @@ int main(int argc, char ** argv)
 						{
 							suchtitel = s->currentHighlightedItem();
 							forcedLine = 0;
-							setNewHistoryItem = 1;
-							loadArticle = 1;
+							setNewHistoryItem = true;
+							loadArticle = true;
 							break;
 						}
 						else if (IsInArea(StatusbarVS.AbsoluteBound,S))
@@ -926,7 +891,7 @@ int main(int argc, char ** argv)
 							cursorPosition = 0;
 							if (!suchtitel.empty())
 							{
-								Str = (unsigned char*) &suchtitel.at(0);
+								Str = (unsigned char*) suchtitel.c_str();
 								Skip = 0;
 								while(Str[Skip])
 								{
@@ -935,10 +900,10 @@ int main(int argc, char ** argv)
 									offsetsUTF.push_back(Skip);
 								}
 							}
-							updateSearchbar = 1;
+							updateSearchbar = true;
 							if (updateInRealTime)
 							{
-								searchSuggestions = 1;
+								searchSuggestions = true;
 							}
 							else
 							{
@@ -954,7 +919,7 @@ int main(int argc, char ** argv)
 							if (s->scrollPageUp())
 							{
 								PA_Sleep(10);
-								updateSuggestions = 1;
+								updateSuggestions = true;
 							}
 						}
 						else if (PA_SpriteTouched(SPRITE_1UPARROW))
@@ -962,7 +927,7 @@ int main(int argc, char ** argv)
 							if (s->scrollLineUp())
 							{
 								PA_Sleep(10);
-								updateSuggestions = 1;
+								updateSuggestions = true;
 							}
 						}
 						else if (PA_SpriteTouched(SPRITE_1DOWNARROW))
@@ -970,7 +935,7 @@ int main(int argc, char ** argv)
 							if (s->scrollLineDown())
 							{
 								PA_Sleep(10);
-								updateSuggestions = 1;
+								updateSuggestions = true;
 							}
 						}
 						else if (PA_SpriteTouched(SPRITE_2DOWNARROW))
@@ -978,12 +943,12 @@ int main(int argc, char ** argv)
 							if (s->scrollPageDown())
 							{
 								PA_Sleep(10);
-								updateSuggestions = 1;
+								updateSuggestions = true;
 							}
 						}
 						else if (PA_SpriteTouched(SPRITE_HISTORY) || PA_SpriteTouched(SPRITE_HISTORYX))
 						{
-							updateInRealTime = 1 - updateInRealTime;
+							updateInRealTime = !updateInRealTime;
 							if (updateInRealTime)
 							{
 								PA_SetSpriteXY(0,SPRITE_HISTORY,-16,-16);
@@ -997,7 +962,7 @@ int main(int argc, char ** argv)
 						}
 						else if (PA_SpriteTouched(SPRITE_RELOAD))
 						{
-							searchSuggestions = 1;
+							searchSuggestions = true;
 							countdown = 0;
 						}
 						else if (PA_SpriteTouched(SPRITE_1LEFTARROW))
@@ -1005,7 +970,7 @@ int main(int argc, char ** argv)
 							if (cursorPosition>0)
 							{
 								cursorPosition--;
-								updateSearchbar = 1;
+								updateSearchbar = true;
 							}
 						}
 						else if (PA_SpriteTouched(SPRITE_1RIGHTARROW))
@@ -1013,7 +978,7 @@ int main(int argc, char ** argv)
 							if (offsetsUTF[cursorPosition]< (int) suchtitel.length())
 							{
 								cursorPosition++;
-								updateSearchbar = 1;
+								updateSearchbar = true;
 							}
 						}
 					}
@@ -1027,7 +992,7 @@ int main(int argc, char ** argv)
 					if (s->scrollLineUp())
 					{
 						PA_Sleep(10);
-						updateSuggestions = 1;
+						updateSuggestions = true;
 					}
 				}
 
@@ -1036,7 +1001,7 @@ int main(int argc, char ** argv)
 					if (s->scrollLineDown())
 					{
 						PA_Sleep(10);
-						updateSuggestions = 1;
+						updateSuggestions = true;
 					}
 				}
 
@@ -1045,7 +1010,7 @@ int main(int argc, char ** argv)
 					if (s->scrollPageUp())
 					{
 						PA_Sleep(10);
-						updateSuggestions = 1;
+						updateSuggestions = true;
 					}
 				}
 
@@ -1054,7 +1019,7 @@ int main(int argc, char ** argv)
 					if (s->scrollPageDown())
 					{
 						PA_Sleep(10);
-						updateSuggestions = 1;
+						updateSuggestions = true;
 					}
 				}
 
@@ -1062,7 +1027,7 @@ int main(int argc, char ** argv)
 				{
 					if (s->scrollLongUp())
 					{
-						updateSuggestions = 1;
+						updateSuggestions = true;
 					}
 				}
 
@@ -1070,7 +1035,7 @@ int main(int argc, char ** argv)
 				{
 					if (s->scrollLongDown())
 					{
-						updateSuggestions = 1;
+						updateSuggestions = true;
 					}
 				}
 
@@ -1083,16 +1048,22 @@ int main(int argc, char ** argv)
 				if (updateSearchbar)
 				{
 					FillVS(&Searchbar,PA_RGB(28,28,28));
+					CharStat tmpCS = NormalCS;
+					tmpCS.Wrap = NOWRAP;
 					CharArea = (BLOCK) {{2,5},{0,0}};
-					iPrint(suchtitel,&Searchbar,&SearchResultsCS1,&CharArea,-1,UTF8);
-					updateCursor = 1;
-					updateSearchbar = 0;
+					iPrint(suchtitel,&Searchbar,&tmpCS,&CharArea,-1,UTF8);
+					updateCursor = true;
+					updateSearchbar = false;
 				}
 
 				if (updateCursor) // TODO
 				{
+
+					CharStat tmpCS = NormalCS;
+					tmpCS.Wrap = NOWRAP;
+					tmpCS.Fx = SIMULATE;
 					CharArea = (BLOCK) {{2,5},{0,0}};
-					iPrint(suchtitel.substr(0,offsetsUTF[cursorPosition]),&Searchbar,&SearchResultsCS3,&CharArea,-1,UTF8);
+					iPrint(suchtitel.substr(0,offsetsUTF[cursorPosition]),&Searchbar,&tmpCS,&CharArea,-1,UTF8);
 					BLOCK temp = {{CharArea.Start.x-1,2},{CharArea.Start.x-1,19}};
 					DrawBlock(&Searchbar,temp,PA_RGB(20,20,20),0);
 				}
@@ -1100,14 +1071,14 @@ int main(int argc, char ** argv)
 				if (searchSuggestions) // load current searchstring, this is the bottleneck
 				{
 					s->load(suchtitel);
-					updateSuggestions = 1;
-					searchSuggestions = 0;
+					updateSuggestions = true;
+					searchSuggestions = false;
 				}
 
 				if (updateSuggestions) // update display
 				{
 					s->display();
-					updateSuggestions = 0;
+					updateSuggestions = false;
 				}
 
 				if (countdown > 0)
@@ -1115,7 +1086,7 @@ int main(int argc, char ** argv)
 					countdown--;
 					if (countdown==0)
 					{
-						searchSuggestions = 1;
+						searchSuggestions = true;
 					}
 				}
 				PA_CheckLid();
@@ -1135,9 +1106,9 @@ int main(int argc, char ** argv)
 			PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
 			PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
 
-			updateTitle = 1;
-			updateContent = 1;
-			updateStatusbarVS = 1;
+			updateTitle = true;
+			updateContent = true;
+			updateStatusbarVS = true;
 		}
 
 		PA_CheckLid();

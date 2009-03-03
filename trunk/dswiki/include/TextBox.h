@@ -17,6 +17,7 @@
 #include <vector>
 #include <string>
 #include "api.h"
+#include "chrlib.h"
 
 using namespace std;
 
@@ -43,6 +44,8 @@ class TextBox
 		VirScreen MaxPossibleSpace;
 		VirScreen BoxSpace;
 		VirScreen ContentSpace;
+		CharStat LineCS;
+		CharStat LineEmphCS;
 
 		int boxDrawingWidth;
 		int boxDrawingHeight;

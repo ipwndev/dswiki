@@ -33,7 +33,7 @@ class Dumps
 {
 	public:
 		Dumps();
-		vector<string> getPossibleWikis();
+		vector<string> getPossibleWikis(bool internal = false);
 		string get_ifo(string basename, bool internal = false);
 		string get_idx(string basename, bool internal = false);
 		string get_ao1(string basename, bool internal = false);
