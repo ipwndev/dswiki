@@ -32,7 +32,7 @@ void PercentIndicator::update(int value)
 		}
 		percentstr += "%";
 		BLOCK CharArea = {{2,2},{0,0}};
-		iPrint(percentstr,&PercentArea,&NormalCS,&CharArea,-1,UTF8);
+		iPrint(percentstr,&PercentArea,&NormalCS,&CharArea);
 	}
 }
 
@@ -54,6 +54,6 @@ void PercentIndicator::redraw()
 	}
 	percentstr += "%";
 	BLOCK CharArea = {{2,2},{0,0}};
-	iPrint(percentstr,&PercentArea,&NormalCS,&CharArea,-1,UTF8);
+	iPrint(percentstr,&PercentArea,&NormalCS,&CharArea);
 
 }

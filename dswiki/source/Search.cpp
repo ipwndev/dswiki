@@ -92,17 +92,17 @@ void Search::display()
 	int i;
 	CharStat CS = NormalCS;
 	CS.Wrap = NOWRAP;
-	for (i=_list_FirstDisplayNumber;i<=_list_LastDisplayNumber;i++)  // TODO: Only paint necessary lines, not all
+	for (i=_list_FirstDisplayNumber;i<=_list_LastDisplayNumber;i++)
 	{
 		if (i!=_list_CurrentArticleNumber)
 		{
 			CS.Color = _globals->textColor();
-			iPrint(_list[i]+"\n",&ContentWin1,&CS,&CharArea,-1,UTF8);
+			iPrint(_list[i]+"\n",&ContentWin1,&CS,&CharArea);
 		}
 		else
 		{
 			CS.Color = PA_RGB(31,0,0);
-			iPrint(_list[i]+"\n",&ContentWin1,&CS,&CharArea,-1,UTF8);
+			iPrint(_list[i]+"\n",&ContentWin1,&CS,&CharArea);
 		}
 	}
 }

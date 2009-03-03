@@ -270,7 +270,7 @@ void iDrawChar(unsigned int* Uni, const VirScreen* VScreen, const CharStat* CSta
 	}
 }
 
-unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang, bool forceInnerWordWrap)
+unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, bool forceInnerWordWrap)
 {
 	unsigned char*	Str                = (unsigned char*) St;
 	// 	global
@@ -452,28 +452,32 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 	return SaveSkipLetter;
 }
 
-unsigned int SimPrint(const char* Str, Device* Dev, unsigned short int Color, Lid Lang)
+unsigned int SimPrint(const char* Str, Device* Dev, unsigned short int Color)
 {
 	Font stdFont("efs:/dswiki/fonts/font_r.dat");
 	VirScreen VScreen = {0, 0, Dev->Width, Dev->Height, {{0,0},{0,0}}, Dev}; InitVS(&VScreen);
 	CharStat CharStat = { &stdFont, 0, 0, Color, 0, 0, DEG0, NORMALWRAP, NONE, 0};
 	BLOCK CharArea = {{0,0},{0,0}};
-	return iPrint(Str, &VScreen, &CharStat, &CharArea, -1, Lang);
+	return iPrint(Str, &VScreen, &CharStat, &CharArea);
 }
 
-unsigned int iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, Lid Lang, bool forceInnerWordWrap)
+unsigned int iPrint(const string Str, const VirScreen* VScreen, const CharStat* CStat, BLOCK* CharArea, int Limit, bool forceInnerWordWrap)
 {
 	if (!Str.empty())
-		return iPrint(Str.c_str(), VScreen, CStat, CharArea, Limit, Lang, forceInnerWordWrap);
+		return iPrint(Str.c_str(), VScreen, CStat, CharArea, Limit, forceInnerWordWrap);
 	else
 		return 0;
 }
 
-unsigned int SimPrint(const string Str, Device* Dev, unsigned short int Color, Lid Lang)
+unsigned int SimPrint(const string Str, Device* Dev, unsigned short int Color)
 {
 	if (!Str.empty())
-		return SimPrint(Str.c_str(), Dev, Color, Lang);
+		return SimPrint(Str.c_str(), Dev, Color);
 	else
 		return 0;
 }
 
+unsigned int wordWidth(const string Str, const CharStat* CStat)
+{
+	return 0;
+}

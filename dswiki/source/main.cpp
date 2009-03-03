@@ -38,7 +38,7 @@ VirScreen ContentWin2;
 VirScreen StatusbarVS;
 VirScreen PercentArea;
 
-#define DEBUG 0
+#define DEBUG 1
 #define DEBUG_WIKI_NR 1
 #define STRESSTEST 0
 
@@ -315,11 +315,11 @@ int main(int argc, char ** argv)
 	bool loadInternalWiki = false;
 
 #if !DEBUG
-	if ( 0 && possibleWikis.size() > 1 )
+	if ( possibleWikis.size() > 1 )
 	{
 		currentSelectedWiki = WikiChooser->run();
 	}
-	else if ( 0 && possibleWikis.size() == 1 )
+	else if ( possibleWikis.size() == 1 )
 	{
 		currentSelectedWiki = 0;
 	}
@@ -335,6 +335,7 @@ int main(int argc, char ** argv)
 		}
 		else
 		{
+			PA_OutputText(1,0,0,"%c1No internal dumps %c0present!");
 			return 1;
 		}
 	}
@@ -653,7 +654,7 @@ int main(int argc, char ** argv)
 				TitlebarCS.Color = PA_RGB(31,31,31);
 				TitlebarCS.Wrap = NOWRAP;
 
-				iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
+				iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea);
 				g->getStatusbar()->display("Formatting \""+currentTitle+"\"...");
 
 				markup = new Markup();
@@ -698,7 +699,7 @@ int main(int argc, char ** argv)
 			CharArea = (BLOCK) {{5,2},{0,0}};
 			CharStat TitlebarCS = NormalCS;
 			TitlebarCS.Color = PA_RGB(31,31,31);
-			iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea,-1,UTF8);
+			iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea);
 			updateTitle = false;
 		}
 
@@ -750,7 +751,7 @@ int main(int argc, char ** argv)
 
 			FillVS(&StatusbarVS, PA_RGB(18,22,28));
 			CharArea = (BLOCK) {{5,2},{0,0}};
-			iPrint(currentTitle,&StatusbarVS,&NormalCS,&CharArea,-1,UTF8);
+			iPrint(currentTitle,&StatusbarVS,&NormalCS,&CharArea);
 
 			char letter = 0;
 			bool updateSearchbar   = true;
@@ -1051,7 +1052,7 @@ int main(int argc, char ** argv)
 					CharStat tmpCS = NormalCS;
 					tmpCS.Wrap = NOWRAP;
 					CharArea = (BLOCK) {{2,5},{0,0}};
-					iPrint(suchtitel,&Searchbar,&tmpCS,&CharArea,-1,UTF8);
+					iPrint(suchtitel,&Searchbar,&tmpCS,&CharArea);
 					updateCursor = true;
 					updateSearchbar = false;
 				}
@@ -1063,7 +1064,7 @@ int main(int argc, char ** argv)
 					tmpCS.Wrap = NOWRAP;
 					tmpCS.Fx = SIMULATE;
 					CharArea = (BLOCK) {{2,5},{0,0}};
-					iPrint(suchtitel.substr(0,offsetsUTF[cursorPosition]),&Searchbar,&tmpCS,&CharArea,-1,UTF8);
+					iPrint(suchtitel.substr(0,offsetsUTF[cursorPosition]),&Searchbar,&tmpCS,&CharArea);
 					BLOCK temp = {{CharArea.Start.x-1,2},{CharArea.Start.x-1,19}};
 					DrawBlock(&Searchbar,temp,PA_RGB(20,20,20),0);
 				}

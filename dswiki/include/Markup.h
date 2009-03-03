@@ -31,9 +31,9 @@ class Markup
 		void	Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea);
 		void	number_Of_Linebreaks(string & name, int & before, int & after);
 		string	pureText(TiXmlNode* pParent);
-		TiXmlNode*	NextNode(TiXmlNode* current);
+		TiXmlNode*	NextNode(TiXmlNode* current, bool skipChildren = false, bool skipSiblings = false);
 		TiXmlNode*	PreviousNode(TiXmlNode* current);
-		void	getElementStyle(CharStat & CStat, int & indent, TiXmlNode* current);
+		void	getElementStyle(CharStat & CStat, int & indent, bool & reallyPrint, string & alternativeText, TiXmlNode* current);
 
 		TiXmlDocument*			_td;
 		TiXmlNode*				_root;
@@ -41,10 +41,12 @@ class Markup
 
 		bool					_loadOK;
 		bool					_showing_index;
-		Globals*				_globals;
+
 		map <string,TiXmlNode*>	index;
 		string					indexMarkupStr;
 		Markup*					indexMarkup;
+
+		Globals*				_globals;
 };
 
 #endif
