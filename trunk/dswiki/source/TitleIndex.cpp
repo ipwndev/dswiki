@@ -2,7 +2,6 @@
 #include "TitleIndex.h"
 
 #include <sys/dir.h>
-#include <unistd.h>
 #include <algorithm>
 #include "Markup.h"
 #include "main.h"

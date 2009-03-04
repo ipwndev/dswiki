@@ -1,11 +1,8 @@
 #ifndef _GLOBAL_FUNCTIONS_H_
 #define _GLOBAL_FUNCTIONS_H_
 
-#include <iostream>
-#include <fstream>
 #include <string>
 #include <vector>
-#include <stdlib.h>
 
 using namespace std;
 
