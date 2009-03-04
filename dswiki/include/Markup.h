@@ -19,7 +19,7 @@ class Markup
 		Markup();
 		~Markup();
 
-		void	parse(string & Str);
+		void	parse(string & Str, bool interpreteWikiMarkup = true);
 		bool	LoadOK();
 
 		void	draw();

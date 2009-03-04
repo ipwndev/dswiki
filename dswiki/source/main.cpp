@@ -8,23 +8,25 @@
 #include <algorithm>
 
 #include "main.h"
+
 #include "api.h"
 #include "struct.h"
 #include "chrlib.h"
 #include "char_convert.h"
 #include "CachingFont.h"
+#include "Dumps.h"
+#include "FATBrowser.h"
 #include "History.h"
 #include "Markup.h"
-#include "Search.h"
-#include "TitleIndex.h"
-#include "WikiMarkupGetter.h"
-#include "Dumps.h"
 #include "Globals.h"
 #include "PercentIndicator.h"
 #include "Statusbar.h"
+#include "Search.h"
+#include "TitleIndex.h"
 #include "TextBox.h"
 #include "WIKI2XML.h"
 #include "WIKI2XML_global.h"
+#include "WikiMarkupGetter.h"
 
 bool debug;
 
@@ -301,6 +303,14 @@ int main(int argc, char ** argv)
 
 	// use graphical interface from now on
 
+	FATBrowser* fb = new FATBrowser();
+	fb->setGlobals(g);
+	string olli = fb->selectFile();
+// 	PA_OutputText(1,0,15,"%s",olli.c_str());
+// 	delete fb;
+
+	while(1);
+
 	ArticleSearchResult* suchergebnis = NULL;
 	ArticleSearchResult* redirection  = NULL;
 	Markup* markup = NULL;
@@ -576,7 +586,7 @@ int main(int argc, char ** argv)
 		if (Pad.Newpress.Select && (possibleWikis.size()>1))
 		{
 			int currentSelectedWikiBackup = currentSelectedWiki;
-			WikiChooser->allowCancel(1);
+			WikiChooser->allowCancel(true);
 			WikiChooser->setCurrentPosition(currentSelectedWiki);
 			currentSelectedWiki = WikiChooser->run();
 			if ((currentSelectedWiki>=0) && (currentSelectedWiki != currentSelectedWikiBackup))
@@ -658,36 +668,38 @@ int main(int argc, char ** argv)
 				currentTitle = suchergebnis->TitleInArchive();
 				markupstr.insert(0,redirectMessage);
 
-				FillVS(&Titlebar, PA_RGB( 16,16,16));
+				FillVS(&Titlebar, PA_RGB(16,16,16));
 				CharArea = (BLOCK) {{5,2},{0,0}};
 				CharStat TitlebarCS = NormalCS;
 				TitlebarCS.Color = PA_RGB(31,31,31);
 				TitlebarCS.Wrap = NOWRAP;
 
 				iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea);
-				g->getStatusbar()->display("Formatting \""+currentTitle+"\"...");
+				g->getStatusbar()->display("Processing \""+currentTitle+"\"...");
 
 				markup = new Markup();
 				g->setMarkup(markup);
 				markup->setGlobals(g);
 				markup->parse(markupstr);
 
-				if (markup->LoadOK())
+				if (!markup->LoadOK())
 				{
-// 					PA_OutputText(1,0,2,"%c2XML-Parsing OK    ");
-				}
-				else
-				{
-					PA_OutputText(1,0,2,"%c1XML-Parsing failed");
+					delete markup;
+
+					g->getStatusbar()->displayErrorClearAfter("XML-Parsing failed!",60);
+					g->getStatusbar()->displayClearAfter("Printing the original markup...",60);
+
+					markupstr.clear();
+					g->getWikiMarkupGetter()->getMarkup(markupstr, currentTitle);
+					markupstr.insert(0,redirectMessage);
+
+					markup = new Markup();
+					g->setMarkup(markup);
+					markup->setGlobals(g);
+					markup->parse(markupstr, false);
 				}
 
-				g->getStatusbar()->displayClearAfter("Formatting complete",30);
-
-// 				markup->jumpToAnchor("A");
-// 				markup->jumpToAnchor("B");
-// 				markup->jumpToAnchor("C");
-// 				markup->jumpToAnchor("D");
-// 				markup->jumpToAnchor("ZZZ");
+				g->getStatusbar()->displayClearAfter("Processing complete",30);
 
 				markup->scrollToLine(forcedLine);
 

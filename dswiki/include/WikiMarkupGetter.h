@@ -5,6 +5,7 @@
 #include <fat.h>
 #include <vector>
 #include <string>
+#include "main.h"
 
 using namespace std;
 

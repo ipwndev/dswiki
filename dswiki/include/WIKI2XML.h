@@ -22,7 +22,7 @@ class WIKI2XML
 {
 	public:
 		WIKI2XML();
-		void parse(string & s);
+		void parse(string & s, bool interpreteWikiMarkup);
 		void setGlobals(Globals* globals);
 	private:
 		void doQuotes(string & l);

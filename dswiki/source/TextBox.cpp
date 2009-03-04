@@ -92,6 +92,7 @@ int TextBox::run()
 		{
 			if (lineClicked < 0)
 			{
+				// scroll up and highlight the first row
 				if (_topItem>0)
 				{
 					_topItem--;
@@ -102,7 +103,7 @@ int TextBox::run()
 				}
 				else if (_currentItem != _topItem)
 				{
-					_currentItem = _topItem;
+					_currentItem = _topItem; // = 0
 					update = true;
 				}
 			}
@@ -119,12 +120,20 @@ int TextBox::run()
 				else if (_currentItem != _topItem + _numlines)
 				{
 					_currentItem = _topItem + _numlines - 1;
+					if (_currentItem >= (int) _lines.size())
+					{
+						_currentItem = _lines.size() - 1;
+					}
 					update = true;
 				}
 			}
 			else if (_currentItem != _topItem + lineClicked)
 			{
 				_currentItem = _topItem + lineClicked;
+				if (_currentItem >= (int) _lines.size())
+				{
+					_currentItem = _lines.size() - 1;
+				}
 				update = true;
 			}
 		}
@@ -263,16 +272,11 @@ int TextBox::run()
 	return -1;
 }
 
-void TextBox::allowCancel(bool allowCancel)
-{
-	_allowCancel = allowCancel;
-}
-
 
 void TextBox::setCurrentPosition(int pos)
 {
 	_currentItem = pos;
-	if (_numlines == (int) _lines.size())
+	if (_numlines >= (int) _lines.size())
 	{
 		// the only case where we can see both ends
 		_topItem = 0;
@@ -319,3 +323,19 @@ TextBox::TextBox(vector<string> lines)
 	ContentSpace = (VirScreen) {BoxSpace.Left+boxDrawingWidth, BoxSpace.Top+boxDrawingHeight, usedWidth-2*boxDrawingWidth, usedHeight-2*boxDrawingHeight, {{0,0},{0,0}}, &DnScreen};
 	InitVS(&ContentSpace);
 }
+
+void TextBox::maximize()
+{
+	VirScreen MaxPossibleSpace = {18, 10, 220, 156, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&MaxPossibleSpace);
+
+	_numlines = (MaxPossibleSpace.Height / boxDrawingHeight) - 2;
+	usedHeight = (2+_numlines)*boxDrawingHeight;
+
+	BoxSpace = (VirScreen) {MaxPossibleSpace.Left+(MaxPossibleSpace.Width-usedWidth)/2, MaxPossibleSpace.Top+(MaxPossibleSpace.Height-usedHeight)/2, usedWidth, usedHeight, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&BoxSpace);
+
+	ContentSpace = (VirScreen) {BoxSpace.Left+boxDrawingWidth, BoxSpace.Top+boxDrawingHeight, usedWidth-2*boxDrawingWidth, usedHeight-2*boxDrawingHeight, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&ContentSpace);
+}
+

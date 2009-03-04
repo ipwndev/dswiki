@@ -1,20 +1,12 @@
 #include "WikiMarkupGetter.h"
 
-#include <sys/dir.h>
-#include <unistd.h>
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <bzlib.h>
-#include <string>
 
-#include "main.h"
 #include "TitleIndex.h"
 #include "Globals.h"
 #include "PercentIndicator.h"
 #include "Dumps.h"
 
-// #define BUFFER_SIZE 8192
 #define BUFFER_SIZE 1024
 #define BZ_DECOMPRESS_SMALL 1
 

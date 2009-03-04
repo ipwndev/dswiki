@@ -91,14 +91,14 @@ void Markup::build_index(vector <TiXmlNode*> & index)
 	}
 }
 
-void Markup::parse(string & Str)
+void Markup::parse(string & Str, bool interpreteWikiMarkup)
 {
 	// Transform the wikimarkup-string into proper XML-markup
 	_globals->getStatusbar()->display("WikiMarkup->XML");
 	WIKI2XML* w2x = new WIKI2XML();
 	w2x->setGlobals(_globals);
 	// Transform
-	w2x->parse(Str);
+	w2x->parse(Str, interpreteWikiMarkup);
 	// Str was modified, so we can delete this helper class
 	delete w2x;
 	w2x = NULL;
@@ -576,9 +576,9 @@ void Markup::scrollToLine(int lineNo)
 	{
 		_currentLine = lineNo;
 	}
-	PA_OutputText(1,0,3,"Scrolling to line %d    ",_currentLine);
-	PA_WaitFor(Pad.Newpress.Anykey);
-	PA_OutputText(1,0,3,"                          ");
+// 	PA_OutputText(1,0,3,"Scrolling to line %d    ",_currentLine);
+// 	PA_WaitFor(Pad.Newpress.Anykey);
+// 	PA_OutputText(1,0,3,"                          ");
 }
 
 void Markup::bringElementToTop(TiXmlElement* current)

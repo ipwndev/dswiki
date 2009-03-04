@@ -27,11 +27,10 @@ class TextBox
 {
 	public:
 		TextBox(vector<string> lines);
-		void allowCancel(bool allowCancel);
+		void allowCancel(bool allowCancel) { _allowCancel = allowCancel; };
 		void setGlobals(Globals* globals) { _globals = globals; }
 		void setTitle(string title) {_title = title; };
-		void highlight(string title);
-		void reset();
+		void maximize();
 		int run();
 		void setCurrentPosition(int pos);
 	private:
@@ -39,7 +38,6 @@ class TextBox
 		string _title;
 		int _topItem;
 		int _currentItem;
-		Globals* _globals;
 		bool _allowCancel;
 		VirScreen MaxPossibleSpace;
 		VirScreen BoxSpace;
@@ -53,6 +51,8 @@ class TextBox
 		int usedWidth;
 		int _numlines;
 		int usedHeight;
+
+		Globals* _globals;
 };
 
 #endif
