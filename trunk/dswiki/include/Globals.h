@@ -31,14 +31,13 @@ class Font;
 class Globals
 {
 	public:
-		void setOptions();
 		string loadBookmark();
 		void saveBookmark(string s);
+
 		void setDumps(Dumps* dumps);
 		void setTitleIndex(TitleIndex* titleIndex);
 		void setWikiMarkupGetter(WikiMarkupGetter* wikiMarkupGetter);
 		void setMarkup(Markup* markup);
-		void setSearch(Search* search);
 		void setPercentIndicator(PercentIndicator* percentIndicator);
 		void setStatusbar(Statusbar* statusbar);
 		void setFont(Font* font, FontCut type);
@@ -47,13 +46,13 @@ class Globals
 		int backgroundColor();
 		int textColor();
 		int linkColor();
+		int activeLinkColor();
 		int templateColor();
 		int imageColor();
 		Dumps*            getDumps();
 		TitleIndex*       getTitleIndex();
 		WikiMarkupGetter* getWikiMarkupGetter();
 		Markup*           getMarkup();
-		Search*           getSearch();
 		PercentIndicator* getPercentIndicator();
 		Statusbar*        getStatusbar();
 		Font*             getFont(FontCut type);
@@ -63,7 +62,6 @@ class Globals
 		TitleIndex*       _titleIndex;
 		WikiMarkupGetter* _wikiMarkupGetter;
 		Markup*           _markup;
-		Search*           _search;
 		PercentIndicator* _percentIndicator;
 		Statusbar*        _statusbar;
 		Font*             _font_r;

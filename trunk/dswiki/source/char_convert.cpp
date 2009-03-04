@@ -46,7 +46,7 @@ void replace_all(string & s, string pattern, string with)
 {
 	int a;
 	a = s.find(pattern);
-	while (a!= (int) string::npos)
+	while (a != (int) string::npos)
 	{
 		s.replace(a,pattern.length(),with);
 		a = s.find(pattern,a+1);

@@ -29,8 +29,9 @@ class TextBox
 		TextBox(vector<string> lines);
 		void allowCancel(bool allowCancel) { _allowCancel = allowCancel; };
 		void setGlobals(Globals* globals) { _globals = globals; }
-		void setTitle(string title) {_title = title; };
+		void setTitle(string title) { _title = title; };
 		void maximize();
+		void allowSingleElement() { _allowSingleElement = true; };
 		int run();
 		void setCurrentPosition(int pos);
 	private:
@@ -39,6 +40,7 @@ class TextBox
 		int _topItem;
 		int _currentItem;
 		bool _allowCancel;
+		bool _allowSingleElement;
 		VirScreen MaxPossibleSpace;
 		VirScreen BoxSpace;
 		VirScreen ContentSpace;

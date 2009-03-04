@@ -27,7 +27,7 @@
 class FATBrowser
 {
 	public:
-		FATBrowser();
+		FATBrowser(bool internal = false);
 		~FATBrowser();
 		std::string selectFile();
 		void	setGlobals(Globals* globals) { _globals = globals; };
