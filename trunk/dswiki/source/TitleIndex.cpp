@@ -445,7 +445,7 @@ ArticleSearchResult* TitleIndex::isRedirect(string Str)
 		Markup* redir_markup = new Markup();
 		redir_markup->setGlobals(_globals);
 		redir_markup->parse(Str);
-		string first_target = redir_markup->getFirstLink();
+		string first_target = redir_markup->getFirstLinkTarget();
 		delete redir_markup;
 		if (first_target.empty())
 			return NULL;

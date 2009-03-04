@@ -19,11 +19,22 @@ Markup::Markup()
 {
 	_td = NULL;
 	_root = NULL;
+	_end = NULL;
+	_currentHighlightedLink = NULL;
 
 	_showing_index = false;
+	_colorChangeOnPage = false;
+	_loadOK = false;
+
+	_numberOfLines = 0;
+	_currentLine = 0;
+	_lastDisplayedLine = -1;
+
 	index.clear();
 	indexMarkup = NULL;
 	indexMarkupStr.clear();
+
+	_globals = NULL;
 
 	TiXmlBase::SetCondenseWhiteSpace( false );
 }
@@ -57,19 +68,28 @@ void Markup::setGlobals(Globals* globals)
 }
 
 
-bool Markup::toggleIndex()
+void Markup::toggleIndex()
 {
 	if (indexMarkup)
 	{
 		_showing_index = !_showing_index;
-		return true;
-	}
-	else
-	{
-		return false;
 	}
 }
 
+void Markup::build_index(vector <TiXmlNode*> & index)
+{
+	for ( TiXmlNode* pParent = _root; pParent; pParent = NextNode(pParent) )
+	{
+		if (pParent->Type() == TiXmlNode::ELEMENT)
+		{
+			string value = pParent->ValueStr();
+			if (value.length() == 2 && value[0] == 'h' && value[1] > '0' && value[1] <= '9')
+			{
+				index.push_back(pParent);
+			}
+		}
+	}
+}
 
 void Markup::parse(string & Str)
 {
@@ -112,7 +132,7 @@ void Markup::postProcessDOM()
 
 	// create the index from the document structure (headings)
 	vector <TiXmlNode*>	index_tmp;
-	build_index(_td, index_tmp);
+	build_index(index_tmp);
 	if (!index_tmp.empty())
 	{
 		int level_curr;
@@ -164,7 +184,7 @@ void Markup::postProcessDOM()
 		indexMarkup->parse(indexMarkupStr);
 	}
 
-	// create the layout of the article
+	// create the layout of the article (TODO)
 	VirScreen oneLayoutLine = ContentWin2;
 	oneLayoutLine.Height = _globals->getFont(FONT_R)->Height();
 	InitVS(&oneLayoutLine);
@@ -226,9 +246,10 @@ void Markup::postProcessDOM()
 
 		}
 	}
+	_numberOfLines = lineNumber;
 }
 
-
+// TODO add: info if the element begins on a new line
 void Markup::getElementStyle(CharStat & CStat, int & indent, bool & reallyPrint, string & alternativeText, TiXmlNode* current)
 {
 	if (current == _root)
@@ -289,24 +310,6 @@ void Markup::getElementStyle(CharStat & CStat, int & indent, bool & reallyPrint,
 	}
 }
 
-void Markup::build_index(TiXmlNode* pParent, vector <TiXmlNode*> & index)
-{
-	if ( !pParent ) return;
-
-	TiXmlNode* pChild;
-	if (pParent->Type() == TiXmlNode::ELEMENT)
-	{
-		string value = pParent->ValueStr();
-		if (value.length() == 2 && value[0] == 'h' && value[1] > '0' && value[1] <= '9')
-		{
-			index.push_back(pParent);
-		}
-	}
-	for ( pChild = pParent->FirstChild(); pChild != 0; pChild = pChild->NextSibling())
-	{
-		build_index( pChild, index );
-	}
-}
 
 
 string Markup::pureText(TiXmlNode* pParent)
@@ -372,6 +375,21 @@ void Markup::draw()
 	}
 	else
 	{
+		if (_currentLine != _lastDisplayedLine)
+		{
+			// full re-draw
+			_lastDisplayedLine = _currentLine;
+		}
+		else if (_colorChangeOnPage)
+		{
+			// minor re-draw
+		}
+		else
+		{
+			// nothing changed
+		}
+
+		// (TODO)
 		FillVS(&ContentWin1,_globals->backgroundColor());
 		FillVS(&ContentWin2,_globals->backgroundColor());
 		BLOCK CharArea = {{0,0},{251,171}};
@@ -454,44 +472,51 @@ void Markup::Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea)
 	}
 }
 
-string Markup::getFirstLink()
+string Markup::getFirstLinkTarget()
 {
-	string ret = getFirstLink(_root);
-	ret = ret.substr(0,ret.find("#"));
-	return ret;
-}
+	TiXmlElement* firstLink = NextLink(_root);
 
-string Markup::getFirstLink(TiXmlNode* pParent)
-{
-	string ret = "";
-	string val = pParent->ValueStr();
-	if (val=="wl")
+	if (firstLink)
 	{
-		TiXmlNode* child = pParent->FirstChild();
+		TiXmlNode* child = firstLink->FirstChild();
 		if (child)
 		{
-			if (child->ValueStr()=="wp")
+			if (child->ValueStr() == "wp")
 			{
 				child = child->FirstChild();
 				if (child)
 				{
-					return child->ValueStr();
+					string ret = child->ValueStr();
+					ret = ret.substr(0,ret.find("#"));
+					return ret;
 				}
 			}
 		}
 	}
 
-	if (ret.empty())
+	return "";
+}
+
+TiXmlElement* Markup::NextLink(TiXmlNode* current)
+{
+	TiXmlNode* next;
+	for (next = NextNode(current); next; next = NextNode(next))
 	{
-		TiXmlNode* child;
-		for (child=pParent->FirstChild(); child; child = child->NextSibling() )
-		{
-			ret = getFirstLink(child);
-			if (!ret.empty())
-				break;
-		}
+		if (next->Type() == TiXmlNode::ELEMENT && next->ValueStr() == "wl")
+			break;
 	}
-	return ret;
+	return (TiXmlElement*) next;
+}
+
+TiXmlElement* Markup::PreviousLink(TiXmlNode* current)
+{
+	TiXmlNode* prev;
+	for (prev = PreviousNode(current); prev; prev = PreviousNode(prev))
+	{
+		if (prev->Type() == TiXmlNode::ELEMENT && prev->ValueStr() == "wl")
+			break;
+	}
+	return (TiXmlElement*) prev;
 }
 
 TiXmlNode* Markup::NextNode(TiXmlNode* current, bool skipChildren, bool skipSiblings)
@@ -536,3 +561,190 @@ TiXmlNode* Markup::PreviousNode(TiXmlNode* current)
 	}
 	return NULL;
 }
+
+void Markup::scrollToLine(int lineNo)
+{
+	if (lineNo < 0)
+	{
+		_currentLine = 0;
+	}
+	else if (lineNo > _numberOfLines - 1)
+	{
+		_currentLine = _numberOfLines - 1;
+	}
+	else
+	{
+		_currentLine = lineNo;
+	}
+	PA_OutputText(1,0,3,"Scrolling to line %d    ",_currentLine);
+	PA_WaitFor(Pad.Newpress.Anykey);
+	PA_OutputText(1,0,3,"                          ");
+}
+
+void Markup::bringElementToTop(TiXmlElement* current)
+{
+	if ( current )
+	{
+		int ival;
+		TiXmlAttribute* pAttrib = current->FirstAttribute();
+		while (pAttrib)
+		{
+			string name = pAttrib->Name();
+			if ( (name == "l") && (pAttrib->QueryIntValue(&ival) == TIXML_SUCCESS) )
+			{
+				scrollToLine(ival);
+				return;
+			}
+			pAttrib=pAttrib->Next();
+		}
+	}
+}
+
+void Markup::jumpToAnchor(string anchor)
+{
+	if ( index.find(anchor) != index.end() )
+	{
+		bringElementToTop((TiXmlElement*) index[anchor]);
+	}
+}
+
+void Markup::unselect()
+{
+	if (_showing_index)
+	{
+		indexMarkup->unselect();
+	}
+	else
+	{
+		_currentHighlightedLink = NULL;
+		_colorChangeOnPage = true;
+	}
+}
+
+void Markup::scrollLineUp()
+{
+	if (_showing_index)
+	{
+		indexMarkup->scrollLineUp();
+	}
+	else
+	{
+		scrollToLine(_currentLine - 1);
+	}
+}
+
+void Markup::scrollLineDown()
+{
+	if (_showing_index)
+	{
+		indexMarkup->scrollLineDown();
+	}
+	else
+	{
+		scrollToLine(_currentLine + 1);
+	}
+}
+
+void Markup::scrollPageUp()
+{
+	if (_showing_index)
+	{
+		indexMarkup->scrollPageUp();
+	}
+	else
+	{
+		scrollToLine(_currentLine - 10); // TODO
+	}
+}
+
+void Markup::scrollPageDown()
+{
+	if (_showing_index)
+	{
+		indexMarkup->scrollPageDown();
+	}
+	else
+	{
+		scrollToLine(_currentLine + 10); // TODO
+	}
+}
+
+void Markup::selectPreviousLink()
+{
+	if (_showing_index)
+	{
+		indexMarkup->selectPreviousLink();
+	}
+	else
+	{
+		if (_currentHighlightedLink == NULL)
+		{
+			// select the first link visible on both screens // TODO: (or last???)
+			// otherwise scroll up
+		}
+		else
+		{
+			// select the previous link
+			_currentHighlightedLink = PreviousLink(_currentHighlightedLink);
+			_colorChangeOnPage = true;
+		}
+	}
+}
+
+void Markup::selectNextLink()
+{
+	if (_showing_index)
+	{
+		indexMarkup->selectNextLink();
+	}
+	else
+	{
+		if (_currentHighlightedLink == NULL)
+		{
+			// select the first link visible on both screens
+			// otherwise scroll down
+		}
+		else
+		{
+			// select the next link
+			_currentHighlightedLink = NextLink(_currentHighlightedLink);
+			_colorChangeOnPage = true;
+		}
+	}
+}
+
+int Markup::currentPercent()
+{
+	if (_showing_index)
+	{
+		return indexMarkup->currentPercent();
+	}
+	else
+	{
+		if (_numberOfLines == 0)
+		{
+			return 0;
+		}
+		else if (_numberOfLines == 1)
+		{
+			return 100;
+		}
+		else
+		{
+			return (_currentLine*100/(_numberOfLines-1));
+		}
+	}
+}
+
+int Markup::currentLine()
+{
+	if (_showing_index)
+	{
+		return indexMarkup->currentLine();
+	}
+	else
+	{
+		return _currentLine;
+	}
+}
+

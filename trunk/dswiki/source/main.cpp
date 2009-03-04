@@ -39,7 +39,7 @@ VirScreen StatusbarVS;
 VirScreen PercentArea;
 
 #define DEBUG 1
-#define DEBUG_WIKI_NR 1
+#define DEBUG_WIKI_NR 0
 #define STRESSTEST 0
 
 int getFreeRAM()
@@ -75,7 +75,7 @@ int main(int argc, char ** argv)
 	string markupstr;
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
-	string suchtitel = "Chester W. Nimitz";
+	string suchtitel = "Temp";
 // 	string suchtitel;
 
 	PA_Init16bitBg(0, 3);
@@ -258,8 +258,7 @@ int main(int argc, char ** argv)
 		PA_ClearTextBg(1);
 	}
 
-	// important variables
-
+	// all sprites for the interface
 	KT_CreateSprite(0, SPRITE_HISTORY,     "dswiki/icons/history",       OBJ_SIZE_16X16, 1, 0, 1, -16, -16);
 	KT_CreateSprite(0, SPRITE_HISTORYX,    "dswiki/icons/history_clear", OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 	KT_CreateSprite(0, SPRITE_RELOAD,      "dswiki/icons/reload",        OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
@@ -277,6 +276,7 @@ int main(int argc, char ** argv)
 	KT_CreateSprite(0, SPRITE_BOOKMARK,    "dswiki/icons/bookmark",      OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 	KT_CreateSprite(0, SPRITE_VIEWMAG,     "dswiki/icons/viewmag",       OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 
+	// statusbar
 	Statusbar* sb = new Statusbar();
 	g->setStatusbar(sb);
 
@@ -351,6 +351,7 @@ int main(int argc, char ** argv)
 	bool search            = false;
 	bool setNewHistoryItem = true;
 	bool loadArticle       = true;
+	bool textBrowserMode   = true;
 	int forcedLine         = 0;
 
 	FillVS(&Titlebar, PA_RGB( 9,16,28));
@@ -442,45 +443,53 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Left || Pad.Held.Left || GHPad.Newpress.Blue || GHPad.Held.Blue)
 		{
-// 			if (markup->scrollPageUp())
-// 			{
-// 				h->updateCurrentLine(markup->currentLine());
-// 				updateContent = true;
-// 				PA_Sleep(10);
-// 			}
+			markup->scrollPageUp();
+			h->updateCurrentLine(markup->currentLine());
+			updateContent = true;
+			PA_Sleep(10);
 		}
 
 		if (Pad.Newpress.Right || Pad.Held.Right || GHPad.Newpress.Green || GHPad.Held.Green)
 		{
-// 			if (markup->scrollPageDown())
-// 			{
-// 				h->updateCurrentLine(markup->currentLine());
-// 				updateContent = true;
-// 				PA_Sleep(10);
-// 			}
+			markup->scrollPageDown();
+			h->updateCurrentLine(markup->currentLine());
+			updateContent = true;
+			PA_Sleep(10);
 		}
 
+		// line scrolling or link-jumping
 		if (Pad.Newpress.Up||Pad.Held.Up)
 		{
-// 			if (markup->scrollLineUp())
-// 			{
-// 				h->updateCurrentLine(markup->currentLine());
-// 				updateContent = true;
-// 				PA_Sleep(10);
-// 			}
+			if (textBrowserMode)
+			{
+				markup->selectPreviousLink();
+			}
+			else
+			{
+				markup->scrollLineUp();
+			}
+			h->updateCurrentLine(markup->currentLine());
+			updateContent = true;
+			PA_Sleep(10);
 		}
 
+		// line scrolling or link-jumping
 		if ((Pad.Newpress.Down||Pad.Held.Down))
 		{
-// 			if (markup->scrollLineDown())
-// 			{
-// 				h->updateCurrentLine(markup->currentLine());
-// 				updateContent = true;
-// 				PA_Sleep(10);
-// 			}
+			if (textBrowserMode)
+			{
+				markup->selectNextLink();
+			}
+			else
+			{
+				markup->scrollLineDown();
+			}
+			h->updateCurrentLine(markup->currentLine());
+			updateContent = true;
+			PA_Sleep(10);
 		}
 
-		if (Pad.Newpress.A)
+		if (Pad.Newpress.A) // TODO: follow selected link in markup or random
 		{
 			suchtitel.clear();
 			forcedLine = 0;
@@ -488,16 +497,22 @@ int main(int argc, char ** argv)
 			loadArticle = true;
 		}
 
-		if ( Pad.Released.B && (Pad.Downtime.B<60) ) // TODO in the morning
+		if ( Pad.Released.B && (Pad.Downtime.B<60) )
 		{
-			if (markup)
-			{
-// 				markup->unselect();
-			}
+			markup->unselect();
+			updateContent = true;
 		}
 		else if ( Pad.Held.B && ( Pad.Downtime.B >= 60 ) )
 		{
-			// TODO switch scrolling type
+			textBrowserMode = !textBrowserMode;
+			if (textBrowserMode)
+			{
+				g->getStatusbar()->displayClearAfter("Up/Down navigate between links",40);
+			}
+			else
+			{
+				g->getStatusbar()->displayClearAfter("Up/Down scroll lines",40);
+			}
 		}
 
 		if (Pad.Newpress.X)
@@ -507,13 +522,8 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Y)
 		{
-			if (markup)
-			{
-				if (markup->toggleIndex())
-				{
-					updateContent = true;
-				}
-			}
+			markup->toggleIndex();
+			updateContent = true;
 		}
 
 		if ( (Pad.Released.R) && (Pad.Downtime.R<60) )
@@ -665,7 +675,6 @@ int main(int argc, char ** argv)
 				if (markup->LoadOK())
 				{
 // 					PA_OutputText(1,0,2,"%c2XML-Parsing OK    ");
-					PA_OutputText(1,0,2,"%c2                  ");
 				}
 				else
 				{
@@ -674,7 +683,13 @@ int main(int argc, char ** argv)
 
 				g->getStatusbar()->displayClearAfter("Formatting complete",30);
 
-// 				markup->setCurrentLine(forcedLine);
+// 				markup->jumpToAnchor("A");
+// 				markup->jumpToAnchor("B");
+// 				markup->jumpToAnchor("C");
+// 				markup->jumpToAnchor("D");
+// 				markup->jumpToAnchor("ZZZ");
+
+				markup->scrollToLine(forcedLine);
 
 				if (setNewHistoryItem)
 				{
@@ -722,7 +737,7 @@ int main(int argc, char ** argv)
 
 		if (updatePercent)
 		{
-// 			g->getPercentIndicator()->update(markup->currentPercent());
+			g->getPercentIndicator()->update(markup->currentPercent());
 			g->getPercentIndicator()->redraw();
 			updatePercent = false;
 		}
@@ -1057,7 +1072,7 @@ int main(int argc, char ** argv)
 					updateSearchbar = false;
 				}
 
-				if (updateCursor) // TODO
+				if (updateCursor)
 				{
 
 					CharStat tmpCS = NormalCS;
