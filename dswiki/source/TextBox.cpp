@@ -14,12 +14,60 @@
 #include "TextBox.h"
 #include "main.h"
 
+TextBox::TextBox(vector<string> lines)
+{
+	_lines = lines;
+	_topItem = 0;
+	_currentItem = 0;
+	_allowCancel = false;
+	_allowSingleElement = false;
+
+	VirScreen MaxPossibleSpace = {18, 10, 220, 156, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&MaxPossibleSpace);
+
+	LineCS = NormalCS;
+	LineCS.Wrap = NOWRAP;
+	LineEmphCS = NormalCS;
+	LineEmphCS.Color = PA_RGB(31,0,0);
+	LineEmphCS.Wrap = NOWRAP;
+
+	boxDrawingWidth = NormalCS.FONT->getCharacterWidth(0x2500);
+	boxDrawingHeight = NormalCS.FONT->Height();
+	boxDrawingCharsPerLine = MaxPossibleSpace.Width / boxDrawingWidth;
+	usedWidth = boxDrawingCharsPerLine * boxDrawingWidth;
+	_numlines = _lines.size();
+	while ((2+_numlines)*boxDrawingHeight > (int) MaxPossibleSpace.Height)
+		_numlines--;
+	usedHeight = (2+_numlines)*boxDrawingHeight;
+
+	BoxSpace = (VirScreen) {MaxPossibleSpace.Left+(MaxPossibleSpace.Width-usedWidth)/2, MaxPossibleSpace.Top+(MaxPossibleSpace.Height-usedHeight)/2, usedWidth, usedHeight, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&BoxSpace);
+
+	ContentSpace = (VirScreen) {BoxSpace.Left+boxDrawingWidth, BoxSpace.Top+boxDrawingHeight, usedWidth-2*boxDrawingWidth, usedHeight-2*boxDrawingHeight, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&ContentSpace);
+}
+
+void TextBox::maximize()
+{
+	VirScreen MaxPossibleSpace = {18, 10, 220, 156, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&MaxPossibleSpace);
+
+	_numlines = (MaxPossibleSpace.Height / boxDrawingHeight) - 2;
+	usedHeight = (2+_numlines)*boxDrawingHeight;
+
+	BoxSpace = (VirScreen) {MaxPossibleSpace.Left+(MaxPossibleSpace.Width-usedWidth)/2, MaxPossibleSpace.Top+(MaxPossibleSpace.Height-usedHeight)/2, usedWidth, usedHeight, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&BoxSpace);
+
+	ContentSpace = (VirScreen) {BoxSpace.Left+boxDrawingWidth, BoxSpace.Top+boxDrawingHeight, usedWidth-2*boxDrawingWidth, usedHeight-2*boxDrawingHeight, {{0,0},{0,0}}, &DnScreen};
+	InitVS(&ContentSpace);
+}
+
 int TextBox::run()
 {
 	PA_WaitForVBL();
 	if (_lines.empty())
 		return -1;
-	if (_lines.size() == 1)
+	if (!_allowSingleElement && _lines.size() == 1)
 		return 0;
 
 	CharStat CS = NormalCS;
@@ -275,7 +323,13 @@ int TextBox::run()
 
 void TextBox::setCurrentPosition(int pos)
 {
+	if (pos < 0)
+		pos = 0;
+	if (pos >= (int) _lines.size())
+		pos = _lines.size() -1;
+
 	_currentItem = pos;
+
 	if (_numlines >= (int) _lines.size())
 	{
 		// the only case where we can see both ends
@@ -290,52 +344,5 @@ void TextBox::setCurrentPosition(int pos)
 		if (_topItem > (int) _lines.size()-_numlines)
 			_topItem = _lines.size()-_numlines;
 	}
-}
-
-TextBox::TextBox(vector<string> lines)
-{
-	_lines = lines;
-	_topItem = 0;
-	_currentItem = 0;
-	_allowCancel = false;
-
-	VirScreen MaxPossibleSpace = {18, 10, 220, 156, {{0,0},{0,0}}, &DnScreen};
-	InitVS(&MaxPossibleSpace);
-
-	LineCS = NormalCS;
-	LineCS.Wrap = NOWRAP;
-	LineEmphCS = NormalCS;
-	LineEmphCS.Color = PA_RGB(31,0,0);
-	LineEmphCS.Wrap = NOWRAP;
-
-	boxDrawingWidth = NormalCS.FONT->getCharacterWidth(0x2500);
-	boxDrawingHeight = NormalCS.FONT->Height();
-	boxDrawingCharsPerLine = MaxPossibleSpace.Width / boxDrawingWidth;
-	usedWidth = boxDrawingCharsPerLine * boxDrawingWidth;
-	_numlines = _lines.size();
-	while ((2+_numlines)*boxDrawingHeight > (int) MaxPossibleSpace.Height)
-		_numlines--;
-	usedHeight = (2+_numlines)*boxDrawingHeight;
-
-	BoxSpace = (VirScreen) {MaxPossibleSpace.Left+(MaxPossibleSpace.Width-usedWidth)/2, MaxPossibleSpace.Top+(MaxPossibleSpace.Height-usedHeight)/2, usedWidth, usedHeight, {{0,0},{0,0}}, &DnScreen};
-	InitVS(&BoxSpace);
-
-	ContentSpace = (VirScreen) {BoxSpace.Left+boxDrawingWidth, BoxSpace.Top+boxDrawingHeight, usedWidth-2*boxDrawingWidth, usedHeight-2*boxDrawingHeight, {{0,0},{0,0}}, &DnScreen};
-	InitVS(&ContentSpace);
-}
-
-void TextBox::maximize()
-{
-	VirScreen MaxPossibleSpace = {18, 10, 220, 156, {{0,0},{0,0}}, &DnScreen};
-	InitVS(&MaxPossibleSpace);
-
-	_numlines = (MaxPossibleSpace.Height / boxDrawingHeight) - 2;
-	usedHeight = (2+_numlines)*boxDrawingHeight;
-
-	BoxSpace = (VirScreen) {MaxPossibleSpace.Left+(MaxPossibleSpace.Width-usedWidth)/2, MaxPossibleSpace.Top+(MaxPossibleSpace.Height-usedHeight)/2, usedWidth, usedHeight, {{0,0},{0,0}}, &DnScreen};
-	InitVS(&BoxSpace);
-
-	ContentSpace = (VirScreen) {BoxSpace.Left+boxDrawingWidth, BoxSpace.Top+boxDrawingHeight, usedWidth-2*boxDrawingWidth, usedHeight-2*boxDrawingHeight, {{0,0},{0,0}}, &DnScreen};
-	InitVS(&ContentSpace);
 }
 
