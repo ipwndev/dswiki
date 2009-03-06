@@ -21,17 +21,19 @@
 */
 
 const char version[] = "0.65b";
-const char dsversion[] = "1.0.4";
+const char dsversion[] = "1.1.0";
 #define INDEX_VERSION 2
 
 #ifdef _WIN32
 // windows defines
 #define WIN32_LEAN_AND_MEAN 	// Exclude rarely-used stuff from Windows headers
-#define fseeko fseek
-#define ftello ftell
+#define fseeko fseeko64
+#define ftello ftello64
 #pragma warning(disable : 4996)
 #endif
 
+#define _LARGEFILE_SOURCE 1
+#define _LARGEFILE64_SOURCE 1
 #define _FILE_OFFSET_BITS 64   // needed on Linux
 
 #include <stdio.h>
@@ -39,10 +41,12 @@ const char dsversion[] = "1.0.4";
 #include <ctype.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <bzlib.h>
+#include <assert.h>
 #include <string>
 #include <map>
 #include <vector>
+#include <bzlib.h>
+#include <zlib.h>
 #include "char_convert.h"
 #include "indexer.h"
 
@@ -56,6 +60,12 @@ const char dsversion[] = "1.0.4";
 #define SPLIT_SIZE 2000000000
 
 FILE*   srcFile = NULL;
+
+BZFILE* srcBZFile = NULL;
+int bz_ret;
+
+gzFile  srcGZFile;
+int gz_ret;
 
 unsigned char numberOfBZippedFile = 0;
 int numberOfIgnoredNamespaces = 0;
@@ -82,8 +92,6 @@ FILE*   file_ao2        = NULL;
 char  imageTitlesFileName[20] = "images.txt";
 FILE*	imageTitlesFile = NULL;
 
-char* imagesPrefix = NULL;
-
 size_t currentDestSize = 0;
 offset_t currentBlockPos = 0;
 offset_t previousBlockPos = 0;
@@ -93,7 +101,6 @@ int* articlesIndex;
 
 vector<string> aTitles;
 vector<string> aTitlesOriginal;
-
 
 bool internalIndexingStats = false;
 IndexStatus *indexStatus = NULL;
@@ -287,12 +294,12 @@ static void WriteArticle(char* title, char* text)
 
 	size_t length = strlen(text);
 
-	int bzerror = BZ_OK;
+	int bz_ret = BZ_OK;
 	if ( currentDestSize+length>BZIP_BLOCK_SIZE_100K*100000 )
 	{
 		if ( destBZFile )
 		{
-			BZ2_bzWriteClose(&bzerror, destBZFile, 0, NULL, NULL);
+			BZ2_bzWriteClose(&bz_ret, destBZFile, 0, NULL, NULL);
 			destBZFile = NULL;
 		}
 		if (ftello(file_dbz) + length > SPLIT_SIZE)
@@ -311,7 +318,7 @@ static void WriteArticle(char* title, char* text)
 		currentDestSize = 0;
 		indexStatus->blockCount++; // just for information
 
-		destBZFile = BZ2_bzWriteOpen(&bzerror, file_dbz, BZIP_BLOCK_SIZE_100K, 0, 30);
+		destBZFile = BZ2_bzWriteOpen(&bz_ret, file_dbz, BZIP_BLOCK_SIZE_100K, 0, 30);
 	}
 
 	// an entry is build like this:
@@ -328,7 +335,7 @@ static void WriteArticle(char* title, char* text)
 
 	// put the text to the articles data file
 	// the text /may/ likely span multiple blocks, but /never/ multiple files
-	BZ2_bzWrite(&bzerror, destBZFile, text, (int) length);
+	BZ2_bzWrite(&bz_ret, destBZFile, text, (int) length);
 	currentDestSize += length;
 
 	indexStatus->articlesWritten++;
@@ -340,8 +347,10 @@ void Help()
 	if ( !standaloneApp )
 		return;
 
-	printf("Usage:\r\n  indexer [-a] <filename> \r\n\r\n");
-	printf("   filename: articles file from wikipedia like 'enwiki-latest-pages-articles.xml.bz2'\r\n");
+	printf("Usage:\r\n  indexer [-a] [-t] <filename> \r\n\r\n");
+	printf("Neccessary:\r\n");
+	printf("    filename:\n\t Mediawiki articles file like 'enwiki-latest-pages-articles.xml.bz2',\n\t supports plain XML (*.xml), gzipped XML (*.xml.gz), and b2zipped XML (*.xml.bz2)\r\n\r\n");
+	printf("Options:\r\n");
 	printf("    -a : Add all articles (not removing namespaces \n\t like 'Help', 'Category' etc.)\r\n");
 	printf("    -t : Create the file articles.txt containing\n\t all article titles and lengths (not needed by DSwiki).\r\n");
 	printf("\r\n");
@@ -457,12 +466,6 @@ void CleanupAfterError()
 		articlesTitles = NULL;
 	}
 
-	if ( imagesPrefix )
-	{
-		free(imagesPrefix);
-		imagesPrefix = NULL;
-	}
-
 	FreeIngoredNamespacesData();
 }
 
@@ -474,6 +477,15 @@ static int index(int argc, char* argv[])
 		printf("DSwiki repackager/indexer by OlliPolli, Version %s, completely based on\r\n", dsversion);
 		printf("Wiki2Touch repackager/indexer, Copyright (c) 2008 T. Haukap, Version %s\r\n\r\n", version);
 	}
+
+// 	printf("sizeof(char)      = %d.\r\n", sizeof(char));
+// 	printf("sizeof(char*)     = %d.\r\n", sizeof(char*));
+// 	printf("sizeof(int)       = %d.\r\n", sizeof(int));
+// 	printf("sizeof(long)      = %d.\r\n", sizeof(long));
+// 	printf("sizeof(long long) = %d.\r\n", sizeof(long long));
+// 	printf("sizeof(off_t)     = %d.\r\n", sizeof(off_t));
+// 	printf("sizeof(off64_t)   = %d.\r\n", sizeof(off64_t));
+// 	printf("sizeof(offset_t)  = %d.\r\n\r\n", sizeof(offset_t));
 
 	char* sourceFileName = NULL;
 	char* sourceFileBasename = NULL;
@@ -556,9 +568,6 @@ static int index(int argc, char* argv[])
 	articlesIgnoredByNamespaces = NULL;
 
 	currentDestSize = 0;
-	imagesPrefix = NULL;
-
-	imagesPrefix = NULL;
 
 	currentDestSize = 0;
 	currentBlockPos = 0;
@@ -584,6 +593,17 @@ static int index(int argc, char* argv[])
 	if ( verbose )
 		printf("working on %s\r\n", sourceFileName);
 
+	string extension = sourceFileName;
+	extension = extension.substr(extension.rfind(".")+1);
+
+	if (extension != "xml" && extension != "bz2" &&extension != "gz")
+	{
+		CleanupAfterError();
+		if ( standaloneApp )
+			printf("extension %s not recognized (xml,bz2,gz)\r\n", extension.c_str());
+		return 1;
+	}
+
 	srcFile = fopen((char*) sourceFileName, "rb");
 	if ( !srcFile )
 	{
@@ -599,8 +619,14 @@ static int index(int argc, char* argv[])
 	sourceSize=ftello(srcFile);
 	fseeko(srcFile, 0, SEEK_SET);
 
-	int bzerror;
-	BZFILE *bzf = BZ2_bzReadOpen(&bzerror, srcFile, 0, 0, NULL, 0);
+	if (extension == "bz2")
+	{
+		srcBZFile = BZ2_bzReadOpen(&bz_ret, srcFile, 0, 0, NULL, 0);
+	}
+	else if (extension == "gz")
+	{
+		srcGZFile = gzopen(sourceFileName,"rb");
+	}
 
 	if ( !extractImagesOnly )
 	{
@@ -644,7 +670,8 @@ static int index(int argc, char* argv[])
 		}
 	}
 
-	char buffer[BUFFER_SIZE];
+	unsigned char buffer[BUFFER_SIZE];
+	unsigned char in[BUFFER_SIZE];
 	size_t read;
 
 	int state = 0;
@@ -669,9 +696,23 @@ static int index(int argc, char* argv[])
 	offset_t totalBytes = 0;
 
 	char* articleTitle = NULL;
-	while ( (read=BZ2_bzRead(&bzerror, bzf, buffer, BUFFER_SIZE)) )
+
+	if (extension == "bz2")
 	{
-		char *buf = buffer;
+		read = BZ2_bzRead(&bz_ret, srcBZFile, buffer, BUFFER_SIZE);
+	}
+	else if (extension == "xml")
+	{
+		read = fread(buffer, 1, BUFFER_SIZE, srcFile);
+	}
+	else if (extension == "gz")
+	{
+		read = gzread(srcGZFile, buffer, BUFFER_SIZE);
+	}
+
+	while ( read )
+	{
+		unsigned char *buf = buffer;
 		totalBytes += read;
 
 		while ( read-- )
@@ -807,14 +848,19 @@ static int index(int argc, char* argv[])
 							else if ( !strcmp(tagName, "text") )
 							{
 								collectContent = false;
-								if ( (indexStatus->articlesWritten&0x0ff)==0 )
+								if (verbose && (indexStatus->articlesWritten&0x03ff)==0)
 								{
-									offset_t currentPos;
-									currentPos=ftello(srcFile);
-									indexStatus->progress = (int)(10000*currentPos/sourceSize);
-									if ( verbose && (indexStatus->articlesWritten&0x03ff)==0 )
+									offset_t currentPos = 0;
+									if (extension == "gz")
 									{
-										printf("\rProcessed: %.0f%% (%i articles) ", (100.0*currentPos/sourceSize), indexStatus->articlesWritten);
+										currentPos=gztell(srcGZFile);
+										printf("\rProcessed: %i articles (%d uncompressed bytes) ", indexStatus->articlesWritten, currentPos );
+										fflush(stdout);
+									}
+									else
+									{
+										currentPos=ftello(srcFile);
+										printf("\rProcessed: %i articles (%.0f%%) ", indexStatus->articlesWritten, (100.0*currentPos/sourceSize));
 										fflush(stdout);
 									}
 								}
@@ -828,16 +874,6 @@ static int index(int argc, char* argv[])
 										if ( namespaceKey==6 && strlen(content)<32 )
 										{
 											strcpy(fileHeader.imageNamespace, content);
-
-											// only do that if it's not Image, these will always be searched
-											if ( strcmp(content, "Image") ) // TODO: Localized?
-											{
-												// get it into the proper form
-												imagesPrefix = (char*) malloc(2 + strlen(content) + 1 + 1);
-												strcpy(imagesPrefix, "[[");
-												strcat(imagesPrefix, content);
-												strcat(imagesPrefix, ":");
-											}
 										}
 										else if ( namespaceKey==10 && strlen(content)<32 )
 											strcpy(fileHeader.templateNamespace, content);
@@ -919,6 +955,18 @@ static int index(int argc, char* argv[])
 					break;
 			}
 		}
+		if (extension == "bz2")
+		{
+			read = BZ2_bzRead(&bz_ret, srcBZFile, buffer, BUFFER_SIZE);
+		}
+		else if (extension == "xml")
+		{
+			read = fread(buffer, 1, BUFFER_SIZE, srcFile);
+		}
+		else if (extension == "gz")
+		{
+			read = gzread(srcGZFile, buffer, BUFFER_SIZE);
+		}
 	}
 
 	fclose(file_idx); file_idx = NULL;
@@ -962,11 +1010,20 @@ static int index(int argc, char* argv[])
 
 	if ( destBZFile )
 	{
-		BZ2_bzWriteClose(&bzerror, destBZFile, 0, NULL, NULL);
+		BZ2_bzWriteClose(&bz_ret, destBZFile, 0, NULL, NULL);
 		destBZFile = NULL;
 	}
 
-	BZ2_bzReadClose(&bzerror, bzf);
+	// TODO
+	if (extension == "bz2")
+	{
+		BZ2_bzReadClose(&bz_ret, srcBZFile);
+	}
+	else if (extension == "gz")
+	{
+		gzclose(srcGZFile);
+	}
+
 	fclose(srcFile);
 	srcFile = NULL;
 
@@ -1153,9 +1210,6 @@ static int index(int argc, char* argv[])
 		free(articlesIndex);
 		free(articlesTitles);
 	}
-
-	if ( imagesPrefix )
-		free(imagesPrefix);
 
 	FreeIngoredNamespacesData();
 

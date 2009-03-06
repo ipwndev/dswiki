@@ -33,7 +33,6 @@ struct IndexStatus
 {
   int articlesWritten;
   int articlesSkipped;
-  int progress;
   int blockCount;
   offset_t bytesTotal;
   offset_t bytesSkipped;
