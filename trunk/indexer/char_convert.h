@@ -1,6 +1,7 @@
 #ifndef CHAR_CONVERT_H_
 #define CHAR_CONVERT_H_
 
+#include <string.h>
 #include <string>
 
 using namespace std;
