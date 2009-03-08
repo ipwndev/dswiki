@@ -22,7 +22,7 @@ class Markup
 		void	parse(string & Str, bool interpreteWikiMarkup = true);
 		bool	LoadOK();
 
-		void	draw();
+		void	draw(bool force = false);
 
 		void	toggleIndex();
 
@@ -41,6 +41,7 @@ class Markup
 		void	unselect();
 
 		void	setGlobals(Globals* globals);
+
 	private:
 		void	postProcessDOM();
 		void	build_index(vector <TiXmlNode*> & index);

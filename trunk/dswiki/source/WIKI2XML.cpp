@@ -975,11 +975,17 @@ void WIKI2XML::parse(string & s, bool interpreteWikiMarkup)
 	}
 	else
 	{
+		_globals->getPercentIndicator()->update(0);
 		replace_all(s,"&","&amp;");
+		_globals->getPercentIndicator()->update(20);
 		replace_all(s,"<","&lt;");
+		_globals->getPercentIndicator()->update(40);
 		replace_all(s,">","&gt;");
+		_globals->getPercentIndicator()->update(60);
 		replace_all(s,"\"","&quot;");
+		_globals->getPercentIndicator()->update(80);
 		replace_all(s,"'","&apos;");
+		_globals->getPercentIndicator()->update(100);
 	}
 
 	s.insert(0,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<text>");

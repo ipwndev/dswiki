@@ -30,7 +30,8 @@ class FATBrowser
 		FATBrowser(bool internal = false);
 		~FATBrowser();
 		std::string selectFile();
-		void	setGlobals(Globals* globals) { _globals = globals; };
+		static void getFileContents(string & markup, string filename);
+		void setGlobals(Globals* globals) { _globals = globals; };
 	private:
 		string currentDir;
 		Globals* _globals;

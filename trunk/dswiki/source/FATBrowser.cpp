@@ -74,6 +74,7 @@ std::string FATBrowser::selectFile()
 			tb.setTitle(currentDir);
 			tb.allowCancel(true);
 			tb.allowSingleElement();
+			tb.setCurrentPosition(0);
 			tb.maximize();
 
 			int choice = tb.run();
@@ -109,3 +110,19 @@ std::string FATBrowser::selectFile()
 	return "";
 }
 
+void FATBrowser::getFileContents(string & markup, string filename)
+{
+	markup.clear();
+	FILE* f = fopen(filename.c_str(),"rb");
+	if (f)
+	{
+		int read;
+		char buffer[1024];
+		while ( (read = fread(buffer,1,1024,f) ) )
+		{
+			string str_buf = buffer;
+			markup += str_buf;
+		}
+		fclose(f);
+	}
+}

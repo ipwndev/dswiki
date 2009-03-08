@@ -253,6 +253,52 @@ bool Search::scrollLongDown()
 	return change;
 }
 
+void Search::removeIcons()
+{
+	PA_SetSpriteXY(0, SPRITE_HISTORY,     -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_HISTORYX,    -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_RELOAD,      -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_CANCEL,      -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_OK,          -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_2UPARROW,    -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_1UPARROW,    -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_1DOWNARROW,  -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_2DOWNARROW,  -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_1LEFTARROW,  -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_1RIGHTARROW, -16, -16 );
+	PA_SetSpriteXY(0, SPRITE_CLEARLEFT,   -16, -16 );
+}
+
+void Search::showIcons()
+{
+	PA_SetSpriteXY(0, SPRITE_CANCEL,       67,   9 );
+	PA_SetSpriteXY(0, SPRITE_OK,          167,   9 );
+	PA_SetSpriteXY(0, SPRITE_2UPARROW,    234,  72 );
+	PA_SetSpriteXY(0, SPRITE_1UPARROW,    234,  97 );
+	PA_SetSpriteXY(0, SPRITE_1DOWNARROW,  234, 122 );
+	PA_SetSpriteXY(0, SPRITE_2DOWNARROW,  234, 147 );
+	PA_SetSpriteXY(0, SPRITE_1LEFTARROW,   31,  39 );
+	PA_SetSpriteXY(0, SPRITE_1RIGHTARROW, 209,  39 );
+	PA_SetSpriteXY(0, SPRITE_CLEARLEFT,   234,  40 );
+}
+
+void Search::showUpdateIcons(bool updateInRealTime)
+{
+	if (updateInRealTime)
+	{
+		PA_SetSpriteXY(0,SPRITE_HISTORY,  -16, -16);
+		PA_SetSpriteXY(0,SPRITE_HISTORYX,   3,   3);
+		PA_SetSpriteXY(0,SPRITE_RELOAD,   -16, -16);
+	}
+	else
+	{
+		PA_SetSpriteXY(0,SPRITE_HISTORY,    3,   3);
+		PA_SetSpriteXY(0,SPRITE_HISTORYX, -16, -16);
+		PA_SetSpriteXY(0,SPRITE_RELOAD,   117,   9);
+	}
+}
+
+
 void Search::setGlobals(Globals* globals)
 {
 	_globals = globals;

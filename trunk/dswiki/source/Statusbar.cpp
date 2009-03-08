@@ -12,22 +12,33 @@
 #include "Statusbar.h"
 #include "main.h"
 
+void Statusbar::removeIcons()
+{
+	PA_SetSpriteXY(0, SPRITE_FILEOPEN,  -16, -16);
+	PA_SetSpriteXY(0, SPRITE_BOOKMARK,  -16, -16);
+	PA_SetSpriteXY(0, SPRITE_VIEWMAG,   -16, -16);
+	PA_SetSpriteXY(0, SPRITE_CONFIGURE, -16, -16);
+}
+
+void Statusbar::showIcons()
+{
+	PA_SetSpriteXY(0, SPRITE_FILEOPEN,    8, 176);
+	PA_SetSpriteXY(0, SPRITE_BOOKMARK,   56, 176);
+	PA_SetSpriteXY(0, SPRITE_VIEWMAG,    80, 176);
+	PA_SetSpriteXY(0, SPRITE_CONFIGURE, 200, 176);
+}
+
 void Statusbar::clear()
 {
 	FillVS(&StatusbarVS,PA_RGB(26,26,26));
-	PA_SetSpriteXY(0, SPRITE_CONFIGURE,  0, 176);
-	PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
-	PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
+	showIcons();
 }
 
 void Statusbar::display(string message)
 {
 	clear();
+	removeIcons();
 	BLOCK CharArea = {{2,2},{0,0}};
-	PA_SetSpriteXY(0, SPRITE_CONFIGURE, -16, -16);
-	PA_SetSpriteXY(0, SPRITE_BOOKMARK, -16, -16);
-	PA_SetSpriteXY(0, SPRITE_VIEWMAG, -16, -16);
-
 	CharStat StatusbarCS = NormalCS;
 	StatusbarCS.W_Space = 1;
 	StatusbarCS.Color = PA_RGB( 5, 5, 5);
@@ -39,10 +50,8 @@ void Statusbar::display(string message)
 void Statusbar::displayError(string message)
 {
 	clear();
+	removeIcons();
 	BLOCK CharArea = {{2,2},{0,0}};
-	PA_SetSpriteXY(0, SPRITE_CONFIGURE, -16, -16);
-	PA_SetSpriteXY(0, SPRITE_BOOKMARK, -16, -16);
-	PA_SetSpriteXY(0, SPRITE_VIEWMAG, -16, -16);
 	CharStat StatErrorCS = NormalCS;
 	StatErrorCS.Color = PA_RGB(27, 4, 4);
 	StatErrorCS.Wrap = HARDWRAP;
