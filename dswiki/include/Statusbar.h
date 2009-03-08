@@ -26,6 +26,8 @@ class Statusbar
 		void displayClearAfter(string message, int delay);
 		void displayErrorClearAfter(string message, int delay);
 		void clearAfter(int delay);
+		static void removeIcons();
+		static void showIcons();
 	private:
 };
 

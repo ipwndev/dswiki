@@ -44,24 +44,6 @@ VirScreen PercentArea;
 #define DEBUG_WIKI_NR 0
 #define STRESSTEST 0
 
-int getFreeRAM()
-{
-	int q = 2*1024*1024;
-	int size = q;
-	void *ptr;
-
-	do
-	{
-		ptr = malloc(size);
-		if(ptr) free(ptr);
-		else size -= q;
-		q /= 2;
-		size += q;
-	} while(q > 0);
-
-	return size;
-}
-
 int main(int argc, char ** argv)
 {
 	// PAlib initialization
@@ -77,25 +59,30 @@ int main(int argc, char ** argv)
 	string markupstr;
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
-	string suchtitel = "Temp";
-// 	string suchtitel;
+// 	string suchtitel    = "Temp";
+	string suchtitel    = "";
 	string currentTitle = "";
 
 	vector<string> possibleWikis;
+	string currentWiki;
+	int    currentWikiNumber = -1;
 
+	bool chooseNewWiki		= false; // the first choice is handled differently
+	bool loadNewWiki		= true;
 	bool loadInternalWiki	= false;
+	bool loadArticle		= true;
+	bool search				= false;
+	bool showMenu			= false;
+
 	bool updateTitle		= false;
 	bool updateContent		= false;
-	bool updateStatusbarVS	= false;
+	bool updateStatusbar	= false;
 	bool updatePercent		= false;
-	bool updateInRealTime	= true;
-	bool search				= false;
-	bool doMenu				= false;
+	bool suggestInRealTime	= true;
+
 	bool setNewHistoryItem	= true;
-	bool loadArticle		= true;
 	bool textBrowserMode	= true;
-	bool loadNewWiki		= true;
-	int currentSelectedWiki	= -1;
+
 	int forcedLine			= 0;
 
 	ArticleSearchResult*	suchergebnis	= NULL;
@@ -107,6 +94,9 @@ int main(int argc, char ** argv)
 	Statusbar*				sb				= NULL;
 	PercentIndicator*		p				= NULL;
 	Dumps*					d				= NULL;
+	History*				h				= NULL;
+	Search*					s				= NULL;
+	FATBrowser*				fb				= NULL;
 	Globals*				g				= NULL;
 
 	g = new Globals();
@@ -280,7 +270,10 @@ int main(int argc, char ** argv)
 
 	d = new Dumps();
 	g->setDumps(d);
+
+	// get all installed dumps
 	possibleWikis = d->getPossibleWikis(loadInternalWiki);
+
 	if (possibleWikis.size() == 0)
 	{
 		PA_OutputText(1,0,0,"%c1No dumps %c0were found!");
@@ -304,6 +297,7 @@ int main(int argc, char ** argv)
 	KT_CreateSprite(0, SPRITE_CONFIGURE,   "dswiki/icons/configure",     OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 	KT_CreateSprite(0, SPRITE_BOOKMARK,    "dswiki/icons/bookmark",      OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 	KT_CreateSprite(0, SPRITE_VIEWMAG,     "dswiki/icons/viewmag",       OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
+	KT_CreateSprite(0, SPRITE_FILEOPEN,    "dswiki/icons/fileopen",      OBJ_SIZE_16X16, 1, 0, 0, -16, -16);
 
 	// Initialization of global variables
 	UpScreen = (Device)   { "U", 1, (unsigned short int*)PA_DrawBg[1], 256, 192};
@@ -322,9 +316,13 @@ int main(int argc, char ** argv)
 	BLOCK CharArea = {{ 0, 0},{ 0, 0}};
 
 	sb = new Statusbar();
-	g->setStatusbar(sb);
-
 	p = new PercentIndicator();
+	h = new History();
+	s = new Search();
+	fb = new FATBrowser();
+
+	s->setGlobals(g);
+	g->setStatusbar(sb);
 	g->setPercentIndicator(p);
 
 	// use graphical interface from now on
@@ -335,54 +333,109 @@ int main(int argc, char ** argv)
 #if !DEBUG
 	if ( possibleWikis.size() > 1 )
 	{
-		currentSelectedWiki = WikiChooser->run();
+		currentWikiNumber = WikiChooser->run();
+		currentWiki = possibleWikis[currentWikiNumber];
 	}
 	else if ( possibleWikis.size() == 1 )
 	{
-		currentSelectedWiki = 0;
+		currentWikiNumber = 0;
+		currentWiki = possibleWikis[0];
 	}
 	else
 	{
 		loadInternalWiki = true;
-		possibleWikis = d->getPossibleWikis(loadInternalWiki);
-		vector<string>::iterator pos_it = find(possibleWikis.begin(), possibleWikis.end(), "manual");
-		if (pos_it != possibleWikis.end())
-		{
-			currentSelectedWiki = pos_it - possibleWikis.begin();
-			suchtitel = "Test"; // TODO Write a good article on correct setup or activating the debug mode
-		}
-		else
-		{
-			PA_OutputText(1,0,0,"%c1No internal dumps %c0present!");
-			return 1;
-		}
+		currentWikiNumber = -1;
+		currentWiki = "manual";
+		suchtitel = "Troubleshooting";
 	}
 #else
-	currentSelectedWiki = DEBUG_WIKI_NR;
+	currentWikiNumber = DEBUG_WIKI_NR;
+	currentWiki = possibleWikis[DEBUG_WIKI_NR];
 #endif
+
 
 	FillVS(&Titlebar, PA_RGB( 9,16,28));
 
 	g->getStatusbar()->clear();
 	g->getPercentIndicator()->clear();
 
-	History* h = new History();
-
-	Search*  s = new Search();
-	s->setGlobals(g);
-
 	while(1) // main loop
 	{
+		if (chooseNewWiki)
+		{
+			// Pops up a dialog to select a new dump or a file from FAT.
+			// Internal wikis are not included (eg. the manual can be loaded from the menu).
+			int currentWikiNumber_Backup = currentWikiNumber;
+			if (loadInternalWiki)
+			{
+				currentWikiNumber_Backup = -1;
+			}
+
+			possibleWikis = g->getDumps()->getPossibleWikis(false);
+			possibleWikis.push_back("[Load ASCII/UTF8-file...]");
+
+			if (WikiChooser)
+				delete WikiChooser;
+
+			WikiChooser = new TextBox(possibleWikis);
+			WikiChooser->setTitle("Choose your Wiki");
+			WikiChooser->allowCancel(true);
+			WikiChooser->allowSingleElement();
+			WikiChooser->setCurrentPosition(currentWikiNumber_Backup);
+
+			currentWikiNumber = WikiChooser->run();
+
+			if (currentWikiNumber >= 0)
+			{
+				if (currentWikiNumber == (int) possibleWikis.size()-1)
+				{
+					// load file from FAT
+					string filename = fb->selectFile();
+					if (!filename.empty())
+					{
+						FATBrowser::getFileContents(markupstr,filename);
+						currentTitle = filename;
+						if (markup)
+							delete markup;
+						markup = new Markup();
+						g->setMarkup(markup);
+						markup->setGlobals(g);
+						markup->parse(markupstr,false);
+						updateContent = true;
+						updatePercent = true;
+						updateStatusbar = true;
+						updateTitle = true;
+					}
+				}
+				else if (currentWikiNumber != currentWikiNumber_Backup)
+				{
+					// some new dump was chosen
+					currentWiki = possibleWikis[currentWikiNumber];
+					loadInternalWiki = false;
+					loadNewWiki = true;
+				}
+			}
+			else
+			{
+				// cancelled
+				currentWikiNumber = currentWikiNumber_Backup;
+			}
+
+			updateTitle = true;
+			updateContent = true;
+			chooseNewWiki = false;
+		}
+
 		if (loadNewWiki)
 		{
-			// Loads a new wiki. The variables 'possibleWikis', 'currentSelectedWiki' and 'loadInternalWiki' have to be set correctly
-			g->getStatusbar()->display("Loading " + possibleWikis[currentSelectedWiki] + "...");
+			// Loads a new wiki. The variables 'currentWiki' and 'loadInternalWiki' have to be set correctly
+			g->getStatusbar()->display("Loading " + currentWiki + "...");
 			if (t)
 				delete t;
 			t = new TitleIndex();
 			g->setTitleIndex(t);
 			t->setGlobals(g);
-			t->load(possibleWikis[currentSelectedWiki],loadInternalWiki);
+			t->load(currentWiki,loadInternalWiki);
 
 			g->getStatusbar()->display("Initializing MarkupGetter...");
 			if (wmg)
@@ -390,7 +443,7 @@ int main(int argc, char ** argv)
 			wmg = new WikiMarkupGetter();
 			g->setWikiMarkupGetter(wmg);
 			wmg->setGlobals(g);
-			wmg->load(possibleWikis[currentSelectedWiki],loadInternalWiki);
+			wmg->load(currentWiki,loadInternalWiki);
 
 			g->getStatusbar()->clear();
 
@@ -404,7 +457,7 @@ int main(int argc, char ** argv)
 		{
 			if (PA_SpriteTouched(SPRITE_CONFIGURE))
 			{
-				doMenu = true;
+				showMenu = true;
 			}
 			else if (PA_SpriteTouched(SPRITE_VIEWMAG))
 			{
@@ -422,6 +475,10 @@ int main(int argc, char ** argv)
 					setNewHistoryItem = true;
 					loadArticle = true;
 				}
+			}
+			else if (PA_SpriteTouched(SPRITE_FILEOPEN))
+			{
+				chooseNewWiki = true;
 			}
 		}
 		else if (Stylus.Held)
@@ -574,36 +631,12 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Start)
 		{
-			doMenu = true;
+			showMenu = true;
 		}
 
 		if (Pad.Newpress.Select)
 		{
-			int currentSelectedWikiBackup = currentSelectedWiki;
-			if (loadInternalWiki)
-			{
-				currentSelectedWikiBackup = -1;
-			}
-
-			loadInternalWiki = false;
-			possibleWikis = g->getDumps()->getPossibleWikis(loadInternalWiki);
-			if (possibleWikis.size() > 0)
-			{
-				WikiChooser->allowCancel(true);
-				WikiChooser->allowSingleElement();
-				WikiChooser->setCurrentPosition(currentSelectedWikiBackup);
-				currentSelectedWiki = WikiChooser->run();
-				if ((currentSelectedWiki>=0) && (currentSelectedWiki != currentSelectedWikiBackup))
-				{
-					loadNewWiki = true;
-				}
-				else
-				{
-					currentSelectedWiki = currentSelectedWikiBackup;
-				}
-				updateTitle = true;
-				updateContent = true;
-			}
+			chooseNewWiki = true;
 		}
 
 #if STRESSTEST
@@ -716,23 +749,22 @@ int main(int argc, char ** argv)
 			CharArea = (BLOCK) {{5,2},{0,0}};
 			CharStat TitlebarCS = NormalCS;
 			TitlebarCS.Color = PA_RGB(31,31,31);
+			TitlebarCS.Wrap = NOWRAP;
 			iPrint(currentTitle,&Titlebar,&TitlebarCS,&CharArea);
 			updateTitle = false;
 		}
 
-		if (updateStatusbarVS)
+		if (updateStatusbar)
 		{
 			g->getStatusbar()->clear();
 			updatePercent = true;
-			updateStatusbarVS = false;
+			updateStatusbar = false;
 		}
 
 		if (updateContent)
 		{
-			if (markup->LoadOK())
-			{
-				g->getMarkup()->draw();
-			}
+			bool force = true;
+			g->getMarkup()->draw(force);
 			updatePercent = true;
 			updateContent = false;
 		}
@@ -749,19 +781,10 @@ int main(int argc, char ** argv)
 			PA_Clear16bitBg(1);
 			PA_Clear16bitBg(0);
 
-			PA_SetSpriteXY(0, SPRITE_HISTORYX,      3,  3);
-			PA_SetSpriteXY(0, SPRITE_CANCEL,       67,  9);
-			PA_SetSpriteXY(0, SPRITE_OK,          167,  9);
-			PA_SetSpriteXY(0, SPRITE_2UPARROW,    234, 72);
-			PA_SetSpriteXY(0, SPRITE_1UPARROW,    234, 97);
-			PA_SetSpriteXY(0, SPRITE_1DOWNARROW,  234,122);
-			PA_SetSpriteXY(0, SPRITE_2DOWNARROW,  234,147);
-			PA_SetSpriteXY(0, SPRITE_1LEFTARROW,   31, 39);
-			PA_SetSpriteXY(0, SPRITE_1RIGHTARROW, 209, 39);
-			PA_SetSpriteXY(0, SPRITE_CLEARLEFT,   234, 40);
-			PA_SetSpriteXY(0, SPRITE_CONFIGURE,   -16,-16);
-			PA_SetSpriteXY(0, SPRITE_BOOKMARK,    -16,-16);
-			PA_SetSpriteXY(0, SPRITE_VIEWMAG,     -16,-16);
+			Statusbar::removeIcons();
+			Search::showIcons();
+			Search::showUpdateIcons(suggestInRealTime);
+
 			PA_ScrollKeyboardXY(24,72);
 
 			FillVS(&StatusbarVS, PA_RGB(18,22,28));
@@ -794,11 +817,6 @@ int main(int argc, char ** argv)
 
 			int countdown = 0;
 
-			if (!updateInRealTime)
-			{
-				PA_SetSpriteXY(0,SPRITE_HISTORYX,3,3);
-				PA_SetSpriteXY(0,SPRITE_RELOAD,117,9);
-			}
 
 			PA_WaitForVBL();
 
@@ -807,7 +825,9 @@ int main(int argc, char ** argv)
 			{
 				letter = PA_CheckKeyboard();
 
-				if (letter > 31) { // there is a new letter
+				if (letter > 31)
+				{
+					// there is a new letter
 					suchtitel.insert(suchtitel.begin()+offsetsUTF[cursorPosition],letter);
 					cursorPosition++;
 
@@ -825,7 +845,7 @@ int main(int argc, char ** argv)
 					}
 
 					updateSearchbar = true;
-					if (updateInRealTime)
+					if (suggestInRealTime)
 					{
 						searchSuggestions = true;
 					}
@@ -852,7 +872,7 @@ int main(int argc, char ** argv)
 						}
 					}
 					updateSearchbar = true;
-					if (updateInRealTime)
+					if (suggestInRealTime)
 					{
 						searchSuggestions = true;
 					}
@@ -870,6 +890,7 @@ int main(int argc, char ** argv)
 					loadArticle = true;
 					break;
 				}
+
 				if (Stylus.Held)
 				{
 					if (Stylus.Newpress)
@@ -882,7 +903,7 @@ int main(int argc, char ** argv)
 							offsetsUTF.push_back(0);
 							cursorPosition = 0;
 							updateSearchbar = true;
-							if (updateInRealTime)
+							if (suggestInRealTime)
 							{
 								searchSuggestions = true;
 							}
@@ -917,7 +938,7 @@ int main(int argc, char ** argv)
 								}
 							}
 							updateSearchbar = true;
-							if (updateInRealTime)
+							if (suggestInRealTime)
 							{
 								searchSuggestions = true;
 							}
@@ -964,17 +985,8 @@ int main(int argc, char ** argv)
 						}
 						else if (PA_SpriteTouched(SPRITE_HISTORY) || PA_SpriteTouched(SPRITE_HISTORYX))
 						{
-							updateInRealTime = !updateInRealTime;
-							if (updateInRealTime)
-							{
-								PA_SetSpriteXY(0,SPRITE_HISTORY,-16,-16);
-								PA_SetSpriteXY(0,SPRITE_RELOAD,-16,-16);
-							}
-							else
-							{
-								PA_SetSpriteXY(0,SPRITE_HISTORY,3,3);
-								PA_SetSpriteXY(0,SPRITE_RELOAD,117,9);
-							}
+							suggestInRealTime = !suggestInRealTime;
+							Search::showUpdateIcons(suggestInRealTime);
 						}
 						else if (PA_SpriteTouched(SPRITE_RELOAD))
 						{
@@ -1115,25 +1127,23 @@ int main(int argc, char ** argv)
 			PA_Clear16bitBg(0);
 
 			PA_ScrollKeyboardXY(24,200);
-			for (int i=SPRITE_HISTORY;i<=SPRITE_CLEARLEFT;i++)
-				PA_SetSpriteXY(0,i,-16,-16);
-			PA_SetSpriteXY(0, SPRITE_CONFIGURE, 0, 176);
-			PA_SetSpriteXY(0, SPRITE_BOOKMARK, 64, 176);
-			PA_SetSpriteXY(0, SPRITE_VIEWMAG, 96, 176);
+
+			Search::removeIcons();
+			Statusbar::showIcons();
 
 			updateTitle = true;
 			updateContent = true;
-			updateStatusbarVS = true;
+			updateStatusbar = true;
 			search = false;
 		}
 
-		if (doMenu)
+		if (showMenu)
 		{
 			vector<string> menu;
-			menu.push_back("Add Bookmark");			// 0
-			menu.push_back("Help/Manual");			// 1
-			menu.push_back("Invert color scheme");	// 2
-			menu.push_back("Load ASCII/UTF8-file");	// 3
+			menu.push_back("Load Bookmark");		// 0
+			menu.push_back("Add Bookmark");			// 1
+			menu.push_back("Help/Manual");			// 2
+			menu.push_back("Invert color scheme");	// 3
 
 			TextBox Options(menu);
 			Options.setTitle("Options");
@@ -1148,23 +1158,32 @@ int main(int argc, char ** argv)
 					break;
 				case 0:
 				{
-					g->saveBookmark(currentTitle);
+					g->getStatusbar()->displayClearAfter("Loading Bookmarks",45);
+					string bookmark = g->loadBookmark();
+					if (!bookmark.empty())
+					{
+						suchtitel = bookmark;
+						forcedLine = 0;
+						setNewHistoryItem = true;
+						loadArticle = true;
+					}
+					updateContent = true;
 					break;
 				}
 				case 1:
 				{
-					loadInternalWiki = true;
-					possibleWikis = d->getPossibleWikis(loadInternalWiki);
-					vector<string>::iterator pos_it = find(possibleWikis.begin(), possibleWikis.end(), "manual");
-					if (pos_it != possibleWikis.end())
-					{
-						loadNewWiki = true;
-						currentSelectedWiki = pos_it - possibleWikis.begin();
-						suchtitel = "Test"; // TODO Write a good start starting page for a manual
-					}
+					g->saveBookmark(currentTitle);
 					break;
 				}
 				case 2:
+				{
+					loadNewWiki = true;
+					loadInternalWiki = true;
+					currentWiki = "manual";
+					suchtitel = "Introduction";
+					break;
+				}
+				case 3:
 				{
 					g->toggleInverted();
 					break;
@@ -1172,7 +1191,7 @@ int main(int argc, char ** argv)
 			}
 
 			updateContent = true;
-			doMenu = false;
+			showMenu = false;
 		}
 
 		PA_CheckLid();

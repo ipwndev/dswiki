@@ -126,6 +126,8 @@ void Markup::parse(string & Str, bool interpreteWikiMarkup)
 
 void Markup::postProcessDOM()
 {
+	_globals->getPercentIndicator()->update(0);
+
 	// set the root node and the last node
 	_root = _td->LastChild();
 	for (_end = _root; _end->LastChild(); _end = _end->LastChild() );
@@ -367,11 +369,11 @@ string Markup::pureText(TiXmlNode* pParent)
 }
 
 
-void Markup::draw()
+void Markup::draw(bool force)
 {
 	if (_showing_index)
 	{
-		indexMarkup->draw();
+		indexMarkup->draw(force);
 	}
 	else
 	{

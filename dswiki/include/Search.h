@@ -37,6 +37,9 @@ class Search
 		bool scrollLongDown();
 		bool scrollLongUp();
 		void display();
+		static void removeIcons();
+		static void showIcons();
+		static void showUpdateIcons(bool updateInRealTime);
 		void setGlobals(Globals* globals);
 	private:
 		void enlarge_front();

@@ -192,7 +192,7 @@ int TextBox::run()
 			return _currentItem;
 		}
 
-		if (_allowCancel && (Pad.Newpress.B || Pad.Newpress.Start) )
+		if (_allowCancel && (Pad.Newpress.B || Pad.Newpress.Start || Pad.Newpress.Select) )
 		{
 			PA_WaitForVBL();
 			return -1;
