@@ -161,6 +161,16 @@ void Globals::toggleInverted()
 	_isInverted = !_isInverted;
 	PA_SetBgPalCol(0, 0, backgroundColor());
 	PA_SetBgPalCol(1, 0, backgroundColor());
+	if (_isInverted)
+	{
+		PA_SetTextCol (0, 31, 31, 31);
+		PA_SetTextCol (1, 31, 31, 31);
+	}
+	else
+	{
+		PA_SetTextCol (0, 0, 0, 0);
+		PA_SetTextCol (1, 0, 0, 0);
+	}
 }
 
 int Globals::backgroundColor()

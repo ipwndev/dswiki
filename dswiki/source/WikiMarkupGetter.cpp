@@ -73,7 +73,7 @@ void WikiMarkupGetter::getMarkup(string & markup, string title)
 {
 	markup.clear();
 
-	ArticleSearchResult* articleSearchResult = _globals->getTitleIndex()->findArticle(title, "", 1); // The only situation when we need the physical position of the article afterwards
+	ArticleSearchResult* articleSearchResult = _globals->getTitleIndex()->findArticle(title, "", "", 1); // The only situation when we need the physical position of the article afterwards
 	if ( !articleSearchResult )
 	{
 		return;

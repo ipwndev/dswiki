@@ -34,11 +34,13 @@ class Markup
 		int		currentLine() ;
 		int		currentPercent();
 
-		string	getFirstLinkTarget();
+		void	getFirstLink(string & title, string & anchor);
+		void	getCurrentLink(string & title, string & anchor);
 		void	jumpToAnchor(string anchor);
 		void	selectPreviousLink();
 		void	selectNextLink();
 		void	unselect();
+		bool	evaluateClick(int x, int y);
 
 		void	setGlobals(Globals* globals);
 
@@ -52,6 +54,7 @@ class Markup
 		void	getElementStyle(CharStat & CStat, int & indent, bool & reallyPrint, string & alternativeText, TiXmlNode* current);
 
 		void	bringElementToTop(TiXmlElement* current);
+		void	moveLineFromTo(int from, int to);
 
 		TiXmlNode*	PreviousNode(TiXmlNode* current);
 		TiXmlNode*	NextNode(TiXmlNode* current, bool skipChildren = false, bool skipSiblings = false);

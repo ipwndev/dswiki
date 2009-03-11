@@ -28,7 +28,7 @@ Markup::Markup()
 
 	_numberOfLines = 0;
 	_currentLine = 0;
-	_lastDisplayedLine = -1;
+	_lastDisplayedLine = 0;
 
 	index.clear();
 	indexMarkup = NULL;
@@ -121,6 +121,16 @@ void Markup::parse(string & Str, bool interpreteWikiMarkup)
 		_globals->getStatusbar()->display("Post-Processing DOM");
 		postProcessDOM();
 	}
+
+	int h = _globals->getFont(FONT_R)->Height();
+	int _linesPerScreen = ContentWin1.Height / h;
+	BLOCK CharArea;
+	CharArea.clear();
+	for (int i=_currentLine; (i<_numberOfLines) && (i-_currentLine<_linesPerScreen); i++)
+	{
+		iPrint("Line "+val(i)+"\n",&ContentWin0,&NormalCS,&CharArea);
+		PA_Sleep(10);
+	}
 }
 
 
@@ -187,15 +197,17 @@ void Markup::postProcessDOM()
 	}
 
 	// create the layout of the article (TODO)
-	VirScreen oneLayoutLine = ContentWin2;
+	VirScreen oneLayoutLine = ContentWin0;
 	oneLayoutLine.Height = _globals->getFont(FONT_R)->Height();
 	InitVS(&oneLayoutLine);
 
 	CharStat CopyCS = NormalCS;
 	BLOCK CharArea;
 	CharArea.clear();
+
 	int indent = 0;
 	int lineNumber = 0;
+
 	bool reallyPrint;
 	string alternativeText;
 
@@ -231,24 +243,10 @@ void Markup::postProcessDOM()
 			TiXmlElement* currentElement = (TiXmlElement*) currentNode;
 			currentElement->SetAttribute("l",lineNumber);
 			currentElement->SetAttribute("s",CharArea.Start.x);
-
-			getElementStyle(CopyCS, indent, reallyPrint, alternativeText, currentNode);
-			CopyCS.Fx = SIMULATE;
-
-			int length = alternativeText.length();
-
-			int numOut = iPrint(alternativeText,&oneLayoutLine,&CopyCS,&CharArea);
-			while (numOut < length)
-			{
-				lineNumber++;
-				CharArea.clear();
-				CharArea.Start.x = indent;
-				numOut += iPrint(alternativeText.substr(numOut),&oneLayoutLine,&CopyCS,&CharArea,-1,true);
-			}
-
 		}
 	}
-	_numberOfLines = lineNumber;
+
+	_numberOfLines = lineNumber + 1;
 }
 
 // TODO add: info if the element begins on a new line
@@ -368,7 +366,6 @@ string Markup::pureText(TiXmlNode* pParent)
 	return "";
 }
 
-
 void Markup::draw(bool force)
 {
 	if (_showing_index)
@@ -377,9 +374,152 @@ void Markup::draw(bool force)
 	}
 	else
 	{
-		if (_currentLine != _lastDisplayedLine)
+		if ( force || (_currentLine != _lastDisplayedLine) )
 		{
 			// full re-draw
+// 			FillVS(&ContentWin1,_globals->backgroundColor());
+// 			FillVS(&ContentWin0,_globals->backgroundColor());
+
+			int h = _globals->getFont(FONT_R)->Height();
+			int _linesPerScreen = ContentWin1.Height / h;
+
+			int textDelta = _currentLine - _lastDisplayedLine;
+			int textDeltaAbs = (textDelta<0) ? -textDelta : textDelta;
+			int linesMovedOnSameScreen = _linesPerScreen - textDeltaAbs;
+			int linesMovedBetweenScreens = textDeltaAbs;
+
+			PA_OutputText(1,15,5,"%d %d %d %d      ",textDelta,textDeltaAbs,linesMovedOnSameScreen,linesMovedBetweenScreens);
+// 			PA_WaitFor(Pad.Newpress.Anykey);
+
+			if ( textDelta <= -2 * _linesPerScreen)
+			{
+				// big scroll, no overlapping
+				// scrolled up, the text moves down
+				// hard case for DMA_Copy
+				DMA_Copy(Blank,
+						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+						 (_linesPerScreen) << 8,
+						 DMA_16NOW
+						);
+				DMA_Copy(Blank,
+						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
+						 (_linesPerScreen) << 8,
+						 DMA_16NOW
+						);
+			}
+			else if ((textDelta > -2 * _linesPerScreen) && (textDelta <= -_linesPerScreen))
+			{
+				// big scroll, copy text from top to bottom screen
+				// scrolled up, the text moves down
+				// hard case for DMA_Copy
+				DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + (-_linesPerScreen - textDelta) * h) << 8)),
+						 ((2*_linesPerScreen + textDelta) * h) << 8,
+						 DMA_16NOW
+						);
+			}
+			else if ((textDelta > -_linesPerScreen) && (textDelta < 0))
+			{
+				// small scroll, moving text on every screen, and from top to bottom
+				// scrolled up, the text moves down
+				// hard case for DMA_Copy
+				for (int i = _linesPerScreen + textDelta - 1; i >= 0; i--)
+				{
+					DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + i * h) << 8)),
+							 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + ( i - textDelta ) * h) << 8)),
+							 (h) << 8,
+							 DMA_16NOW
+							);
+				}
+				DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + (_linesPerScreen + textDelta) * h) << 8)),
+						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
+						 (-textDelta * h) << 8,
+						 DMA_16NOW
+						);
+				for (int i = _linesPerScreen + textDelta - 1; i >= 0; i--)
+				{
+					DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + i * h) << 8)),
+							 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + ( i - textDelta ) * h) << 8)),
+							 (h) << 8,
+							 DMA_16NOW
+							);
+				}
+				DMA_Copy(Blank,
+						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+						 (-textDelta * h) << 8,
+						 DMA_16NOW
+						);
+			}
+			else if (textDelta == 0)
+			{
+				// no scroll
+			}
+			else if ((textDelta > 0) && (textDelta < _linesPerScreen))
+			{
+				// small scroll, moving text on every screen, and from bottom to top
+				// scrolled down, the text moves up
+				// easy case for DMA_Copy
+				DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + linesMovedBetweenScreens * h) << 8)),
+						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+						 (linesMovedOnSameScreen * h) << 8,
+						 DMA_16NOW
+						);
+				DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y) << 8)),
+						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + linesMovedOnSameScreen * h) << 8)),
+						 (linesMovedBetweenScreens * h) << 8,
+						 DMA_16NOW
+						);
+				DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + linesMovedBetweenScreens * h) << 8)),
+						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
+						 (linesMovedOnSameScreen * h) << 8,
+						 DMA_16NOW
+						);
+				DMA_Copy(Blank,
+						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + linesMovedOnSameScreen * h) << 8)),
+						 (linesMovedBetweenScreens * h) << 8,
+						 DMA_16NOW
+						);
+			}
+			else if ((textDelta >= _linesPerScreen) && (textDelta < 2*_linesPerScreen))
+			{
+				// big scroll, copy text from bottom to top screen
+				// scrolled down, the text moves up
+				// easy case for DMA_Copy
+				DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + (textDelta - _linesPerScreen) * h) << 8)),
+						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+						 ((2*_linesPerScreen-textDelta) * h) << 8,
+						 DMA_16NOW
+						);
+				DMA_Copy(Blank,
+						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + (2*_linesPerScreen-textDelta) * h) << 8)),
+						 ((textDelta - _linesPerScreen) * h) << 8,
+						 DMA_16NOW
+						);
+				DMA_Copy(Blank,
+						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
+						 (_linesPerScreen * h) << 8,
+						 DMA_16NOW
+						);
+			}
+			else if (textDelta >= 2*_linesPerScreen)
+			{
+				// big scroll, no overlapping
+				// scrolled down, the text moves up
+				// easy case for DMA_Copy
+				DMA_Copy(Blank,
+						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+						 (_linesPerScreen) << 8,
+						 DMA_16NOW
+						);
+				DMA_Copy(Blank,
+						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
+						 (_linesPerScreen) << 8,
+						 DMA_16NOW
+						);
+			}
+
+			// do something
+
 			_lastDisplayedLine = _currentLine;
 		}
 		else if (_colorChangeOnPage)
@@ -390,97 +530,31 @@ void Markup::draw(bool force)
 		{
 			// nothing changed
 		}
-
-		// (TODO)
-		FillVS(&ContentWin1,_globals->backgroundColor());
-		FillVS(&ContentWin2,_globals->backgroundColor());
-		BLOCK CharArea = {{0,0},{251,171}};
-		CharStat CS = NormalCS;
-		CS.Color = _globals->textColor();
-		CS.Rotate = DEG0;
-		Paint(_root,&CS,&CharArea);
 	}
 }
 
 
-void Markup::Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea)
+bool Markup::evaluateClick(int x, int y)
 {
-	CharStat CopyCS = *CS;
-	string text = parent->ValueStr();
-	int linebreaksBefore = 0;
-	int linebreaksAfter = 0;
-
-	switch (parent->Type())
-	{
-		case TiXmlNode::TEXT :
-			iPrint(text,&ContentWin2,&CopyCS,CharArea);
-			break;
-		case TiXmlNode::ELEMENT :
-			for (int a=0;a<linebreaksBefore;a++)
-				iPrint("\n",&ContentWin2,&CopyCS,CharArea);
-
-			if (text=="i")
-			{
-				if (CopyCS.FONT == _globals->getFont(FONT_R))
-					CopyCS.FONT = _globals->getFont(FONT_O);
-				else if (CopyCS.FONT == _globals->getFont(FONT_B))
-					CopyCS.FONT = _globals->getFont(FONT_BO);
-			}
-			else if (text=="b")
-			{
-				if (CopyCS.FONT == _globals->getFont(FONT_R))
-					CopyCS.FONT = _globals->getFont(FONT_B);
-				else if (CopyCS.FONT == _globals->getFont(FONT_O))
-					CopyCS.FONT = _globals->getFont(FONT_BO);
-			}
-			else if (text=="wl")
-			{
-				CopyCS.Color = _globals->linkColor();
-			}
-			else if (text=="wi")
-			{
-				CopyCS.Color = _globals->imageColor();
-			}
-			else if (text=="pre")
-			{
-				CopyCS.BgColor = PA_RGB(29,29,30);
-				CopyCS.Fx = BACKGR;
-			}
-			else if (text=="wt")
-			{
-				CopyCS.Color = _globals->templateColor();
-				iPrint("<Template snipped>",&ContentWin2,&CopyCS,CharArea);
-				return;
-			}
-			else if (text=="li")
-			{
-				iPrint("* ",&ContentWin2,&CopyCS,CharArea);
-			}
-			else if (text=="h2"||text=="h3"||text=="h4"||text=="h5"||text=="h6"||text=="h7"||text=="h8"||text=="h9")
-			{
-				CopyCS.FONT = _globals->getFont(FONT_B);
-			}
-
-			TiXmlNode* child;
-			for (child=parent->FirstChild(); child; child=child->NextSibling())
-			{
-				Paint(child,&CopyCS,CharArea);
-			}
-
-			for (int a=0;a<linebreaksAfter;a++)
-				iPrint("\n",&ContentWin2,&CopyCS,CharArea);
-
-			break;
-	}
+	x -= ContentWin0.AbsoluteBound.Start.x;
+	y -= ContentWin0.AbsoluteBound.Start.y;
+	int line = y / _globals->getFont(FONT_R)->Height() + _currentLine;
+	int start = x;
+	// TODO: Find a link on this coordinates, if there is one, make it active and return true
+	PA_OutputText(1,0,0,"%d/%d     ",line,start);
+	return false;
 }
 
-string Markup::getFirstLinkTarget()
-{
-	TiXmlElement* firstLink = NextLink(_root);
+/******************************************************************************/
 
-	if (firstLink)
+void Markup::getCurrentLink(string & title, string & anchor)
+{
+	title = "";
+	anchor = "";
+
+	if (_currentHighlightedLink)
 	{
-		TiXmlNode* child = firstLink->FirstChild();
+		TiXmlNode* child = _currentHighlightedLink->FirstChild();
 		if (child)
 		{
 			if (child->ValueStr() == "wp")
@@ -488,16 +562,23 @@ string Markup::getFirstLinkTarget()
 				child = child->FirstChild();
 				if (child)
 				{
-					string ret = child->ValueStr();
-					ret = ret.substr(0,ret.find("#"));
-					return ret;
+					string val = child->ValueStr();
+					title = val.substr(0,val.find("#"));
+					if (val.find("#") != string::npos )
+						anchor = val.substr(val.find("#"));
 				}
 			}
 		}
 	}
-
-	return "";
 }
+
+
+void Markup::getFirstLink(string & title, string & anchor)
+{
+	_currentHighlightedLink = NextLink(_root);
+	getCurrentLink(title, anchor);
+}
+
 
 TiXmlElement* Markup::NextLink(TiXmlNode* current)
 {
@@ -578,9 +659,6 @@ void Markup::scrollToLine(int lineNo)
 	{
 		_currentLine = lineNo;
 	}
-// 	PA_OutputText(1,0,3,"Scrolling to line %d    ",_currentLine);
-// 	PA_WaitFor(Pad.Newpress.Anykey);
-// 	PA_OutputText(1,0,3,"                          ");
 }
 
 void Markup::bringElementToTop(TiXmlElement* current)
@@ -618,8 +696,11 @@ void Markup::unselect()
 	}
 	else
 	{
-		_currentHighlightedLink = NULL;
-		_colorChangeOnPage = true;
+		if(_currentHighlightedLink)
+		{
+			_currentHighlightedLink = NULL;
+			_colorChangeOnPage = true;
+		}
 	}
 }
 
@@ -655,7 +736,7 @@ void Markup::scrollPageUp()
 	}
 	else
 	{
-		scrollToLine(_currentLine - 10); // TODO
+		scrollToLine(_currentLine - ContentWin1.Height / _globals->getFont(FONT_R)->Height() );
 	}
 }
 
@@ -667,7 +748,7 @@ void Markup::scrollPageDown()
 	}
 	else
 	{
-		scrollToLine(_currentLine + 10); // TODO
+		scrollToLine(_currentLine + ContentWin1.Height / _globals->getFont(FONT_R)->Height() );
 	}
 }
 
@@ -679,17 +760,12 @@ void Markup::selectPreviousLink()
 	}
 	else
 	{
-		if (_currentHighlightedLink == NULL)
-		{
-			// select the first link visible on both screens // TODO: (or last???)
-			// otherwise scroll up
-		}
-		else
-		{
-			// select the previous link
+		if (_currentHighlightedLink)
 			_currentHighlightedLink = PreviousLink(_currentHighlightedLink);
-			_colorChangeOnPage = true;
-		}
+		else
+			_currentHighlightedLink = PreviousLink(_end);
+
+		_colorChangeOnPage = true;
 	}
 }
 
@@ -701,17 +777,12 @@ void Markup::selectNextLink()
 	}
 	else
 	{
-		if (_currentHighlightedLink == NULL)
-		{
-			// select the first link visible on both screens
-			// otherwise scroll down
-		}
-		else
-		{
-			// select the next link
+		if (_currentHighlightedLink)
 			_currentHighlightedLink = NextLink(_currentHighlightedLink);
-			_colorChangeOnPage = true;
-		}
+		else
+			_currentHighlightedLink = NextLink(_root);
+
+		_colorChangeOnPage = true;
 	}
 }
 

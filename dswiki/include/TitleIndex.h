@@ -13,10 +13,11 @@ using namespace std;
 class ArticleSearchResult
 {
 	public:
-		ArticleSearchResult(string title, string titleInArchive, u64 blockPos, int articlePos, int articleLength);
+		ArticleSearchResult(string title, string titleInArchive, string anchor, u64 blockPos, int articlePos, int articleLength);
 
 		string Title();
 		string TitleInArchive();
+		string Anchor();
 
 		u64 BlockPos();
 		int ArticlePos();
@@ -25,6 +26,7 @@ class ArticleSearchResult
 	private:
 		string _title;
 		string _titleInArchive;
+		string _anchor;
 		u64 _blockPos;
 		int _articlePos;
 		int _articleLength;
@@ -41,7 +43,7 @@ public:
 
 	string	getTitle(int articleNumber, unsigned char indexNo = 1, bool setPosition = false);
 
-	ArticleSearchResult*	findArticle(string title, string previousTitle, bool setPosition = false);
+	ArticleSearchResult*	findArticle(string title, string previousTitle, string anchor, bool setPosition = false);
 	ArticleSearchResult*	getRandomArticle();
 	ArticleSearchResult*	isRedirect(string markup);
 	int		getSuggestedArticleNumber(string phrase, unsigned char indexNo = 1, bool setPosition = false);
