@@ -27,7 +27,7 @@ extern CharStat NormalCS;
 extern VirScreen PercentArea;
 extern VirScreen Titlebar;
 extern VirScreen ContentWin1;
-extern VirScreen ContentWin2;
+extern VirScreen ContentWin0;
 extern VirScreen StatusbarVS;
 
 #endif

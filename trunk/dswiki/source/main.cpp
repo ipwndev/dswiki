@@ -36,12 +36,12 @@ CharStat NormalCS;
 
 VirScreen Titlebar;
 VirScreen ContentWin1;
-VirScreen ContentWin2;
+VirScreen ContentWin0;
 VirScreen StatusbarVS;
 VirScreen PercentArea;
 
-#define DEBUG 0
-#define DEBUG_WIKI_NR 0
+#define DEBUG 1
+#define DEBUG_WIKI_NR 1
 #define STRESSTEST 0
 
 int main(int argc, char ** argv)
@@ -59,8 +59,9 @@ int main(int argc, char ** argv)
 	string markupstr;
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
-// 	string suchtitel    = "Temp";
-	string suchtitel    = "";
+	string search_title    = "Temp";
+// 	string search_title    = "";
+	string search_anchor  = "";
 	string currentTitle = "";
 
 	vector<string> possibleWikis;
@@ -81,7 +82,7 @@ int main(int argc, char ** argv)
 	bool suggestInRealTime	= true;
 
 	bool setNewHistoryItem	= true;
-	bool textBrowserMode	= true;
+	bool textBrowserMode	= false;
 
 	int forcedLine			= 0;
 
@@ -306,7 +307,7 @@ int main(int argc, char ** argv)
 
 	Titlebar    = (VirScreen) {   0,   0, 256,  16, {{0,0},{0,0}}, &UpScreen}; InitVS(&Titlebar);
 	ContentWin1 = (VirScreen) {   2,  18, 252, 172, {{0,0},{0,0}}, &UpScreen}; InitVS(&ContentWin1);
-	ContentWin2 = (VirScreen) {   2,   2, 252, 172, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin2);
+	ContentWin0 = (VirScreen) {   2,   2, 252, 172, {{0,0},{0,0}}, &DnScreen}; InitVS(&ContentWin0);
 	StatusbarVS = (VirScreen) {   0, 176, 256,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&StatusbarVS);
 	PercentArea = (VirScreen) { 229, 176,  27,  16, {{0,0},{0,0}}, &DnScreen}; InitVS(&PercentArea);
 	// End of global variables
@@ -346,7 +347,7 @@ int main(int argc, char ** argv)
 		loadInternalWiki = true;
 		currentWikiNumber = -1;
 		currentWiki = "manual";
-		suchtitel = "Troubleshooting";
+		search_title = "Troubleshooting";
 	}
 #else
 	currentWikiNumber = DEBUG_WIKI_NR;
@@ -470,7 +471,7 @@ int main(int argc, char ** argv)
 				updateContent = true;
 				if (!bookmark.empty())
 				{
-					suchtitel = bookmark;
+					search_title = bookmark;
 					forcedLine = 0;
 					setNewHistoryItem = true;
 					loadArticle = true;
@@ -479,6 +480,20 @@ int main(int argc, char ** argv)
 			else if (PA_SpriteTouched(SPRITE_FILEOPEN))
 			{
 				chooseNewWiki = true;
+			}
+			else
+			{
+				POINT p_click = {Stylus.X,Stylus.Y};
+				if (IsInArea(ContentWin0.AbsoluteBound,p_click))
+				{
+					if (markup->evaluateClick(Stylus.X,Stylus.Y) )
+					{
+						markup->getCurrentLink(search_title,search_anchor);
+						forcedLine = 0;
+						setNewHistoryItem = true;
+						loadArticle = true;
+					}
+				}
 			}
 		}
 		else if (Stylus.Held)
@@ -490,18 +505,6 @@ int main(int argc, char ** argv)
 		else
 		{
 		}
-
-// 		if (Stylus.Newpress)
-// 		{
-// 			string markupClick = markup->evaluateClick(Stylus.X,Stylus.Y);
-// 			if (!markupClick.empty())
-// 			{
-// 				suchtitel = markupClick;
-// 				forcedLine = 0;
-// 				setNewHistoryItem = true;
-// 				loadArticle = true;
-// 			}
-// 		}
 
 		if (Pad.Newpress.Left || Pad.Held.Left || GHPad.Newpress.Blue || GHPad.Held.Blue)
 		{
@@ -551,9 +554,14 @@ int main(int argc, char ** argv)
 			updateContent = true;
 		}
 
-		if (Pad.Newpress.A) // TODO: follow selected link in markup or random
+		if (Pad.Newpress.A)
 		{
-			suchtitel.clear();
+			search_title.clear();
+			search_anchor.clear();
+			if (markup)
+			{
+				markup->getCurrentLink(search_title, search_anchor);
+			}
 			forcedLine = 0;
 			setNewHistoryItem = true;
 			loadArticle = true;
@@ -592,7 +600,7 @@ int main(int argc, char ** argv)
 		{
 			if (h->forward())
 			{
-				suchtitel = h->currentTitle();
+				search_title = h->currentTitle();
 				forcedLine = h->currentLine();
 				setNewHistoryItem = false;
 				loadArticle = true;
@@ -602,7 +610,7 @@ int main(int argc, char ** argv)
 		{
 			if (h->back())
 			{
-				suchtitel = h->currentTitle();
+				search_title = h->currentTitle();
 				forcedLine = h->currentLine();
 				setNewHistoryItem = false;
 				loadArticle = true;
@@ -623,7 +631,7 @@ int main(int argc, char ** argv)
 			{
 				h->setCurrentPosition(chosenHistItem);
 				setNewHistoryItem = false;
-				suchtitel = history_vec[chosenHistItem];
+				search_title = history_vec[chosenHistItem];
 				loadArticle = true;
 			}
 			updateContent = true;
@@ -648,15 +656,15 @@ int main(int argc, char ** argv)
 			delete suchergebnis;
 			suchergebnis = NULL;
 
-			if (suchtitel.empty())
+			if (search_title.empty())
 			{
 				g->getStatusbar()->display("Searching random article...");
 				suchergebnis = t->getRandomArticle();
 			}
 			else
 			{
-				g->getStatusbar()->display("Searching "+suchtitel+"...");
-				suchergebnis = t->findArticle(suchtitel,currentTitle);
+				g->getStatusbar()->display("Searching "+search_title+"...");
+				suchergebnis = t->findArticle(search_title,search_anchor,currentTitle);
 			}
 
 			if (suchergebnis)
@@ -667,7 +675,7 @@ int main(int argc, char ** argv)
 					markup = NULL;
 				}
 
-				suchtitel.clear();
+				search_title.clear();
 				g->getStatusbar()->display("Loading \""+suchergebnis->TitleInArchive()+"\"");
 
 				markupstr.clear();
@@ -724,7 +732,7 @@ int main(int argc, char ** argv)
 
 				g->getStatusbar()->displayClearAfter("Processing complete",30);
 
-				markup->scrollToLine(forcedLine);
+				markup->scrollToLine(forcedLine); // TODO: or scroll to suchergebnis->Anchor()
 
 				if (setNewHistoryItem)
 				{
@@ -736,7 +744,7 @@ int main(int argc, char ** argv)
 			}
 			else
 			{
-				g->getStatusbar()->displayErrorClearAfter("\""+suchtitel+"\" not found...",90);
+				g->getStatusbar()->displayErrorClearAfter("\""+search_title+"\" not found...",90);
 				updatePercent = true;
 			}
 
@@ -803,9 +811,9 @@ int main(int argc, char ** argv)
 			vector<int> offsetsUTF;
 
 			offsetsUTF.push_back(0);
-			if (!suchtitel.empty())
+			if (!search_title.empty())
 			{
-				Str = (unsigned char*) suchtitel.c_str();
+				Str = (unsigned char*) search_title.c_str();
 				Skip = 0;
 				while(Str[Skip])
 				{
@@ -828,14 +836,14 @@ int main(int argc, char ** argv)
 				if (letter > 31)
 				{
 					// there is a new letter
-					suchtitel.insert(suchtitel.begin()+offsetsUTF[cursorPosition],letter);
+					search_title.insert(search_title.begin()+offsetsUTF[cursorPosition],letter);
 					cursorPosition++;
 
 					offsetsUTF.clear();
 					offsetsUTF.push_back(0);
-					if (!suchtitel.empty())
+					if (!search_title.empty())
 					{
-						Str = (unsigned char*) suchtitel.c_str();
+						Str = (unsigned char*) search_title.c_str();
 						Skip = 0;
 						while(Str[Skip])
 						{
@@ -857,13 +865,13 @@ int main(int argc, char ** argv)
 
 				if ((letter == PA_BACKSPACE) && (cursorPosition>0))
 				{
-					suchtitel.erase(offsetsUTF[cursorPosition-1],offsetsUTF[cursorPosition]-offsetsUTF[cursorPosition-1]); // Erase the last letter
+					search_title.erase(offsetsUTF[cursorPosition-1],offsetsUTF[cursorPosition]-offsetsUTF[cursorPosition-1]); // Erase the last letter
 					cursorPosition--;
 					offsetsUTF.clear();
 					offsetsUTF.push_back(0);
-					if (!suchtitel.empty())
+					if (!search_title.empty())
 					{
-						Str = (unsigned char*) suchtitel.c_str();
+						Str = (unsigned char*) search_title.c_str();
 						Skip = 0;
 						while(Str[Skip])
 						{
@@ -884,7 +892,7 @@ int main(int argc, char ** argv)
 
 				if ( (letter == '\n') || (Pad.Newpress.A) )
 				{
-					suchtitel = s->currentHighlightedItem();
+					search_title = s->currentHighlightedItem();
 					forcedLine = 0;
 					setNewHistoryItem = true;
 					loadArticle = true;
@@ -896,9 +904,9 @@ int main(int argc, char ** argv)
 					if (Stylus.Newpress)
 					{
 						POINT S = {Stylus.X,Stylus.Y};
-						if (PA_SpriteTouched(SPRITE_CLEARLEFT) && (!suchtitel.empty()) )
+						if (PA_SpriteTouched(SPRITE_CLEARLEFT) && (!search_title.empty()) )
 						{
-							suchtitel.clear();
+							search_title.clear();
 							offsetsUTF.clear();
 							offsetsUTF.push_back(0);
 							cursorPosition = 0;
@@ -914,7 +922,7 @@ int main(int argc, char ** argv)
 						}
 						else if (PA_SpriteTouched(SPRITE_OK))
 						{
-							suchtitel = s->currentHighlightedItem();
+							search_title = s->currentHighlightedItem();
 							forcedLine = 0;
 							setNewHistoryItem = true;
 							loadArticle = true;
@@ -922,13 +930,13 @@ int main(int argc, char ** argv)
 						}
 						else if (IsInArea(StatusbarVS.AbsoluteBound,S))
 						{
-							suchtitel = currentTitle;
+							search_title = currentTitle;
 							offsetsUTF.clear();
 							offsetsUTF.push_back(0);
 							cursorPosition = 0;
-							if (!suchtitel.empty())
+							if (!search_title.empty())
 							{
-								Str = (unsigned char*) suchtitel.c_str();
+								Str = (unsigned char*) search_title.c_str();
 								Skip = 0;
 								while(Str[Skip])
 								{
@@ -1003,7 +1011,7 @@ int main(int argc, char ** argv)
 						}
 						else if (PA_SpriteTouched(SPRITE_1RIGHTARROW))
 						{
-							if (offsetsUTF[cursorPosition]< (int) suchtitel.length())
+							if (offsetsUTF[cursorPosition]< (int) search_title.length())
 							{
 								cursorPosition++;
 								updateSearchbar = true;
@@ -1079,7 +1087,7 @@ int main(int argc, char ** argv)
 					CharStat tmpCS = NormalCS;
 					tmpCS.Wrap = NOWRAP;
 					CharArea = (BLOCK) {{2,5},{0,0}};
-					iPrint(suchtitel,&Searchbar,&tmpCS,&CharArea);
+					iPrint(search_title,&Searchbar,&tmpCS,&CharArea);
 					updateCursor = true;
 					updateSearchbar = false;
 				}
@@ -1091,14 +1099,14 @@ int main(int argc, char ** argv)
 					tmpCS.Wrap = NOWRAP;
 					tmpCS.Fx = SIMULATE;
 					CharArea = (BLOCK) {{2,5},{0,0}};
-					iPrint(suchtitel.substr(0,offsetsUTF[cursorPosition]),&Searchbar,&tmpCS,&CharArea);
+					iPrint(search_title.substr(0,offsetsUTF[cursorPosition]),&Searchbar,&tmpCS,&CharArea);
 					BLOCK temp = {{CharArea.Start.x-1,2},{CharArea.Start.x-1,19}};
 					DrawBlock(&Searchbar,temp,PA_RGB(20,20,20),0);
 				}
 
 				if (searchSuggestions) // load current searchstring, this is the bottleneck
 				{
-					s->load(suchtitel);
+					s->load(search_title);
 					updateSuggestions = true;
 					searchSuggestions = false;
 				}
@@ -1149,6 +1157,7 @@ int main(int argc, char ** argv)
 			Options.setTitle("Options");
 			Options.allowCancel(true);
 			Options.setCurrentPosition(0);
+
 			int choice = Options.run();
 
 			switch (choice)
@@ -1162,7 +1171,7 @@ int main(int argc, char ** argv)
 					string bookmark = g->loadBookmark();
 					if (!bookmark.empty())
 					{
-						suchtitel = bookmark;
+						search_title = bookmark;
 						forcedLine = 0;
 						setNewHistoryItem = true;
 						loadArticle = true;
@@ -1180,7 +1189,7 @@ int main(int argc, char ** argv)
 					loadNewWiki = true;
 					loadInternalWiki = true;
 					currentWiki = "manual";
-					suchtitel = "Introduction";
+					search_title = "Introduction";
 					break;
 				}
 				case 3:

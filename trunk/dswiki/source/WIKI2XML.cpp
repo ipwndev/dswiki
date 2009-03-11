@@ -975,21 +975,30 @@ void WIKI2XML::parse(string & s, bool interpreteWikiMarkup)
 	}
 	else
 	{
+		_globals->getStatusbar()->display("l="+val(s.length()));
 		_globals->getPercentIndicator()->update(0);
 		replace_all(s,"&","&amp;");
-		_globals->getPercentIndicator()->update(20);
+		_globals->getStatusbar()->display("l="+val(s.length()));
+		_globals->getPercentIndicator()->update(17);
 		replace_all(s,"<","&lt;");
-		_globals->getPercentIndicator()->update(40);
+		_globals->getStatusbar()->display("l="+val(s.length()));
+		_globals->getPercentIndicator()->update(33);
 		replace_all(s,">","&gt;");
-		_globals->getPercentIndicator()->update(60);
+		_globals->getStatusbar()->display("l="+val(s.length()));
+		_globals->getPercentIndicator()->update(50);
 		replace_all(s,"\"","&quot;");
-		_globals->getPercentIndicator()->update(80);
+		_globals->getStatusbar()->display("l="+val(s.length()));
+		_globals->getPercentIndicator()->update(67);
 		replace_all(s,"'","&apos;");
+		_globals->getStatusbar()->display("l="+val(s.length()));
+		_globals->getPercentIndicator()->update(83);
+		replace_all(s,"\n\n","\n<p />\n");
+		_globals->getStatusbar()->display("l="+val(s.length()));
 		_globals->getPercentIndicator()->update(100);
 	}
 
 	s.insert(0,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<text>");
-	s.append("</text>");
+	s.append("<p /></text>");
 }
 
 

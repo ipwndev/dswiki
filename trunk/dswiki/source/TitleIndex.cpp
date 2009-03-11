@@ -83,7 +83,7 @@ void TitleIndex::load(string basename, bool internal)
 		{
 			PA_Clear16bitBg(0);
 // 			BLOCK CharArea = {{0,0},{0,0}};
-// 			iPrint("'''Warning:''' The index version of this dump is higher than the maximal supported version. Loading/searching ''may'' fail. Please upgrade to the latest release of DSwiki, to get the best browsing experience.", &ContentWin2, &ErrorCS, &CharArea);
+// 			iPrint("'''Warning:''' The index version of this dump is higher than the maximal supported version. Loading/searching ''may'' fail. Please upgrade to the latest release of DSwiki, to get the best browsing experience.", &ContentWin0, &ErrorCS, &CharArea);
 			PA_WaitFor(Pad.Newpress.Anykey || Stylus.Newpress);
 			PA_Clear16bitBg(0);
 		}
@@ -197,7 +197,7 @@ string TitleIndex::getTitle(int articleNumber, unsigned char indexNo, bool setPo
 }
 
 
-ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle, bool setPosition)
+ArticleSearchResult* TitleIndex::findArticle(string title, string anchor, string previousTitle, bool setPosition)
 {
 	if ( _numberOfArticles<=0  )
 		return NULL;
@@ -274,7 +274,7 @@ ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle,
 				string titleInArchive = getTitle(i, 0, setPosition);
 				if ( title==titleInArchive )
 				{
-					return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
+					return new ArticleSearchResult(title, titleInArchive, anchor, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 				}
 			}
 
@@ -286,7 +286,7 @@ ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle,
 				string titleInArchive = getTitle(i, 0, setPosition);
 				if ( lowerFirstTitle==lowerPhrase(titleInArchive.substr(0,1),255)+titleInArchive.substr(1) )
 				{
-					return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
+					return new ArticleSearchResult(title, titleInArchive, anchor, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 				}
 			}
 		// no match at all
@@ -297,7 +297,7 @@ ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle,
 		// return the one and only result
 			string titleInArchive = getTitle(foundAt, 0, setPosition);
 
-			return new ArticleSearchResult(title, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
+			return new ArticleSearchResult(title, titleInArchive, anchor, _lastBlockPos, _lastArticlePos, _lastArticleLength);
 		}
 		return NULL;
 	}
@@ -311,14 +311,14 @@ ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle,
 		ArticleSearchResult* ret;
 
 		// try the article name itself
-		ret = findArticle(title,"",setPosition);
+		ret = findArticle(title,anchor,"",setPosition);
 		if (ret)
 			return ret;
 
 		// is it a direct child?
 		if ( title.substr(0,1) == "/" )
 		{
-			ret = findArticle(previousTitle+title,"",setPosition);
+			ret = findArticle(previousTitle+title,anchor,"",setPosition);
 			if (ret)
 				return ret;
 		}
@@ -337,23 +337,23 @@ ArticleSearchResult* TitleIndex::findArticle(string title, string previousTitle,
 			}
 
 			if ( titleCopy.empty() )
-				ret = findArticle(previousTitleCopy,"",setPosition);
+				ret = findArticle(previousTitleCopy,anchor,"",setPosition);
 			else
-				ret = findArticle(previousTitleCopy+"/"+titleCopy,"",setPosition);
+				ret = findArticle(previousTitleCopy+"/"+titleCopy,anchor,"",setPosition);
 
 			if (ret)
 				return ret;
 		}
 
 		// try subpage
-		ret = findArticle(previousTitle+"/"+title,"",setPosition);
+		ret = findArticle(previousTitle+"/"+title,anchor,"",setPosition);
 		if (ret)
 			return ret;
 
 		// or has it unnecessary slashes at the end
 		if ( title.substr(title.length()-1) == "/" )
 		{
-			ret = findArticle(title.substr(0,title.length()-1),previousTitle,setPosition);
+			ret = findArticle(title.substr(0,title.length()-1),previousTitle,anchor,setPosition);
 			if (ret)
 				return ret;
 		}
@@ -444,12 +444,16 @@ ArticleSearchResult* TitleIndex::isRedirect(string Str)
 		Markup* redir_markup = new Markup();
 		redir_markup->setGlobals(_globals);
 		redir_markup->parse(Str);
-		string first_target = redir_markup->getFirstLinkTarget();
+		string first_target;
+		string first_anchor;
+
+		redir_markup->getFirstLink(first_target, first_anchor);
 		delete redir_markup;
+
 		if (first_target.empty())
 			return NULL;
 		else
-			return findArticle(first_target,"");
+			return findArticle(first_target,first_anchor,"");
 	}
 	else
 	{
@@ -466,7 +470,7 @@ ArticleSearchResult* TitleIndex::getRandomArticle()
 
 	string titleInArchive = getTitle(articleNo, 0, true);
 
-	return new ArticleSearchResult(titleInArchive, titleInArchive, _lastBlockPos, _lastArticlePos, _lastArticleLength);
+	return new ArticleSearchResult(titleInArchive, titleInArchive, "", _lastBlockPos, _lastArticlePos, _lastArticleLength);
 }
 
 int TitleIndex::NumberOfArticles()
@@ -489,10 +493,13 @@ void TitleIndex::setGlobals(Globals* globals)
 	_globals = globals;
 }
 
-ArticleSearchResult::ArticleSearchResult(string title, string titleInArchive, u64 blockPos, int articlePos, int articleLength)
+/************************************************************/
+
+ArticleSearchResult::ArticleSearchResult(string title, string titleInArchive, string anchor, u64 blockPos, int articlePos, int articleLength)
 {
 	_title = title;
 	_titleInArchive = titleInArchive;
+	_anchor = anchor;
 
 	_blockPos = blockPos;
 	_articlePos = articlePos;
@@ -509,6 +516,10 @@ string ArticleSearchResult::TitleInArchive()
 	return _titleInArchive;
 }
 
+string ArticleSearchResult::Anchor()
+{
+	return _anchor;
+}
 
 u64 ArticleSearchResult::BlockPos()
 {
