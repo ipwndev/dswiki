@@ -40,8 +40,8 @@ VirScreen ContentWin0;
 VirScreen StatusbarVS;
 VirScreen PercentArea;
 
-#define DEBUG 1
-#define DEBUG_WIKI_NR 1
+#define DEBUG 0
+#define DEBUG_WIKI_NR 0
 #define STRESSTEST 0
 
 int main(int argc, char ** argv)
@@ -59,32 +59,36 @@ int main(int argc, char ** argv)
 	string markupstr;
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
-	string search_title    = "Temp";
-// 	string search_title    = "";
-	string search_anchor  = "";
+// 	string search_title = "Temp";
+	string search_title = "";
+	string search_anchor = "";
 	string currentTitle = "";
 
 	vector<string> possibleWikis;
 	string currentWiki;
 	int    currentWikiNumber = -1;
 
-	bool chooseNewWiki		= false; // the first choice is handled differently
-	bool loadNewWiki		= true;
-	bool loadInternalWiki	= false;
-	bool loadArticle		= true;
-	bool search				= false;
-	bool showMenu			= false;
+	bool chooseNewWiki			= false; // the first choice is handled differently
+	bool loadNewWiki			= true;
+	bool loadInternalWiki		= false;
+	bool loadArticle			= true;
+	bool search					= false;
+	bool showMenu				= false;
 
-	bool updateTitle		= false;
-	bool updateContent		= false;
-	bool updateStatusbar	= false;
-	bool updatePercent		= false;
-	bool suggestInRealTime	= true;
+	bool updateTitle			= false;
+	bool updateContent			= false;
+	bool updateContent_force	= false;
+	bool updateStatusbar		= false;
+	bool updatePercent			= false;
+	bool suggestInRealTime		= true;
 
-	bool setNewHistoryItem	= true;
-	bool textBrowserMode	= false;
+	bool setNewHistoryItem		= true;
+	bool textBrowserMode		= false;
 
-	int forcedLine			= 0;
+	int forcedLine				= 0;
+	int stylusDownLine			= 0;
+
+	POINT stylusPosition		= {0,0};
 
 	ArticleSearchResult*	suchergebnis	= NULL;
 	ArticleSearchResult*	redirection		= NULL;
@@ -122,14 +126,17 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 
-	PA_Sleep(30); // TODO
-	debug = (Pad.Held.L || Pad.Held.R);
-	if (debug)
+	for (int i=0;i<30;i++)
 	{
-		PA_OutputText(1,11,11,"debug-mode");
-		PA_OutputText(1,11,12,"  active  ");
-		PA_Sleep(60);
-		PA_ClearTextBg(1);
+		if (Pad.Held.L || Pad.Held.R)
+		{
+			debug = true;
+			PA_OutputText(1,11,11,"debug-mode");
+			PA_OutputText(1,11,12,"  active  ");
+			PA_Sleep(60);
+			PA_ClearTextBg(1);
+			break;
+		}
 	}
 
 #if !DEBUG
@@ -152,8 +159,9 @@ int main(int argc, char ** argv)
 	{
 		if (Pad.Newpress.Anykey || Stylus.Newpress)
 			breakIntro = true;
-		if ((i>30) && breakIntro)
-			break;
+		// Disabled for the NEO-Contest
+// 		if ((i>30) && breakIntro)
+// 			break;
 		PA_WaitForVBL();
 	}
 	for (int i=0;i<32;i++)
@@ -402,7 +410,7 @@ int main(int argc, char ** argv)
 						g->setMarkup(markup);
 						markup->setGlobals(g);
 						markup->parse(markupstr,false);
-						updateContent = true;
+						updateContent_force = true;
 						updatePercent = true;
 						updateStatusbar = true;
 						updateTitle = true;
@@ -423,7 +431,7 @@ int main(int argc, char ** argv)
 			}
 
 			updateTitle = true;
-			updateContent = true;
+			updateContent_force = true;
 			chooseNewWiki = false;
 		}
 
@@ -468,7 +476,6 @@ int main(int argc, char ** argv)
 			{
 				g->getStatusbar()->displayClearAfter("Loading Bookmarks",45);
 				string bookmark = g->loadBookmark();
-				updateContent = true;
 				if (!bookmark.empty())
 				{
 					search_title = bookmark;
@@ -476,6 +483,7 @@ int main(int argc, char ** argv)
 					setNewHistoryItem = true;
 					loadArticle = true;
 				}
+				updateContent_force = true;
 			}
 			else if (PA_SpriteTouched(SPRITE_FILEOPEN))
 			{
@@ -483,8 +491,11 @@ int main(int argc, char ** argv)
 			}
 			else
 			{
-				POINT p_click = {Stylus.X,Stylus.Y};
-				if (IsInArea(ContentWin0.AbsoluteBound,p_click))
+				stylusPosition.x = Stylus.X;
+				stylusPosition.y = Stylus.Y;
+				stylusDownLine = markup->currentLine();
+
+/*				if (IsInArea(ContentWin0.AbsoluteBound,stylusPosition))
 				{
 					if (markup->evaluateClick(Stylus.X,Stylus.Y) )
 					{
@@ -493,11 +504,20 @@ int main(int argc, char ** argv)
 						setNewHistoryItem = true;
 						loadArticle = true;
 					}
-				}
+				}*/
 			}
 		}
 		else if (Stylus.Held)
 		{
+			int diff_y = Stylus.Y - stylusPosition.y;
+			int height = g->getFont(FONT_R)->Height();
+			int newLine = stylusDownLine - (diff_y + 100 * height + height / 2) / height + 100;
+			if (newLine != markup->currentLine())
+			{
+				markup->scrollToLine(newLine);
+				h->updateCurrentLine(markup->currentLine());
+				updateContent = true;
+			}
 		}
 		else if (Stylus.Released)
 		{
@@ -592,8 +612,10 @@ int main(int argc, char ** argv)
 
 		if (Pad.Newpress.Y)
 		{
-			markup->toggleIndex();
-			updateContent = true;
+			if (markup->toggleIndex())
+			{
+				updateContent_force = true;
+			}
 		}
 
 		if ( (Pad.Released.R) && (Pad.Downtime.R<60) )
@@ -634,7 +656,7 @@ int main(int argc, char ** argv)
 				search_title = history_vec[chosenHistItem];
 				loadArticle = true;
 			}
-			updateContent = true;
+			updateContent_force = true;
 		}
 
 		if (Pad.Newpress.Start)
@@ -740,7 +762,7 @@ int main(int argc, char ** argv)
 				}
 
 				updateTitle = true;
-				updateContent = true;
+				updateContent_force = true;
 			}
 			else
 			{
@@ -769,17 +791,24 @@ int main(int argc, char ** argv)
 			updateStatusbar = false;
 		}
 
-		if (updateContent)
+		if ( updateContent || updateContent_force )
 		{
-			bool force = true;
-			g->getMarkup()->draw(force);
+			if (updateContent_force)
+			{
+				g->getMarkup()->draw(true);
+			}
+			else
+			{
+				g->getMarkup()->draw();
+			}
 			updatePercent = true;
 			updateContent = false;
+			updateContent_force = false;
 		}
 
 		if (updatePercent)
 		{
-			g->getPercentIndicator()->update(markup->currentPercent());
+			g->getPercentIndicator()->update( markup->currentPercent() );
 			g->getPercentIndicator()->redraw();
 			updatePercent = false;
 		}
@@ -1140,7 +1169,7 @@ int main(int argc, char ** argv)
 			Statusbar::showIcons();
 
 			updateTitle = true;
-			updateContent = true;
+			updateContent_force = true;
 			updateStatusbar = true;
 			search = false;
 		}
@@ -1176,7 +1205,6 @@ int main(int argc, char ** argv)
 						setNewHistoryItem = true;
 						loadArticle = true;
 					}
-					updateContent = true;
 					break;
 				}
 				case 1:
@@ -1199,7 +1227,7 @@ int main(int argc, char ** argv)
 				}
 			}
 
-			updateContent = true;
+			updateContent_force = true;
 			showMenu = false;
 		}
 
