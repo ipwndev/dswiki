@@ -121,16 +121,6 @@ void Markup::parse(string & Str, bool interpreteWikiMarkup)
 		_globals->getStatusbar()->display("Post-Processing DOM");
 		postProcessDOM();
 	}
-
-	int h = _globals->getFont(FONT_R)->Height();
-	int _linesPerScreen = ContentWin1.Height / h;
-	BLOCK CharArea;
-	CharArea.clear();
-	for (int i=_currentLine; (i<_numberOfLines) && (i-_currentLine<_linesPerScreen); i++)
-	{
-		iPrint("Line "+val(i)+"\n",&ContentWin0,&NormalCS,&CharArea);
-		PA_Sleep(10);
-	}
 }
 
 
@@ -374,162 +364,195 @@ void Markup::draw(bool force)
 	}
 	else
 	{
-		if ( force || (_currentLine != _lastDisplayedLine) )
+		int h = _globals->getFont(FONT_R)->Height();
+		int _linesPerScreen = ContentWin1.Height / h;
+		int textDelta = _currentLine - _lastDisplayedLine;
+
+		int first = 0;
+		int last = 0;
+
+		if ( textDelta <= -2 * _linesPerScreen)
 		{
-			// full re-draw
-// 			FillVS(&ContentWin1,_globals->backgroundColor());
-// 			FillVS(&ContentWin0,_globals->backgroundColor());
-
-			int h = _globals->getFont(FONT_R)->Height();
-			int _linesPerScreen = ContentWin1.Height / h;
-
-			int textDelta = _currentLine - _lastDisplayedLine;
-			int textDeltaAbs = (textDelta<0) ? -textDelta : textDelta;
-			int linesMovedOnSameScreen = _linesPerScreen - textDeltaAbs;
-			int linesMovedBetweenScreens = textDeltaAbs;
-
-			PA_OutputText(1,15,5,"%d %d %d %d      ",textDelta,textDeltaAbs,linesMovedOnSameScreen,linesMovedBetweenScreens);
-// 			PA_WaitFor(Pad.Newpress.Anykey);
-
-			if ( textDelta <= -2 * _linesPerScreen)
-			{
-				// big scroll, no overlapping
-				// scrolled up, the text moves down
-				// hard case for DMA_Copy
-				DMA_Copy(Blank,
-						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
-						 (_linesPerScreen) << 8,
-						 DMA_16NOW
-						);
-				DMA_Copy(Blank,
-						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
-						 (_linesPerScreen) << 8,
-						 DMA_16NOW
-						);
-			}
-			else if ((textDelta > -2 * _linesPerScreen) && (textDelta <= -_linesPerScreen))
-			{
-				// big scroll, copy text from top to bottom screen
-				// scrolled up, the text moves down
-				// hard case for DMA_Copy
-				DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
-						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + (-_linesPerScreen - textDelta) * h) << 8)),
-						 ((2*_linesPerScreen + textDelta) * h) << 8,
-						 DMA_16NOW
-						);
-			}
-			else if ((textDelta > -_linesPerScreen) && (textDelta < 0))
-			{
-				// small scroll, moving text on every screen, and from top to bottom
-				// scrolled up, the text moves down
-				// hard case for DMA_Copy
-				for (int i = _linesPerScreen + textDelta - 1; i >= 0; i--)
-				{
-					DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + i * h) << 8)),
-							 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + ( i - textDelta ) * h) << 8)),
-							 (h) << 8,
-							 DMA_16NOW
-							);
-				}
-				DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + (_linesPerScreen + textDelta) * h) << 8)),
-						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
-						 (-textDelta * h) << 8,
-						 DMA_16NOW
-						);
-				for (int i = _linesPerScreen + textDelta - 1; i >= 0; i--)
-				{
-					DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + i * h) << 8)),
-							 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + ( i - textDelta ) * h) << 8)),
-							 (h) << 8,
-							 DMA_16NOW
-							);
-				}
-				DMA_Copy(Blank,
-						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
-						 (-textDelta * h) << 8,
-						 DMA_16NOW
-						);
-			}
-			else if (textDelta == 0)
-			{
-				// no scroll
-			}
-			else if ((textDelta > 0) && (textDelta < _linesPerScreen))
-			{
-				// small scroll, moving text on every screen, and from bottom to top
-				// scrolled down, the text moves up
-				// easy case for DMA_Copy
-				DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + linesMovedBetweenScreens * h) << 8)),
-						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
-						 (linesMovedOnSameScreen * h) << 8,
-						 DMA_16NOW
-						);
-				DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y) << 8)),
-						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + linesMovedOnSameScreen * h) << 8)),
-						 (linesMovedBetweenScreens * h) << 8,
-						 DMA_16NOW
-						);
-				DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + linesMovedBetweenScreens * h) << 8)),
-						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
-						 (linesMovedOnSameScreen * h) << 8,
-						 DMA_16NOW
-						);
-				DMA_Copy(Blank,
-						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + linesMovedOnSameScreen * h) << 8)),
-						 (linesMovedBetweenScreens * h) << 8,
-						 DMA_16NOW
-						);
-			}
-			else if ((textDelta >= _linesPerScreen) && (textDelta < 2*_linesPerScreen))
-			{
-				// big scroll, copy text from bottom to top screen
-				// scrolled down, the text moves up
-				// easy case for DMA_Copy
-				DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + (textDelta - _linesPerScreen) * h) << 8)),
-						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
-						 ((2*_linesPerScreen-textDelta) * h) << 8,
-						 DMA_16NOW
-						);
-				DMA_Copy(Blank,
-						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + (2*_linesPerScreen-textDelta) * h) << 8)),
-						 ((textDelta - _linesPerScreen) * h) << 8,
-						 DMA_16NOW
-						);
-				DMA_Copy(Blank,
-						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
-						 (_linesPerScreen * h) << 8,
-						 DMA_16NOW
-						);
-			}
-			else if (textDelta >= 2*_linesPerScreen)
-			{
-				// big scroll, no overlapping
-				// scrolled down, the text moves up
-				// easy case for DMA_Copy
-				DMA_Copy(Blank,
-						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
-						 (_linesPerScreen) << 8,
-						 DMA_16NOW
-						);
-				DMA_Copy(Blank,
-						 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
-						 (_linesPerScreen) << 8,
-						 DMA_16NOW
-						);
-			}
-
-			// do something
-
-			_lastDisplayedLine = _currentLine;
+			// big scroll, no overlapping
+			// scrolled up, the text moves down
+			// hard case for DMA_Copy
+			DMA_Copy(Blank,
+					 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+					 (_linesPerScreen * h) << 8,
+					 DMA_16NOW
+					);
+			DMA_Copy(Blank,
+					 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
+					 (_linesPerScreen * h) << 8,
+					 DMA_16NOW
+					);
+			first = _currentLine - _linesPerScreen;
+			last = _currentLine + _linesPerScreen - 1;
 		}
-		else if (_colorChangeOnPage)
+		else if ((textDelta > -2 * _linesPerScreen) && (textDelta <= -_linesPerScreen))
 		{
-			// minor re-draw
+			// big scroll, copy text from top to bottom screen
+			// scrolled up, the text moves down
+			// hard case for DMA_Copy
+			DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+					 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + (-_linesPerScreen - textDelta) * h) << 8)),
+					 ((2*_linesPerScreen + textDelta) * h) << 8,
+					 DMA_16NOW
+					);
+			DMA_Copy(Blank,
+					 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+					 (_linesPerScreen * h) << 8,
+					 DMA_16NOW
+					);
+			DMA_Copy(Blank,
+					 (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
+					 ((-_linesPerScreen - textDelta) * h) << 8,
+					 DMA_16NOW
+					);
+			first = _currentLine - _linesPerScreen;
+			last = _currentLine - _linesPerScreen - textDelta - 1;
+		}
+		else if ((textDelta > -_linesPerScreen) && (textDelta < 0))
+		{
+			// small scroll, moving text on every screen, and from top to bottom
+			// scrolled up, the text moves down
+			// hard case for DMA_Copy
+			for (int i = _linesPerScreen + textDelta - 1; i >= 0; i--)
+			{
+				DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + i * h) << 8)),
+							(void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + ( i - textDelta ) * h) << 8)),
+							(h) << 8,
+							DMA_16NOW
+						);
+			}
+			DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + (_linesPerScreen + textDelta) * h) << 8)),
+						(void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
+						(-textDelta * h) << 8,
+						DMA_16NOW
+					);
+			for (int i = _linesPerScreen + textDelta - 1; i >= 0; i--)
+			{
+				DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + i * h) << 8)),
+							(void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + ( i - textDelta ) * h) << 8)),
+							(h) << 8,
+							DMA_16NOW
+						);
+			}
+			DMA_Copy(Blank,
+						(void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+						(-textDelta * h) << 8,
+						DMA_16NOW
+					);
+			first = _currentLine - _linesPerScreen;
+			last = _currentLine - _linesPerScreen - textDelta - 1;
+		}
+		else if (textDelta == 0)
+		{
+			// no scroll
+		}
+		else if ((textDelta > 0) && (textDelta < _linesPerScreen))
+		{
+			// small scroll, moving text on every screen, and from bottom to top
+			// scrolled down, the text moves up
+			// easy case for DMA_Copy
+			DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + textDelta * h) << 8)),
+						(void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+						((_linesPerScreen - textDelta) * h) << 8,
+						DMA_16NOW
+					);
+			DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y) << 8)),
+						(void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + (_linesPerScreen - textDelta) * h) << 8)),
+						(textDelta * h) << 8,
+						DMA_16NOW
+					);
+			DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + textDelta * h) << 8)),
+						(void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y ) << 8)),
+						((_linesPerScreen - textDelta) * h) << 8,
+						DMA_16NOW
+					);
+			DMA_Copy(Blank,
+						(void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + (_linesPerScreen - textDelta) * h) << 8)),
+						(textDelta * h) << 8,
+						DMA_16NOW
+					);
+			first = _currentLine + _linesPerScreen - textDelta;
+			last = _currentLine + _linesPerScreen - 1;
+		}
+		else if ((textDelta >= _linesPerScreen) && (textDelta < 2*_linesPerScreen))
+		{
+			// big scroll, copy text from bottom to top screen
+			// scrolled down, the text moves up
+			// easy case for DMA_Copy
+			DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + (textDelta - _linesPerScreen) * h) << 8)),
+						(void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
+						((2 * _linesPerScreen - textDelta) * h) << 8,
+						DMA_16NOW
+					);
+			DMA_Copy(Blank,
+						(void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + (2 * _linesPerScreen - textDelta) * h) << 8)),
+						((textDelta - _linesPerScreen) * h) << 8,
+						DMA_16NOW
+					);
+			DMA_Copy(Blank,
+						(void*) (DnScreen.Ptr + (ContentWin0.AbsoluteBound.Start.y << 8)),
+						(_linesPerScreen * h) << 8,
+						DMA_16NOW
+					);
+			first = _currentLine + _linesPerScreen - textDelta;
+			last = _currentLine + _linesPerScreen - 1;
+		}
+		else if (textDelta >= 2*_linesPerScreen)
+		{
+			// big scroll, no overlapping
+			// scrolled down, the text moves up
+			// easy case for DMA_Copy
+			DMA_Copy(Blank,
+						(void*) (UpScreen.Ptr + (ContentWin1.AbsoluteBound.Start.y << 8)),
+						(_linesPerScreen) << 8,
+						DMA_16NOW
+					);
+			DMA_Copy(Blank,
+						(void*) (DnScreen.Ptr + (ContentWin0.AbsoluteBound.Start.y << 8)),
+						(_linesPerScreen) << 8,
+						DMA_16NOW
+					);
+			first = _currentLine - _linesPerScreen;
+			last = _currentLine + _linesPerScreen - 1;
+		}
+
+		if (first < 0)
+			first = 0;
+		if (last > _numberOfLines - 1 )
+			last = _numberOfLines - 1;
+
+		CharStat CopyCS = NormalCS;
+		CopyCS.Color = PA_RGB(PA_RandMinMax(0,31),0,PA_RandMinMax(0,31));
+		BLOCK CharArea;
+		CharArea.clear();
+
+		if (first < _currentLine)
+		{
+			CharArea.Start.y = (first - _currentLine + _linesPerScreen) * h; // Important part
+			for (int i=first; (i<=last) && (i<_currentLine); i++)
+			{
+				iPrint("█ Line "+val(i)+"\n",&ContentWin1,&CopyCS,&CharArea);
+			}
+			CharArea.clear(); // Important part
+			for (int i=_currentLine; (i<=last) && (i < _currentLine + _numberOfLines); i++)
+			{
+				iPrint("█ Line "+val(i)+"\n",&ContentWin0,&CopyCS,&CharArea);
+			}
 		}
 		else
 		{
-			// nothing changed
+			CharArea.Start.y = (first - _currentLine) * h; // Important part
+			for (int i=first; (i<=last) && (i < _currentLine + _numberOfLines); i++)
+			{
+				iPrint("█ Line "+val(i)+"\n",&ContentWin0,&CopyCS,&CharArea);
+			}
 		}
+
+		_lastDisplayedLine = _currentLine;
 	}
 }
 
