@@ -24,7 +24,7 @@ class Markup
 
 		void	draw(bool force = false);
 
-		void	toggleIndex();
+		bool	toggleIndex();
 
 		void	scrollToLine(int lineNo);
 		void	scrollPageUp();
