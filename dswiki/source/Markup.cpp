@@ -69,9 +69,16 @@ void Markup::parse(string & Str, bool interpreteWikiMarkup)
 	w2x = NULL;
 	_globals->getStatusbar()->display("WikiMarkup->XML done");
 
+// 	int numOut = 0;
 // 	PA_Clear16bitBg(0);
-// 	SimPrint(Str,&DnScreen,PA_RGB(0,0,0));
+// 	numOut = SimPrint(Str,&DnScreen,PA_RGB(0,0,0));
 // 	PA_WaitFor(Pad.Newpress.Anykey);
+// 	while (numOut<Str.length())
+// 	{
+// 		PA_Clear16bitBg(0);
+// 		numOut += SimPrint(Str.substr(numOut),&DnScreen,PA_RGB(0,0,0));
+// 		PA_WaitFor(Pad.Newpress.Anykey);
+// 	}
 
 	// Parse the xml-markup with tinyXML
 	_globals->getStatusbar()->display("Parsing XML");
@@ -96,6 +103,11 @@ void Markup::postProcessDOM()
 	// set the root node and the last node
 	_root = _td->LastChild();
 	for (_end = _root; _end->LastChild(); _end = _end->LastChild() );
+
+	// count the nodes
+	int numNodes = 0;
+	for (TiXmlNode* currentNode = _root; currentNode; currentNode = NextNode(currentNode) )
+		numNodes++;
 
 	// create the index from the document structure (headings)
 	vector <TiXmlNode*>	index_tmp;
@@ -152,96 +164,105 @@ void Markup::postProcessDOM()
 	}
 
 	// create the layout of the article (TODO)
-	VirScreen oneLayoutLine = ContentWin0;
-	oneLayoutLine.Height = _globals->getFont(FONT_R)->Height();
-	InitVS(&oneLayoutLine);
+	VirScreen LayoutSimulator = { 0, 0, ContentWin0.Width, 1048576 * _globals->getFont(FONT_R)->Height(), {{0,0},{0,0}}, &DnScreen};
+	InitVS(&LayoutSimulator);
+	PA_Clear16bitBg(0);
 
-	CharStat CopyCS = NormalCS;
 	BLOCK CharArea;
 	CharArea.clear();
 
+	CharStat CopyCS = NormalCS;
 	int indent = 0;
-	int lineNumber = 0;
 
-	bool reallyPrint;
-	string alternativeText;
-
-	int numNodes = 0;
-	for (TiXmlNode* currentNode = _root; currentNode; currentNode = NextNode(currentNode) )
-		numNodes++;
-
-	int numCurrentNode = 0;
 	for (TiXmlNode* currentNode = _root; currentNode; currentNode = NextNode(currentNode) )
 	{
-		numCurrentNode++;
-		_globals->getPercentIndicator()->update(numCurrentNode*100/numNodes);
+		getElementStyle(CopyCS, indent, currentNode);
 
 		if (currentNode->Type() == TiXmlNode::TEXT)
 		{
-			getElementStyle(CopyCS, indent, reallyPrint, alternativeText, currentNode);
-			CopyCS.Fx = SIMULATE;
+			LayoutSimulator.Left = indent;
+			LayoutSimulator.Width = ContentWin0.Width - indent;
+			InitVS(&LayoutSimulator);
 
 			string text = currentNode->ValueStr();
-			int length = text.length();
+			iPrint(text,&LayoutSimulator,&CopyCS,&CharArea);
 
-			int numOut = iPrint(text,&oneLayoutLine,&CopyCS,&CharArea);
-			while (numOut < length)
-			{
-				lineNumber++;
-				CharArea.clear();
-				CharArea.Start.x = indent;
-				numOut += iPrint(text.substr(numOut),&oneLayoutLine,&CopyCS,&CharArea,-1,true);
-			}
+			PA_WaitFor(Pad.Newpress.Anykey);
 		}
 		else if (currentNode->Type() == TiXmlNode::ELEMENT)
 		{
 			TiXmlElement* currentElement = (TiXmlElement*) currentNode;
+			string name = currentElement->ValueStr();
+
+			int lineNumber = CharArea.Start.y / _globals->getFont(FONT_R)->Height();
 			currentElement->SetAttribute("l",lineNumber);
-			currentElement->SetAttribute("s",CharArea.Start.x);
+
+			if (name=="li")
+			{
+				LayoutSimulator.Left = indent - 12;
+				LayoutSimulator.Width = ContentWin0.Width - indent + 12;
+				InitVS(&LayoutSimulator);
+				CharArea.Start.x = 0;
+				iPrint("*",&LayoutSimulator,&CopyCS,&CharArea);
+				CharArea.Start.x = 0;
+				PA_WaitFor(Pad.Newpress.Anykey);
+			}
 		}
 	}
 
-	_numberOfLines = lineNumber + 1;
+	_numberOfLines = CharArea.Start.y / _globals->getFont(FONT_R)->Height() + 1;
 }
 
 
-// TODO add: info if the element begins on a new line
-void Markup::getElementStyle(CharStat & CStat, int & indent, bool & reallyPrint, string & alternativeText, TiXmlNode* current)
+void Markup::getElementStyle(CharStat & CStat, int & indent, TiXmlNode* current)
 {
 	if (current == _root)
 	{
 		CStat = NormalCS;
 		indent = 0;
-		reallyPrint = true;
-		alternativeText = "";
 	}
 	else
 	{
+		// inherit style
 		TiXmlNode* parent = current->Parent();
-		getElementStyle(CStat, indent, reallyPrint, alternativeText, parent);
+		getElementStyle(CStat, indent, parent);
+
+		// and modify
 		if (current->Type() == TiXmlNode::ELEMENT)
 		{
 			string name = current->ValueStr();
 			if (name=="i")
 			{
 				if (CStat.FONT == _globals->getFont(FONT_R))
+				{
 					CStat.FONT = _globals->getFont(FONT_O);
+				}
 				else if (CStat.FONT == _globals->getFont(FONT_B))
+				{
 					CStat.FONT = _globals->getFont(FONT_BO);
+				}
 			}
 			else if (name=="b")
 			{
 				if (CStat.FONT == _globals->getFont(FONT_R))
+				{
 					CStat.FONT = _globals->getFont(FONT_B);
+				}
 				else if (CStat.FONT == _globals->getFont(FONT_O))
+				{
 					CStat.FONT = _globals->getFont(FONT_BO);
+				}
 			}
 			else if (name=="wl")
 			{
 				if ( current == _currentHighlightedLink)
+				{
 					CStat.Color = _globals->activeLinkColor();
+				}
 				else
+				{
 					CStat.Color = _globals->linkColor();
+				}
 			}
 			else if (name=="wi")
 			{
@@ -255,15 +276,14 @@ void Markup::getElementStyle(CharStat & CStat, int & indent, bool & reallyPrint,
 			else if (name=="wt")
 			{
 				CStat.Color = _globals->templateColor();
-				alternativeText = "<Template snipped>";
 			}
-			else if (name=="li")
-			{
-				alternativeText = "*\u00a0";
-			}
-			else if (name=="h2"||name=="h3"||name=="h4"||name=="h5"||name=="h6"||name=="h7"||name=="h8"||name=="h9")
+			else if (name=="h1"||name=="h2"||name=="h3"||name=="h4"||name=="h5"||name=="h6"||name=="h7"||name=="h8"||name=="h9")
 			{
 				CStat.FONT = _globals->getFont(FONT_B);
+			}
+			else if (name=="dl"||name=="ul"||name=="ol")
+			{
+				indent += 12;
 			}
 		}
 	}

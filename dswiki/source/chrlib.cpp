@@ -291,7 +291,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 	if ((CStat->Wrap==HARDWRAP)||(CStat->Wrap==NOWRAP))
 		HardWrap = true;
 
-	BLOCK    PrintArea = {{0,0},{0,0}};
+	BLOCK    PrintArea = {{0,0},{0,0}}; // FIXME
 	BLOCK SaveCharArea = *CharArea;
 
 	switch(CStat->Rotate)
@@ -310,7 +310,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.Start.y = 0;
 			PrintArea.End.x   = VScreen->Width-1;
 			PrintArea.End.y   = VScreen->Height-1;
-			Origin            = PrintArea.End.y;
+			Origin            = PrintArea.End.y; // FIXME
 			if (CharArea->End.y == Origin)
 				forceInnerWordWrap = true;
 			break;
@@ -319,7 +319,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.Start.y = 0;
 			PrintArea.End.x   = VScreen->Width-1;
 			PrintArea.End.y   = VScreen->Height-1;
-			Origin            = PrintArea.End.x;
+			Origin            = PrintArea.End.x; // FIXME
 			if (CharArea->End.x == Origin)
 				forceInnerWordWrap = true;
 			break;
@@ -328,7 +328,7 @@ unsigned int iPrint(const char* St, const VirScreen* VScreen, const CharStat* CS
 			PrintArea.Start.y = 0;
 			PrintArea.End.x   = VScreen->Width-1;
 			PrintArea.End.y   = VScreen->Height-1;
-			Origin            = PrintArea.Start.y;
+			Origin            = PrintArea.Start.y; // FIXME
 			if (CharArea->Start.y == Origin)
 				forceInnerWordWrap = true;
 			break;
