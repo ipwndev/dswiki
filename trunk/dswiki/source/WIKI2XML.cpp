@@ -357,11 +357,18 @@ string WIKI2XML::get_list_tag(chart c, bool open)
 	{
 		string itemname = "li";
 		if (c == ':')
+		{
 			itemname = "dd";
+		}
+
 		if (open)
+		{
 			ret = "<" + ret + "><" + itemname + ">";
+		}
 		else
+		{
 			ret = "</" + itemname + "></" + ret + ">";
+		}
 	}
 	return ret;
 }
@@ -369,9 +376,12 @@ string WIKI2XML::get_list_tag(chart c, bool open)
 
 string WIKI2XML::fix_list(string & l)
 {
-	int a, b;
-	for (a = 0; a < (int) l.length() && is_list_char(l[a]); a++);
+	int a, common;
 	string newlist, pre;
+
+	for (a = 0; a < (int) l.length() && is_list_char(l[a]); a++);
+
+	// split l into list leading list characters (->newlist) and the rest (->l)
 	if (a > 0)
 	{
 		newlist = left(l, a);
@@ -379,14 +389,37 @@ string WIKI2XML::fix_list(string & l)
 			a++;		// Removing leading blanks
 		l.erase(0,a);
 	}
+
 	if (list.empty() && newlist.empty())
 		return "";
-	for (a = 0; a < (int) list.length() && a < (int) newlist.length() && list[a] == newlist[a]; a++);	// The common part, if any
 
-	for (b = a; b < (int) list.length(); b++)
-		pre = get_list_tag(list[b], false) + pre;	// Close old list tags
-	for (b = a; b < (int) newlist.length(); b++)
-		pre += get_list_tag(newlist[b], true);	// Open new ones
+	bool someClosed = false;
+	bool someOpened = false;
+
+	// The common part, if any
+	for (common = 0; common < (int) list.length() && common < (int) newlist.length() && list[common] == newlist[common]; common++);
+
+	if ( common < (int) list.length() )
+	{
+		someClosed = true;
+		for (a = common; a < (int) list.length(); a++)
+			pre.insert(0, get_list_tag(list[a], false));	// Close old list tags
+	}
+
+	if ( common < (int) newlist.length() )
+	{
+		someOpened = true;
+		for (a = common; a < (int) newlist.length(); a++)
+			pre += get_list_tag(newlist[a], true);	// Open new ones
+	}
+
+	if ( !newlist.empty() && (!someOpened) )
+	{
+		string itemname = "li";
+		if (right(newlist, 1) == ":")
+			itemname = "dd";
+		pre += "</" + itemname + "><" + itemname + ">";
+	}
 
 	list = newlist;
 	return pre;
@@ -627,16 +660,8 @@ void WIKI2XML::parse_line(string & l)
 {
 	int a;
 	string pre;
-	string oldlist = list;
-	pre += fix_list(l);
 
-	if ((!list.empty()) && (list == oldlist))
-	{
-		string itemname = "li";
-		if (right(list, 1) == ":")
-			itemname = "dd";
-		pre = "</" + itemname + "><" + itemname + ">" + pre;
-	}
+	pre += fix_list(l);
 
 	doQuotes(l);
 
