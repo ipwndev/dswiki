@@ -51,7 +51,7 @@ class Markup
 		void	Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea);
 		void	number_Of_Linebreaks(string & name, int & before, int & after);
 		string	pureText(TiXmlNode* pParent);
-		void	getElementStyle(CharStat & CStat, int & indent, bool & reallyPrint, string & alternativeText, TiXmlNode* current);
+		void	getElementStyle(CharStat & CStat, int & indent, TiXmlNode* current);
 
 		void	bringElementToTop(TiXmlElement* current);
 		void	moveLineFromTo(int from, int to);

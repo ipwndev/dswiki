@@ -40,7 +40,7 @@ VirScreen ContentWin0;
 VirScreen StatusbarVS;
 VirScreen PercentArea;
 
-#define DEBUG 0
+#define DEBUG 1
 #define DEBUG_WIKI_NR 0
 #define STRESSTEST 0
 
@@ -59,8 +59,8 @@ int main(int argc, char ** argv)
 	string markupstr;
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
-// 	string search_title = "Temp";
-	string search_title = "";
+	string search_title = "Lists";
+// 	string search_title = "";
 	string search_anchor = "";
 	string currentTitle = "";
 
