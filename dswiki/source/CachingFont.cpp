@@ -35,6 +35,7 @@ Font::Font(char* filename)
 		fclose(f);
 	}
 	_lastCached = UNICODEBLOCKS_STATIC;
+	_normalWidth = getCharacterWidth(0x20);
 }
 
 Font::~Font()
@@ -47,6 +48,11 @@ Font::~Font()
 unsigned char Font::Height()
 {
 	return _height;
+}
+
+unsigned char Font::normalWidth()
+{
+	return _normalWidth;
 }
 
 unsigned char* Font::getCharacterData(unsigned int Uni)

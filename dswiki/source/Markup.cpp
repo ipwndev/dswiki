@@ -163,62 +163,86 @@ void Markup::postProcessDOM()
 		indexMarkup->parse(indexMarkupStr);
 	}
 
-	// create the layout of the article (TODO)
+	// create the layout of the article
 	VirScreen LayoutSimulator = { 0, 0, ContentWin0.Width, 1048576 * _globals->getFont(FONT_R)->Height(), {{0,0},{0,0}}, &DnScreen};
 	InitVS(&LayoutSimulator);
-	PA_Clear16bitBg(0);
 
 	BLOCK CharArea;
 	CharArea.clear();
 
-	CharStat CopyCS = NormalCS;
+	// simulate the complete layout
+	Paint(_root, &LayoutSimulator, &CharArea, true);
+}
+
+void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool simulationPass)
+{
+	int VSLeft = VS->Left;
+	CharStat CopyCS;
 	int indent = 0;
 
-	for (TiXmlNode* currentNode = _root; currentNode; currentNode = NextNode(currentNode) )
+	for (TiXmlNode* currentNode = firstNode; currentNode && (CharArea->Start.y < (int) VS->Height); currentNode = NextNode(currentNode) )
 	{
 		getElementStyle(CopyCS, indent, currentNode);
 
+		if (simulationPass)
+		{
+			CopyCS.Fx = SIMULATE;
+		}
+
 		if (currentNode->Type() == TiXmlNode::TEXT)
 		{
-			LayoutSimulator.Left = indent;
-			LayoutSimulator.Width = ContentWin0.Width - indent;
-			InitVS(&LayoutSimulator);
+			VS->Left = VSLeft + indent;
+			VS->Width = ContentWin0.Width - indent;
+			InitVS(VS);
 
 			string text = currentNode->ValueStr();
-			iPrint(text,&LayoutSimulator,&CopyCS,&CharArea);
-
-			PA_WaitFor(Pad.Newpress.Anykey);
+			iPrint(text,VS,&CopyCS,CharArea,-1);
 		}
 		else if (currentNode->Type() == TiXmlNode::ELEMENT)
 		{
 			TiXmlElement* currentElement = (TiXmlElement*) currentNode;
 			string name = currentElement->ValueStr();
 
-			int lineNumber = CharArea.Start.y / _globals->getFont(FONT_R)->Height();
-			currentElement->SetAttribute("l",lineNumber);
-
-			if (name=="li")
+			if (simulationPass)
 			{
-				LayoutSimulator.Left = indent - 12;
-				LayoutSimulator.Width = ContentWin0.Width - indent + 12;
-				InitVS(&LayoutSimulator);
-				CharArea.Start.x = 0;
-				iPrint("*",&LayoutSimulator,&CopyCS,&CharArea);
-				CharArea.Start.x = 0;
-				PA_WaitFor(Pad.Newpress.Anykey);
+				// add offset information to an element only in the simulation pass
+				int lineNumber = CharArea->Start.y / _globals->getFont(FONT_R)->Height();
+				currentElement->SetAttribute("l",lineNumber);
+				currentElement->SetAttribute("s",CharArea->Start.x);
+			}
+
+			// treatment of special elements
+			if (name == "wl")
+			{
+				// a link, we have to keep track of all its clickable bounding boxes
+			}
+			else if (name == "li")
+			{
+				// element of a list, print either an asterisk or the correct enumeration number
+				VS->Left = VSLeft + indent - 2 * _globals->getFont(FONT_R)->normalWidth();
+				VS->Width = ContentWin0.Width - indent + 2 * _globals->getFont(FONT_R)->normalWidth();
+				InitVS(VS);
+				CharArea->Start.x = 0;
+				iPrint(get_li_string(currentElement),VS,&CopyCS,CharArea);
+				CharArea->Start.x -= 2 * _globals->getFont(FONT_R)->normalWidth();
+				if (CharArea->Start.x < 0)
+					CharArea->Start.x = 0;
 			}
 		}
 	}
 
-	_numberOfLines = CharArea.Start.y / _globals->getFont(FONT_R)->Height() + 1;
+	if (simulationPass)
+	{
+		_numberOfLines = CharArea->Start.y / _globals->getFont(FONT_R)->Height() + 1;
+	}
 }
-
 
 void Markup::getElementStyle(CharStat & CStat, int & indent, TiXmlNode* current)
 {
 	if (current == _root)
 	{
 		CStat = NormalCS;
+		CStat.Color = _globals->textColor();
 		indent = 0;
 	}
 	else
@@ -283,12 +307,31 @@ void Markup::getElementStyle(CharStat & CStat, int & indent, TiXmlNode* current)
 			}
 			else if (name=="dl"||name=="ul"||name=="ol")
 			{
-				indent += 12;
+				indent += 2 * _globals->getFont(FONT_R)->normalWidth();
 			}
 		}
 	}
 }
 
+string Markup::get_li_string(TiXmlElement* current)
+{
+	TiXmlNode* pParent = current->Parent();
+	if (pParent && pParent->Type() == TiXmlNode::ELEMENT)
+	{
+		string name = pParent->ValueStr();
+		if (name == "ul")
+			return "*\u00a0";
+		else if (name == "ol")
+		{
+			int pos = 0;
+			for (TiXmlNode* c = current; c; c = c->PreviousSibling() )
+				pos++;
+			string ret = val(pos)+".\u00a0";
+			return ret;
+		}
+	}
+	return "";
+}
 
 string Markup::pureText(TiXmlNode* pParent)
 {
@@ -364,7 +407,6 @@ void Markup::draw(bool force)
 
 		if (force || (_colorChangeOnPage && (_currentLine != _lastDisplayedLine))) // TODO treat the latter case more intelligent
 		{
-// 			PA_OutputText(1,25,5,"force");
 			DMA_Copy(Blank,
 					 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
 					 (_linesPerScreen * h) << 8,
@@ -380,7 +422,6 @@ void Markup::draw(bool force)
 		}
 		else if (_colorChangeOnPage && (_currentLine == _lastDisplayedLine))
 		{
-// 			PA_OutputText(1,25,5,"soft ");
 			first = _currentLine - _linesPerScreen;
 			last = _currentLine + _linesPerScreen - 1;
 		}
@@ -389,10 +430,9 @@ void Markup::draw(bool force)
 			// only scroll
 			int textDelta = _currentLine - _lastDisplayedLine;
 
-// 			PA_OutputText(1,25,5,"%d     ",textDelta);
-
 			if ( (textDelta <= -2 * _linesPerScreen) || (textDelta >= 2 * _linesPerScreen) )
 			{
+				// completely scrolled out
 				DMA_Copy((void*) Blank,
 						 (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
 						  (_linesPerScreen * h) << 8,
@@ -410,7 +450,7 @@ void Markup::draw(bool force)
 			{
 				// big scroll, copy text from top to bottom screen
 				// scrolled up, the text moves down
-				// hard case for DMA_Copy
+				// harder case for DMA_Copy
 				DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
 						  (void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + (-_linesPerScreen - textDelta) * h) << 8)),
 						   ((2*_linesPerScreen + textDelta) * h) << 8,
@@ -436,7 +476,7 @@ void Markup::draw(bool force)
 			{
 				// small scroll, moving text on every screen, and from top to bottom
 				// scrolled up, the text moves down
-				// hard case for DMA_Copy
+				// harder case for DMA_Copy
 				for (int i = _linesPerScreen + textDelta - 1; i >= 0; i--)
 				{
 					DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + i * h) << 8)),
@@ -470,7 +510,7 @@ void Markup::draw(bool force)
 			{
 				// small scroll, moving text on every screen, and from bottom to top
 				// scrolled down, the text moves up
-				// easy case for DMA_Copy
+				// easier case for DMA_Copy
 				DMA_Copy((void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y + textDelta * h) << 8)),
 						  (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
 						   ((_linesPerScreen - textDelta) * h) << 8,
@@ -498,7 +538,7 @@ void Markup::draw(bool force)
 			{
 				// big scroll, copy text from bottom to top screen
 				// scrolled down, the text moves up
-				// easy case for DMA_Copy
+				// easier case for DMA_Copy
 				DMA_Copy((void*) (DnScreen.Ptr + ((ContentWin0.AbsoluteBound.Start.y + (textDelta - _linesPerScreen) * h) << 8)),
 						  (void*) (UpScreen.Ptr + ((ContentWin1.AbsoluteBound.Start.y ) << 8)),
 						   ((2 * _linesPerScreen - textDelta) * h) << 8,
@@ -522,37 +562,66 @@ void Markup::draw(bool force)
 			}
 		}
 
-
 		if (first < 0)
 			first = 0;
 		if (last > _numberOfLines - 1 )
 			last = _numberOfLines - 1;
 
-		CharStat CopyCS = NormalCS;
-		CopyCS.Color = PA_RGB(PA_RandMinMax(0,31),PA_RandMinMax(0,5),PA_RandMinMax(0,31));
-		BLOCK CharArea;
-		CharArea.clear();
-
-		if (first < _currentLine)
+		if ( last < _currentLine )
 		{
-			CharArea.Start.y = (first - _currentLine + _linesPerScreen) * h; // Important part
-			for (int i=first; (i<=last) && (i<_currentLine); i++)
-			{
-				iPrint("█ Line "+val(i)+"\n",&ContentWin1,&CopyCS,&CharArea);
-			}
-			CharArea.clear(); // Important part
-			for (int i=_currentLine; (i<=last) && (i < _currentLine + _numberOfLines); i++)
-			{
-				iPrint("█ Line "+val(i)+"\n",&ContentWin0,&CopyCS,&CharArea);
-			}
+			// only repaint on top screen
+			VirScreen repaintArea = { ContentWin1.Left, ContentWin1.Top + (first - _currentLine + _linesPerScreen) * h, ContentWin1.Width, (last - first + 1) * h, {{0,0},{0,0}}, &UpScreen};
+			InitVS(&repaintArea);
+
+			int line = 0;
+			int offset = 0;
+			BLOCK CharArea;
+
+			TiXmlNode* before = findElementBeforeLine(first, line, offset);
+			CharArea.clear();
+			CharArea.Start.x = offset;
+			CharArea.Start.y -= (first - line) * h;
+			Paint(before, &repaintArea, &CharArea, false);
+		}
+		else if ( first >= _currentLine)
+		{
+			// only repaint on bottom screen
+			VirScreen repaintArea = { ContentWin0.Left, ContentWin0.Top + (first-_currentLine) * h, ContentWin0.Width, (last - first + 1) * h, {{0,0},{0,0}}, &DnScreen};
+			InitVS(&repaintArea);
+
+			int line = 0;
+			int offset = 0;
+			BLOCK CharArea;
+
+			TiXmlNode* before = findElementBeforeLine(first, line, offset);
+			CharArea.clear();
+			CharArea.Start.x = offset;
+			CharArea.Start.y -= (first - line) * h;
+			Paint(before, &repaintArea, &CharArea, false);
 		}
 		else
 		{
-			CharArea.Start.y = (first - _currentLine) * h; // Important part
-			for (int i=first; (i<=last) && (i < _currentLine + _numberOfLines); i++)
-			{
-				iPrint("█ Line "+val(i)+"\n",&ContentWin0,&CopyCS,&CharArea);
-			}
+			// repaint on both screens
+			VirScreen repaintArea_top = { ContentWin1.Left, ContentWin1.Top + (first - _currentLine + _linesPerScreen) * h, ContentWin1.Width, (_currentLine - first) * h, {{0,0},{0,0}}, &UpScreen};
+			InitVS(&repaintArea_top);
+			VirScreen repaintArea_bottom = { ContentWin0.Left, ContentWin0.Top, ContentWin0.Width, (last - _currentLine + 1) * h, {{0,0},{0,0}}, &DnScreen};
+			InitVS(&repaintArea_bottom);
+
+			int line = 0;
+			int offset = 0;
+			BLOCK CharArea;
+
+			TiXmlNode* before = findElementBeforeLine(first, line, offset);
+			CharArea.clear();
+			CharArea.Start.x = offset;
+			CharArea.Start.y -= (first - line) * h;
+			Paint(before, &repaintArea_top, &CharArea, false);
+
+			before = findElementBeforeLine(_currentLine, line, offset);
+			CharArea.clear();
+			CharArea.Start.x = offset;
+			CharArea.Start.y -= (_currentLine - line) * h;
+			Paint(before, &repaintArea_bottom, &CharArea, false);
 		}
 
 		_lastDisplayedLine = _currentLine;
@@ -560,6 +629,66 @@ void Markup::draw(bool force)
 	}
 }
 
+TiXmlNode* Markup::findElementBeforeLine(int lineNo, int & line, int & offset) // TODO make this fast by traversing the tree in a clever way
+{
+	line = 0;
+	offset = 0;
+
+	int line_best = 0;
+	int offset_best = 0;
+
+	if (lineNo == 0)
+		return _root;
+
+	TiXmlElement* currentElement;
+	TiXmlNode* beforeLineElement = _root;
+
+	for (TiXmlNode* currentNode = _root; currentNode; currentNode = NextNode(currentNode) )
+	{
+		if (currentNode->Type() == TiXmlNode::ELEMENT)
+		{
+			currentElement = (TiXmlElement*) currentNode;
+
+			int ival;
+			bool lineRead = false;
+			bool offsetRead = false;
+
+			TiXmlAttribute* pAttrib = currentElement->FirstAttribute();
+			while (pAttrib)
+			{
+				string name = pAttrib->Name();
+				if ( (name == "l") && (pAttrib->QueryIntValue(&ival) == TIXML_SUCCESS) )
+				{
+					lineRead = true;
+					line = ival;
+				}
+				else if ( (name == "s") && (pAttrib->QueryIntValue(&ival) == TIXML_SUCCESS) )
+				{
+					offsetRead = true;
+					offset = ival;
+				}
+
+				if (lineRead && offsetRead)
+					break;
+				else
+					pAttrib=pAttrib->Next();
+			}
+
+			if (line < lineNo)
+			{
+				line_best = line;
+				offset_best = offset;
+				beforeLineElement = currentNode;
+			}
+			else
+				break;
+		}
+	}
+
+	offset = offset_best;
+	line = line_best;
+	return beforeLineElement;
+}
 
 bool Markup::evaluateClick(int x, int y)
 {
@@ -777,7 +906,7 @@ void Markup::scrollPageUp()
 	}
 	else
 	{
-		scrollToLine(_currentLine - ContentWin1.Height / _globals->getFont(FONT_R)->Height() );
+		scrollToLine(_currentLine - ContentWin1.Height / _globals->getFont(FONT_R)->Height() - 3);
 	}
 }
 
@@ -789,7 +918,7 @@ void Markup::scrollPageDown()
 	}
 	else
 	{
-		scrollToLine(_currentLine + ContentWin1.Height / _globals->getFont(FONT_R)->Height() );
+		scrollToLine(_currentLine + ContentWin1.Height / _globals->getFont(FONT_R)->Height() + 3);
 	}
 }
 

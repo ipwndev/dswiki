@@ -46,15 +46,17 @@ class Markup
 
 	private:
 		void	postProcessDOM();
-		void	build_index(vector <TiXmlNode*> & index);
 
-		void	Paint(TiXmlNode* parent, CharStat* CS, BLOCK* CharArea);
-		void	number_Of_Linebreaks(string & name, int & before, int & after);
-		string	pureText(TiXmlNode* pParent);
+		void	build_index(vector <TiXmlNode*> & index);
 		void	getElementStyle(CharStat & CStat, int & indent, TiXmlNode* current);
+		string	get_li_string(TiXmlElement* current);
+
+		void	Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool simulationPass);
+		string	pureText(TiXmlNode* pParent);
 
 		void	bringElementToTop(TiXmlElement* current);
 		void	moveLineFromTo(int from, int to);
+		TiXmlNode* findElementBeforeLine(int lineNo, int & line, int & offset);
 
 		TiXmlNode*	PreviousNode(TiXmlNode* current);
 		TiXmlNode*	NextNode(TiXmlNode* current, bool skipChildren = false, bool skipSiblings = false);
