@@ -40,8 +40,10 @@ class Font
 		unsigned char getCharacterWidth(unsigned int Uni) { return (getCharacterData(Uni)[0]); };
 		bool initOK();
 		unsigned char Height();
+		unsigned char normalWidth();
 	private:
 		unsigned char _height;
+		unsigned char _normalWidth;
 		bool _initOK;
 		char _filename[32];
 		int* blockImpressions;
