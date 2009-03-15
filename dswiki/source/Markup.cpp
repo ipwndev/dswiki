@@ -21,6 +21,7 @@ Markup::Markup()
 	_root = NULL;
 	_end = NULL;
 	_currentHighlightedLink = NULL;
+	_lastHighlightedLink = NULL;
 
 	_showing_index = false;
 	_colorChangeOnPage = false;
@@ -216,6 +217,9 @@ void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool si
 			{
 				// a link, we have to keep track of all its clickable bounding boxes
 			}
+			else if (name == "wi")
+			{
+			}
 			else if (name == "li")
 			{
 				// element of a list, print either an asterisk or the correct enumeration number
@@ -291,6 +295,10 @@ void Markup::getElementStyle(CharStat & CStat, int & indent, TiXmlNode* current)
 			else if (name=="wi")
 			{
 				CStat.Color = _globals->imageColor();
+			}
+			else if (name=="math")
+			{
+				CStat.Color = PA_RGB(15,15,15);
 			}
 			else if (name=="pre")
 			{
@@ -721,23 +729,30 @@ void Markup::build_index(vector <TiXmlNode*> & index)
 
 void Markup::getCurrentLink(string & title, string & anchor)
 {
-	title = "";
-	anchor = "";
-
-	if (_currentHighlightedLink)
+	if (_showing_index)
 	{
-		TiXmlNode* child = _currentHighlightedLink->FirstChild();
-		if (child)
+		indexMarkup->getCurrentLink(title, anchor);
+	}
+	else
+	{
+		title = "";
+		anchor = "";
+
+		if (_currentHighlightedLink)
 		{
-			if (child->ValueStr() == "wp")
+			TiXmlNode* child = _currentHighlightedLink->FirstChild();
+			if (child)
 			{
-				child = child->FirstChild();
-				if (child)
+				if (child->ValueStr() == "wp")
 				{
-					string val = child->ValueStr();
-					title = val.substr(0,val.find("#"));
-					if (val.find("#") != string::npos )
-						anchor = val.substr(val.find("#"));
+					child = child->FirstChild();
+					if (child)
+					{
+						string val = child->ValueStr();
+						title = val.substr(0,val.find("#"));
+						if (val.find("#") != string::npos )
+							anchor = val.substr(val.find("#")+1);
+					}
 				}
 			}
 		}
@@ -748,6 +763,7 @@ void Markup::getFirstLink(string & title, string & anchor)
 {
 	_currentHighlightedLink = NextLink(_root);
 	getCurrentLink(title, anchor);
+	unselect();
 }
 
 TiXmlElement* Markup::NextLink(TiXmlNode* current)
@@ -817,45 +833,38 @@ TiXmlNode* Markup::PreviousNode(TiXmlNode* current)
 
 void Markup::scrollToLine(int lineNo)
 {
-	if (lineNo < 0)
+	if (_showing_index)
 	{
-		_currentLine = 0;
-	}
-	else if (lineNo > _numberOfLines - 1)
-	{
-		_currentLine = _numberOfLines - 1;
+		indexMarkup->scrollToLine(lineNo);
 	}
 	else
 	{
-		_currentLine = lineNo;
+		if (lineNo < 0)
+		{
+			_currentLine = 0;
+		}
+		else if (lineNo > _numberOfLines - 1)
+		{
+			_currentLine = _numberOfLines - 1;
+		}
+		else
+		{
+			_currentLine = lineNo;
+		}
 	}
 }
 
 void Markup::bringElementToTop(TiXmlElement* current)
 {
-	if ( current )
-	{
-		int ival;
-		TiXmlAttribute* pAttrib = current->FirstAttribute();
-		while (pAttrib)
-		{
-			string name = pAttrib->Name();
-			if ( (name == "l") && (pAttrib->QueryIntValue(&ival) == TIXML_SUCCESS) )
-			{
-				scrollToLine(ival);
-				return;
-			}
-			pAttrib=pAttrib->Next();
-		}
-	}
+	int line = getLine(current);
+	if (line != -1)
+		scrollToLine(line);
 }
 
 void Markup::jumpToAnchor(string anchor)
 {
 	if ( index.find(anchor) != index.end() )
-	{
 		bringElementToTop((TiXmlElement*) index[anchor]);
-	}
 }
 
 void Markup::unselect()
@@ -868,6 +877,7 @@ void Markup::unselect()
 	{
 		if(_currentHighlightedLink)
 		{
+			_lastHighlightedLink = _currentHighlightedLink;
 			_currentHighlightedLink = NULL;
 			_colorChangeOnPage = true;
 		}
@@ -906,7 +916,7 @@ void Markup::scrollPageUp()
 	}
 	else
 	{
-		scrollToLine(_currentLine - ContentWin1.Height / _globals->getFont(FONT_R)->Height() - 3);
+		scrollToLine(_currentLine - ContentWin1.Height / _globals->getFont(FONT_R)->Height() );
 	}
 }
 
@@ -918,7 +928,7 @@ void Markup::scrollPageDown()
 	}
 	else
 	{
-		scrollToLine(_currentLine + ContentWin1.Height / _globals->getFont(FONT_R)->Height() + 3);
+		scrollToLine(_currentLine + ContentWin1.Height / _globals->getFont(FONT_R)->Height() );
 	}
 }
 
@@ -930,31 +940,27 @@ void Markup::selectPreviousLink()
 	}
 	else
 	{
+		_lastHighlightedLink = _currentHighlightedLink;
+
 		if (_currentHighlightedLink)
-		{
 			_currentHighlightedLink = PreviousLink(_currentHighlightedLink);
-			_colorChangeOnPage = true;
-		}
 		else
 		{
-			_currentHighlightedLink = PreviousLink(_end);
-			if (_currentHighlightedLink)
-			{
-				_colorChangeOnPage = true;
-			}
+			for (_currentHighlightedLink = PreviousLink(_end); _currentHighlightedLink && getLine(_currentHighlightedLink) >= _currentLine; _currentHighlightedLink = PreviousLink(_currentHighlightedLink));
+
+			if (!_currentHighlightedLink)
+				_currentHighlightedLink = PreviousLink(_end);
+		}
+
+		if (_currentHighlightedLink != _lastHighlightedLink)
+		{
+			_colorChangeOnPage = true;
 		}
 
 		if (_currentHighlightedLink)
 		{
 			bringElementToTop(_currentHighlightedLink);
-
-			int halfLinesPerScreen = ContentWin1.Height / (2*_globals->getFont(FONT_R)->Height());
-			for (int i=0;i<halfLinesPerScreen;i++)
-			{
-				scrollLineUp();
-			}
 		}
-
 	}
 }
 
@@ -966,32 +972,53 @@ void Markup::selectNextLink()
 	}
 	else
 	{
+		_lastHighlightedLink = _currentHighlightedLink;
+
 		if (_currentHighlightedLink)
-		{
 			_currentHighlightedLink = NextLink(_currentHighlightedLink);
-			_colorChangeOnPage = true;
-		}
 		else
 		{
-			_currentHighlightedLink = NextLink(_root);
-			if (_currentHighlightedLink)
-			{
-				_colorChangeOnPage = true;
-			}
+			for (_currentHighlightedLink = NextLink(_root); _currentHighlightedLink && getLine(_currentHighlightedLink) < _currentLine; _currentHighlightedLink = NextLink(_currentHighlightedLink));
+
+			if (_currentLine == _numberOfLines - 1)
+				_currentHighlightedLink = NextLink(_root);
+
+			if (!_currentHighlightedLink)
+				_currentHighlightedLink = NextLink(_root);
+		}
+
+		if (_currentHighlightedLink != _lastHighlightedLink)
+		{
+			_colorChangeOnPage = true;
 		}
 
 		if (_currentHighlightedLink)
 		{
 			bringElementToTop(_currentHighlightedLink);
-
-			int halfLinesPerScreen = ContentWin1.Height / (2*_globals->getFont(FONT_R)->Height());
-			for (int i=0;i<halfLinesPerScreen;i++)
-			{
-				scrollLineUp();
-			}
 		}
 	}
 }
+
+
+int Markup::getLine(TiXmlElement* current)
+{
+	if ( current )
+	{
+		int ival;
+		TiXmlAttribute* pAttrib = current->FirstAttribute();
+		while (pAttrib)
+		{
+			string name = pAttrib->Name();
+			if ( (name == "l") && (pAttrib->QueryIntValue(&ival) == TIXML_SUCCESS) )
+			{
+				return ival;
+			}
+			pAttrib=pAttrib->Next();
+		}
+	}
+	return -1;
+}
+
 
 int Markup::currentPercent()
 {
@@ -1046,4 +1073,14 @@ bool Markup::toggleIndex()
 		return true;
 	}
 	return false;
+}
+
+bool Markup::showingArticle()
+{
+	return !_showing_index;
+}
+
+void Markup::showArticle()
+{
+	_showing_index = false;
 }

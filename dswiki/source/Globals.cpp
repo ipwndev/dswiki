@@ -213,11 +213,11 @@ int Globals::activeLinkColor()
 {
 	if (!_isInverted)
 	{
-		return PA_RGB(31,0,0);
+		return PA_RGB(0,27,0);
 	}
 	else
 	{
-		return PA_RGB(31,0,0);
+		return PA_RGB(0,27,0);
 	}
 }
 

@@ -25,6 +25,8 @@ class Markup
 		void	draw(bool force = false);
 
 		bool	toggleIndex();
+		bool	showingArticle();
+		void	showArticle();
 
 		void	scrollToLine(int lineNo);
 		void	scrollPageUp();
@@ -57,6 +59,7 @@ class Markup
 		void	bringElementToTop(TiXmlElement* current);
 		void	moveLineFromTo(int from, int to);
 		TiXmlNode* findElementBeforeLine(int lineNo, int & line, int & offset);
+		int		getLine(TiXmlElement* current);
 
 		TiXmlNode*	PreviousNode(TiXmlNode* current);
 		TiXmlNode*	NextNode(TiXmlNode* current, bool skipChildren = false, bool skipSiblings = false);
@@ -67,6 +70,7 @@ class Markup
 		TiXmlNode*				_root;
 		TiXmlNode*				_end;
 		TiXmlElement*			_currentHighlightedLink;
+		TiXmlElement*			_lastHighlightedLink;
 
 		bool					_loadOK;
 		bool					_showing_index;

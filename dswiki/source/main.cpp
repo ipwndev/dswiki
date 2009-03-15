@@ -40,8 +40,13 @@ VirScreen ContentWin0;
 VirScreen StatusbarVS;
 VirScreen PercentArea;
 
+// debug level
+// 0 = release
+// 1 = skip splashscreens, but normal open dialogs
+// 2 = direct loading of the given wiki
 #define DEBUG 0
 #define DEBUG_WIKI_NR 0
+
 #define STRESSTEST 0
 
 int main(int argc, char ** argv)
@@ -59,9 +64,13 @@ int main(int argc, char ** argv)
 	string markupstr;
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
-// 	string search_title = "Temp";
-	string search_title = "";
-	string search_anchor = "";
+
+	string search_title			= "Temp";
+// 	string search_title			= "";
+	string search_anchor		= "";
+	bool setNewHistoryItem		= true;
+	int forcedLine				= 0;
+
 	string currentTitle = "";
 
 	vector<string> possibleWikis;
@@ -69,9 +78,9 @@ int main(int argc, char ** argv)
 	int    currentWikiNumber = -1;
 
 	bool chooseNewWiki			= false; // the first choice is handled differently
-	bool loadNewWiki			= true;
+	bool loadNewWiki			= false;
 	bool loadInternalWiki		= false;
-	bool loadArticle			= true;
+	bool loadArticle			= false;
 	bool search					= false;
 	bool showMenu				= false;
 
@@ -82,10 +91,8 @@ int main(int argc, char ** argv)
 	bool updatePercent			= false;
 	bool suggestInRealTime		= true;
 
-	bool setNewHistoryItem		= true;
-	bool textBrowserMode		= false;
+	bool textBrowserMode		= true; // TODO false in the release
 
-	int forcedLine				= 0;
 	int stylusDownLine			= 0;
 
 	POINT stylusPosition		= {0,0};
@@ -110,7 +117,7 @@ int main(int argc, char ** argv)
 	PA_Init16bitBg(0, 3);
 	PA_Init16bitBg(1, 3);
 	PA_InitText(1,2);
-#if DEBUG
+#if DEBUG > 0
 	PA_InitText(0,2);
 #endif
 
@@ -139,7 +146,7 @@ int main(int argc, char ** argv)
 		}
 	}
 
-#if !DEBUG
+#if DEBUG == 0
 	PA_SetBrightness(0,-31);
 	PA_SetBrightness(1,-31);
 	// intro screens from EFS
@@ -231,7 +238,7 @@ int main(int argc, char ** argv)
 
 	PA_SetTextCol (0, 0, 0, 0);
 	PA_SetTextCol (1, 0, 0, 0);
-#if !DEBUG
+#if DEBUG == 0
 	PA_InitKeyboard(2);
 	PA_KeyboardOut();
 
@@ -247,7 +254,7 @@ int main(int argc, char ** argv)
 		dirclose(dswikiDir);
 	}
 	else
-	{
+	{ // TODO mkdir /dswiki/
 		PA_OutputText(1,0,0,"Checking \"/dswiki/\" %c1failed%c0!");
 		return 1;
 	}
@@ -335,35 +342,100 @@ int main(int argc, char ** argv)
 	g->setPercentIndicator(p);
 
 	// use graphical interface from now on
-	WikiChooser = new TextBox(possibleWikis);
-	WikiChooser->setTitle("Choose your Wiki");
-	WikiChooser->allowCancel(false);
+#if DEBUG < 2
+	FILE* firstload_file = fopen("efs:/dswiki/firstload","rb");
+	if (firstload_file)
+	{
+		char c;
+		fread(&c, 1, 1, firstload_file);
+		if (c == '1')
+		{
+			CharArea.clear();
+			string message = "Welcome!\n\nThis is the first time you start this version of DSwiki. You have these options:\n\n1. Take the tutorial (recommended for new users, but even older users can benefit). The tutorial can always be run from the menu.\n\n2. Go along and open an installed wiki.\n\n[Press any key]";
+			iPrint(message ,&ContentWin0, &NormalCS, &CharArea);
+			PA_WaitFor(Pad.Newpress.Anykey || Stylus.Newpress);
 
-#if !DEBUG
-	if ( possibleWikis.size() > 1 )
-	{
-		currentWikiNumber = WikiChooser->run();
-		currentWiki = possibleWikis[currentWikiNumber];
+			vector<string> menu;
+			menu.push_back("1. Take the tutorial");	// 0
+			menu.push_back("2. Continue");			// 1
+
+			TextBox Options(menu);
+			Options.setTitle("First start action");
+			Options.allowCancel(false);
+			Options.setCurrentPosition(0);
+
+			int choice = Options.run();
+
+			switch (choice)
+			{
+				case 0:
+				{
+					loadNewWiki = true;
+					loadInternalWiki = true;
+					currentWiki = "manual";
+					search_title = "Tutorial 01";
+					search_anchor.clear();
+					setNewHistoryItem = true;
+					forcedLine = 0;
+					break;
+				}
+				case 1:
+				default:
+					break;
+			}
+
+		}
+		fclose(firstload_file);
+		c = '0';
+		firstload_file = fopen("efs:/dswiki/firstload","wb");
+		if (firstload_file)
+		{
+			fwrite(&c,1,1,firstload_file);
+			fclose(firstload_file);
+		}
 	}
-	else if ( possibleWikis.size() == 1 )
+
+	if (!loadNewWiki)
 	{
-		currentWikiNumber = 0;
-		currentWiki = possibleWikis[0];
+		WikiChooser = new TextBox(possibleWikis);
+		WikiChooser->setTitle("Choose your Wiki");
+		WikiChooser->allowCancel(false);
+
+		if ( possibleWikis.size() > 1 )
+		{
+			currentWikiNumber = WikiChooser->run();
+			currentWiki = possibleWikis[currentWikiNumber];
+			loadNewWiki = true;
+			loadInternalWiki = false;
+		}
+		else if ( possibleWikis.size() == 1 )
+		{
+			currentWikiNumber = 0;
+			currentWiki = possibleWikis[0];
+			loadNewWiki = true;
+			loadInternalWiki = false;
+		}
+		else
+		{
+			loadNewWiki = true;
+			loadInternalWiki = true;
+			currentWikiNumber = -1;
+			currentWiki = "manual";
+			search_title = "Troubleshooting";
+			search_anchor.clear();
+			setNewHistoryItem = true;
+			forcedLine = 0;
+		}
 	}
-	else
-	{
-		loadInternalWiki = true;
-		currentWikiNumber = -1;
-		currentWiki = "manual";
-		search_title = "Troubleshooting";
-	}
+
 #else
+	loadNewWiki = true;
+	loadInternalWiki = false;
 	currentWikiNumber = DEBUG_WIKI_NR;
 	currentWiki = possibleWikis[DEBUG_WIKI_NR];
+	setNewHistoryItem = true;
+	forcedLine = 0;
 #endif
-
-
-	FillVS(&Titlebar, PA_RGB( 9,16,28));
 
 	g->getStatusbar()->clear();
 	g->getPercentIndicator()->clear();
@@ -437,7 +509,7 @@ int main(int argc, char ** argv)
 
 		if (loadNewWiki)
 		{
-			// Loads a new wiki. The variables 'currentWiki' and 'loadInternalWiki' have to be set correctly
+			// Loads a new wiki. The variables 'currentWiki' (string) and 'loadInternalWiki' (bool) have to be set correctly
 			g->getStatusbar()->display("Loading " + currentWiki + "...");
 			if (t)
 				delete t;
@@ -515,7 +587,8 @@ int main(int argc, char ** argv)
 			if (newLine != markup->currentLine())
 			{
 				markup->scrollToLine(newLine);
-				h->updateCurrentLine(markup->currentLine());
+				if (markup->showingArticle())
+					h->updateCurrentLine(markup->currentLine());
 				updateContent = true;
 			}
 		}
@@ -578,13 +651,26 @@ int main(int argc, char ** argv)
 		{
 			search_title.clear();
 			search_anchor.clear();
-			if (markup)
+			markup->getCurrentLink(search_title, search_anchor);
+			if (!search_title.empty())
 			{
-				markup->getCurrentLink(search_title, search_anchor);
+				setNewHistoryItem = true;
+				loadArticle = true;
+				forcedLine = 0;
 			}
-			forcedLine = 0;
-			setNewHistoryItem = true;
-			loadArticle = true;
+			else if (!search_anchor.empty())
+			{
+				markup->showArticle();
+				markup->jumpToAnchor(search_anchor);
+				h->updateCurrentLine(markup->currentLine());
+				updateContent_force = true;
+			}
+			else
+			{
+				setNewHistoryItem = true;
+				loadArticle = true;
+				forcedLine = 0;
+			}
 		}
 
 		if ( Pad.Released.B && (Pad.Downtime.B<60) )
@@ -652,6 +738,7 @@ int main(int argc, char ** argv)
 			if ( (chosenHistItem>=0) && (chosenHistItem != h->getCurrentPosition()) )
 			{
 				h->setCurrentPosition(chosenHistItem);
+				forcedLine = h->currentLine();
 				setNewHistoryItem = false;
 				search_title = history_vec[chosenHistItem];
 				loadArticle = true;
@@ -671,11 +758,19 @@ int main(int argc, char ** argv)
 
 #if STRESSTEST
 		loadArticle = true;
+		search_title.clear();
+		search_anchor.clear();
+		setNewHistoryItem = true;
+		forcedLine = 0;
 #endif
 
+		// load an article
+		// search_title (string), search_anchor (string) and setNewHistoryItem (bool) have to be set
+		// if search_anchor is empty, we scroll to forced_line (int)
 		if (loadArticle)
 		{
-			delete suchergebnis;
+			if (suchergebnis)
+				delete suchergebnis;
 			suchergebnis = NULL;
 
 			if (search_title.empty())
@@ -712,6 +807,8 @@ int main(int argc, char ** argv)
 					ArticleSearchResult* temp = suchergebnis;
 					redirectMessage += "("+temp->TitleInArchive()+" \u2192)\n";
 					suchergebnis = redirection;
+
+					search_anchor = suchergebnis->Anchor();
 
 					markupstr.clear();
 					g->getStatusbar()->display("Following redirection...");
@@ -754,11 +851,18 @@ int main(int argc, char ** argv)
 
 				g->getStatusbar()->displayClearAfter("Processing complete",30);
 
-				markup->scrollToLine(forcedLine); // TODO: or scroll to suchergebnis->Anchor()
+				if (search_anchor.empty())
+				{
+					markup->scrollToLine(forcedLine);
+				}
+				else
+				{
+					markup->jumpToAnchor(search_anchor);
+				}
 
 				if (setNewHistoryItem)
 				{
-					h->insert(currentTitle, forcedLine);
+					h->insert(currentTitle, markup->currentLine());
 				}
 
 				updateTitle = true;
@@ -1180,7 +1284,8 @@ int main(int argc, char ** argv)
 			menu.push_back("Load Bookmark");		// 0
 			menu.push_back("Add Bookmark");			// 1
 			menu.push_back("Help/Manual");			// 2
-			menu.push_back("Invert color scheme");	// 3
+			menu.push_back("Tutorial");				// 3
+			menu.push_back("Invert color scheme");	// 4
 
 			TextBox Options(menu);
 			Options.setTitle("Options");
@@ -1221,6 +1326,14 @@ int main(int argc, char ** argv)
 					break;
 				}
 				case 3:
+				{
+					loadNewWiki = true;
+					loadInternalWiki = true;
+					currentWiki = "manual";
+					search_title = "Tutorial 01";
+					break;
+				}
+				case 4:
 				{
 					g->toggleInverted();
 					break;
