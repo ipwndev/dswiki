@@ -65,8 +65,8 @@ int main(int argc, char ** argv)
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
 
-	string search_title			= "Temp";
-// 	string search_title			= "";
+// 	string search_title			= "Temp";
+	string search_title			= "";
 	string search_anchor		= "";
 	bool setNewHistoryItem		= true;
 	int forcedLine				= 0;
@@ -702,11 +702,11 @@ int main(int argc, char ** argv)
 			textBrowserMode = !textBrowserMode;
 			if (textBrowserMode)
 			{
-				g->getStatusbar()->displayClearAfter("Up/Down navigate between links",40);
+				g->getStatusbar()->displayClearAfter("Textbrowser-mode active",40);
 			}
 			else
 			{
-				g->getStatusbar()->displayClearAfter("Up/Down scroll lines",40);
+				g->getStatusbar()->displayClearAfter("Up/Down scrolling lines",40);
 			}
 		}
 

@@ -286,8 +286,8 @@ void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool si
 				VS->Width = ContentWin0.Width - indent;
 				InitVS(VS);
 
-				string content = pureText(currentNode);
-				iPrint(content,VS,&CopyCS,CharArea,-1);
+// 				string content = pureText(currentNode);
+				iPrint("<template snipped>",VS,&CopyCS,CharArea,-1);
 				while(currentNode->LastChild())
 					currentNode = currentNode->LastChild();
 			}
