@@ -57,14 +57,14 @@ Markup::~Markup()
 }
 
 
-void Markup::parse(string & Str, bool interpreteWikiMarkup)
+void Markup::parse(string & Str, int type)
 {
 	// Transform the wikimarkup-string into proper XML-markup
 	_globals->getStatusbar()->display("WikiMarkup->XML");
 	WIKI2XML* w2x = new WIKI2XML();
 	w2x->setGlobals(_globals);
 	// Transform
-	w2x->parse(Str, interpreteWikiMarkup);
+	w2x->parse(Str, type);
 	// Str was modified, so we can delete this helper class
 	delete w2x;
 	w2x = NULL;
@@ -216,9 +216,80 @@ void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool si
 			if (name == "wl")
 			{
 				// a link, we have to keep track of all its clickable bounding boxes
+				VS->Left = VSLeft + indent;
+				VS->Width = ContentWin0.Width - indent;
+				InitVS(VS);
+
+				string content = pureText(currentNode);
+
+				if (simulationPass)
+				{
+					// print the link text successively to calculate all bounding boxes
+					// we only work with copies of the important variables VS and CharArea
+					BLOCK CharAreaSimulate = *CharArea;
+
+					int lineNumber = CharAreaSimulate.Start.y / _globals->getFont(FONT_R)->Height();
+					int numOut = 0;
+					int boxNr = 0;
+
+					while (numOut < (int) content.length())
+					{
+						// Create a virtual screen that contains just one bottom line for the text to go into
+						VirScreen oneLine = *VS;
+						oneLine.Height = CharAreaSimulate.Start.y + _globals->getFont(FONT_R)->Height();
+						InitVS(&oneLine);
+
+						// output the rest of the text, and get the printed part
+						BLOCK CharAreaSim_Backup = CharAreaSimulate;
+
+						int outputCount = iPrint(content.substr(numOut),&oneLine,&CopyCS,&CharAreaSimulate,-1);
+
+						string outputPart = content.substr(numOut,outputCount);
+						trimRight(outputPart);
+
+						currentElement->SetAttribute(("l"+val(boxNr)).c_str(),lineNumber+boxNr);
+						currentElement->SetAttribute(("s"+val(boxNr)).c_str(), oneLine.Left + CharAreaSim_Backup.Start.x);
+						iPrint(outputPart,&oneLine,&CopyCS,&CharAreaSim_Backup,-1);
+						currentElement->SetAttribute(("e"+val(boxNr)).c_str(), oneLine.Left + CharAreaSim_Backup.Start.x);
+
+						numOut += outputCount;
+						boxNr++;
+					}
+
+					// advance CharArea the normal way, just to make sure everything is layouted as in the display version
+
+					iPrint(content,VS,&CopyCS,CharArea,-1);
+				}
+				else
+				{
+					iPrint(content,VS,&CopyCS,CharArea,-1);
+				}
+				while(currentNode->LastChild())
+					currentNode = currentNode->LastChild();
 			}
 			else if (name == "wi")
 			{
+				// an image, we have to keep track of all its clickable bounding boxes (for future versions with image support) TODO
+				VS->Left = VSLeft + indent;
+				VS->Width = ContentWin0.Width - indent;
+				InitVS(VS);
+
+				string content = pureText(currentNode);
+				iPrint(content,VS,&CopyCS,CharArea,-1);
+				while(currentNode->LastChild())
+					currentNode = currentNode->LastChild();
+			}
+			if (name == "wt")
+			{
+				// a template, we have to keep track of all its clickable bounding boxes (for future versions) TODO
+				VS->Left = VSLeft + indent;
+				VS->Width = ContentWin0.Width - indent;
+				InitVS(VS);
+
+				string content = pureText(currentNode);
+				iPrint(content,VS,&CopyCS,CharArea,-1);
+				while(currentNode->LastChild())
+					currentNode = currentNode->LastChild();
 			}
 			else if (name == "li")
 			{
@@ -232,6 +303,22 @@ void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool si
 				if (CharArea->Start.x < 0)
 					CharArea->Start.x = 0;
 			}
+
+			// print all created attributes of the current element
+/*			if (simulationPass)
+			{
+				PA_ClearTextBg(1);
+				int i = 2;
+				TiXmlAttribute* pAttrib = currentElement->FirstAttribute();
+				while (pAttrib)
+				{
+					string name = pAttrib->Name();
+					string val = pAttrib->ValueStr();
+					PA_OutputText(1,0,i++,"%s %s",name.c_str(),val.c_str());
+					pAttrib=pAttrib->Next();
+				}
+				PA_WaitFor(Pad.Newpress.Anykey);
+			}*/
 		}
 	}
 
@@ -346,34 +433,51 @@ string Markup::pureText(TiXmlNode* pParent)
 	switch (pParent->Type())
 	{
 		case TiXmlNode::TEXT :
+		{
 			return pParent->ValueStr();
 			break;
+		}
 		case TiXmlNode::ELEMENT :
+		{
 			string name = pParent->ValueStr();
+
 			if (name=="wl")
 			{
 				string ret; // the displayed text of a link
 
 				TiXmlNode* child = pParent->FirstChild();
-				if (child)
+
+				if (child && child->ValueStr()=="wp") // syntax of internal links
 				{
-					if (child->ValueStr()=="wp")
-					{
-						ret += pureText(child); // the target
-					}
+					ret += pureText(child); // the target
 
 					TiXmlNode* altChild = child->NextSibling();
+
 					if (altChild && altChild->ValueStr() == "wp")
 					{
 						// there is an alternative linktext given
 						ret.clear();
+						vector<string> alternativeTexts;
+						for (TiXmlNode* aChild = altChild; aChild && aChild->ValueStr()=="wp"; aChild = aChild->NextSibling() )
+						{
+							alternativeTexts.push_back(pureText(aChild));
+						}
+						implode("|",alternativeTexts,ret);
 					}
-					for (altChild = child->NextSibling(); altChild && altChild->ValueStr()=="wp"; altChild = altChild->NextSibling())
+
+					TiXmlNode* trail = pParent->LastChild();
+					if (trail && trail->ValueStr() == "trail")
 					{
-						ret += pureText(altChild);
-						ret += "|";
+						ret += pureText(trail);
 					}
-					ret.erase(ret.length()-1);
+				}
+				else if (child && child->ValueStr()=="url") // syntax of external links
+				{
+					TiXmlNode* title = pParent->LastChild();
+					if (title && title->ValueStr() == "title")
+					{
+						ret += pureText(title);
+					}
 				}
 
 				return ret;
@@ -391,6 +495,7 @@ string Markup::pureText(TiXmlNode* pParent)
 				return ret;
 			}
 			break;
+		}
 	}
 	return "";
 }
@@ -698,15 +803,65 @@ TiXmlNode* Markup::findElementBeforeLine(int lineNo, int & line, int & offset) /
 	return beforeLineElement;
 }
 
-bool Markup::evaluateClick(int x, int y)
+bool Markup::evaluateClick(int absolute_x, int absolute_y)
 {
-	x -= ContentWin0.AbsoluteBound.Start.x;
-	y -= ContentWin0.AbsoluteBound.Start.y;
-	int line = y / _globals->getFont(FONT_R)->Height() + _currentLine;
-	int start = x;
-	// TODO: Find a link on this coordinates, if there is one, make it active and return true
-	PA_OutputText(1,0,0,"%d/%d     ",line,start);
-	return false;
+	if (_showing_index)
+	{
+		return indexMarkup->evaluateClick(absolute_x, absolute_y);
+	}
+	else
+	{
+		int x = absolute_x - ContentWin0.AbsoluteBound.Start.x;
+		int y = absolute_y - ContentWin0.AbsoluteBound.Start.y;
+		int line = y / _globals->getFont(FONT_R)->Height() + _currentLine;
+		int start = x;
+
+		for (TiXmlElement* currentLink = NextLink(_root); currentLink; currentLink = NextLink(currentLink) )
+		{
+			TiXmlAttribute* pAttrib = currentLink->FirstAttribute();
+
+			int ival;
+
+			while (pAttrib)
+			{
+				string name = pAttrib->Name();
+				if (name[0] == 'l' && name.length() > 1 && name.find_last_not_of("0123456789") == 0)
+				{
+				// we found a link part line attribute
+					if ( (pAttrib->QueryIntValue(&ival) == TIXML_SUCCESS) && (line == ival) )
+					{
+					// we found a link part on the correct line
+						string line_ident = name.substr(1);
+						int s = -1;
+						int e = -1;
+
+					// get the bounding box
+						TiXmlAttribute* offsetsAttrib = currentLink->FirstAttribute();
+						while (offsetsAttrib)
+						{
+							string offsetname = offsetsAttrib->Name();
+							if ( (offsetname == ("s" + line_ident)) && (offsetsAttrib->QueryIntValue(&ival) == TIXML_SUCCESS))
+							{
+								s = ival;
+							}
+							else if ( (offsetname == ("e" + line_ident)) && (offsetsAttrib->QueryIntValue(&ival) == TIXML_SUCCESS))
+							{
+								e = ival;
+							}
+							offsetsAttrib = offsetsAttrib->Next();
+						}
+						if ((s <= start) && (start <= e))
+						{
+							_currentHighlightedLink = currentLink;
+							return true;
+						}
+					}
+				}
+				pAttrib=pAttrib->Next();
+			}
+		}
+		return false;
+	}
 }
 
 
