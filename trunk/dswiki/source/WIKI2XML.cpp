@@ -590,6 +590,12 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 	{
 		string p = parts[a];
 
+		if (a==0)
+		{
+			trim(p);
+			trimDoubleSpaces(p);
+		}
+
 		if ((a > 0) && (mode == 'T'))
 		{
 			string key, value;
@@ -723,303 +729,352 @@ void WIKI2XML::parse_line(string & l)
 }
 
 
-void WIKI2XML::parse(string & s, bool interpreteWikiMarkup)
+void WIKI2XML::parse(string & s, int type)
 {
-	if (interpreteWikiMarkup)
+	int a,b,c,d;
+	string substring;
+
+	switch (type)
 	{
-		int a,b,c,d;
-		string substring;
-
-		// In order to get a valid XML-document, we have to treat all environments
-		// which may legally contain unmasked XML-entities ('&','<','>','"',''').
-		// The biggest problem for make_tags are '<' and '>'.
-		// These environments are separated out. Later they get recombined with
-		// the rest of the text. These environments are: nowiki, math, pre, source
-		nowiki_contents.clear();
-		a = s.find("<nowiki>");
-		while (a != (int) string::npos)
+		default:
+		case FULL_PARSE:
 		{
-			b = s.find("</nowiki>",a);
-			if (b == (int) string::npos)
-				b = s.length()+1;
-			substring = s.substr(a+8,b-a-8);
-			exchangeSGMLEntities(substring); // &amp; -> &
-			// mask all XML-entities
-			replace_all(substring,"&","&amp;");
-			replace_all(substring,"<","&lt;");
-			replace_all(substring,">","&gt;");
-			replace_all(substring,"\"","&quot;");
-			replace_all(substring,"'","&apos;");
-			replace_all(substring,"\n"," ");
-			trimDoubleSpaces(substring);
-			nowiki_contents.push_back(substring);
-			substring.clear();
-			replace_part(s, a, b+8, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()-1));
-			a = s.find("<nowiki>",a+1);
-		}
-
-		math_contents.clear();
-		a = s.find("<math>");
-		while (a != (int) string::npos)
-		{
-			b = s.find("</math>",a);
-			if (b == (int) string::npos)
-				b = s.length()+1;
-			substring = s.substr(a+6,b-a-6);
-			replace_all(substring,"&","&amp;");
-			for (c=0;c< (int) nowiki_contents.size();c++)
+			// In order to get a valid XML-document, we have to treat all environments
+			// which may legally contain unmasked XML-entities ('&','<','>','"',''').
+			// The biggest problem for make_tags are '<' and '>'.
+			// These environments are separated out. Later they get recombined with
+			// the rest of the text. These environments are: nowiki, math, pre, source
+			nowiki_contents.clear();
+			a = s.find("<nowiki>");
+			while (a != (int) string::npos)
 			{
-				replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+c),dswiki_magic_nowiki_open+nowiki_contents[c]+dswiki_magic_nowiki_close);
+				b = s.find("</nowiki>",a);
+				if (b == (int) string::npos)
+					b = s.length()+1;
+				substring = s.substr(a+8,b-a-8);
+				exchangeSGMLEntities(substring); // &amp; -> &
+				// mask all XML-entities
+				replace_all(substring,"&","&amp;");
+				replace_all(substring,"<","&lt;");
+				replace_all(substring,">","&gt;");
+				replace_all(substring,"\"","&quot;");
+				replace_all(substring,"'","&apos;");
+				replace_all(substring,"\n"," ");
+				trimDoubleSpaces(substring);
+				nowiki_contents.push_back(substring);
+				substring.clear();
+				replace_part(s, a, b+8, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()-1));
+				a = s.find("<nowiki>",a+1);
 			}
-			replace_all(substring,"<","&lt;");
-			replace_all(substring,">","&gt;");
-			replace_all(substring,"\"","&quot;");
-			replace_all(substring,"'","&apos;");
-			replace_all(substring,"\n"," ");
-			trim(substring);
-			trimDoubleSpaces(substring);
-			math_contents.push_back(substring);
-			substring.clear();
-			replace_part(s, a, b+6, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()-1));
-			a = s.find("<math>",a+1);
-		}
 
-		pre_contents.clear();
-		a = s.find("<pre>");
-		while (a != (int) string::npos)
-		{
-			b = s.find("</pre>",a);
-			if (b == (int) string::npos)
-				b = s.length()+1;
-			substring = s.substr(a+5,b-a-5);
-			exchangeSGMLEntities(substring); // &amp; -> &
-			replace_all(substring,"&","&amp;");
-			for (c=0;c< (int) math_contents.size();c++)
+			math_contents.clear();
+			a = s.find("<math>");
+			while (a != (int) string::npos)
 			{
-				replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+c),"<math>"+math_contents[c]+"</math>");
-			}
-			// special treatment for nowiki in math (when both in pre)
-			replace_all(substring,dswiki_magic_nowiki_open,"");
-			replace_all(substring,dswiki_magic_nowiki_close,"");
-			for (c=0;c< (int) nowiki_contents.size();c++)
-			{
-				replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+c),nowiki_contents[c]);
-			}
-			replace_all(substring,"<","&lt;");
-			replace_all(substring,">","&gt;");
-			replace_all(substring,"\"","&quot;");
-			replace_all(substring,"'","&apos;");
-			trimSpacesBeforeLinebreaks(substring);
-			pre_contents.push_back(substring);
-			replace_part(s, a, b+5, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+pre_contents.size()-1));
-			a = s.find("<pre>",a+1);
-		}
-
-
-		// every '<source ...>' tag we find here, is NOT contained in a nowiki, math or pre environment, that's sure
-		source_contents.clear();
-		a = s.find("<source");
-		while (a != (int) string::npos)
-		{
-			c = s.find(">",a);
-			if (c== (int) string::npos)
-				break;
-			b = s.find("</source>",c);
-			if (b == (int) string::npos)
-				b = s.length()+1;
-			substring = s.substr(c+1,b-c-1);
-			replace_all(substring,"&","&amp;");
-			for (d=0;d< (int) pre_contents.size();d++)
-			{
-				replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+d),"&lt;pre&gt;"+pre_contents[d]+"&lt;/pre&gt;");
-			}
-			for (d=0;d< (int) math_contents.size();d++)
-			{
-				replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+d),"&lt;math&gt;"+math_contents[d]+"&lt;/math&gt;");
-			}
-			for (d=0;d< (int) nowiki_contents.size();d++)
-			{
-				replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+d),"&lt;nowiki&gt;"+nowiki_contents[d]+"&lt;/nowiki&gt;");
-			}
-			replace_all(substring,"<","&lt;");
-			replace_all(substring,">","&gt;");
-			replace_all(substring,"\"","&quot;");
-			replace_all(substring,"'","&apos;");
-			trimSpacesBeforeLinebreaks(substring);
-			source_contents.push_back(s.substr(a+7,c-a-6)+substring);
-			replace_part(s, a, b+8, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+pre_contents.size()+source_contents.size()-1));
-			a = s.find("<source",a+1);
-		}
-
-		// In the remaining text, we exchange all uncritical named SGML-entities,
-		// As, for example, "&apos;" should not be interpretated as wiki-markup, we must exclude it
-		exchangeSGMLEntities(s,true);
-
-		// remove linebreaks from within multi-line template tags, so that parse_line can process them as a normal tag
-		a = s.find("{{");
-		while (a != (int) string::npos)
-		{
-			int open = 1;
-			for (b=a+2; b+1 < (int) s.length(); b++)
-			{
-				if (s[b] == '{' && s[b+1] == '{')
+				b = s.find("</math>",a);
+				if (b == (int) string::npos)
+					b = s.length()+1;
+				substring = s.substr(a+6,b-a-6);
+				replace_all(substring,"&","&amp;");
+				for (c=0;c< (int) nowiki_contents.size();c++)
 				{
-					open++;
-					b+=2;
+					replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+c),dswiki_magic_nowiki_open+nowiki_contents[c]+dswiki_magic_nowiki_close);
 				}
-				if (s[b] == '}' && s[b+1] == '}')
+				replace_all(substring,"<","&lt;");
+				replace_all(substring,">","&gt;");
+				replace_all(substring,"\"","&quot;");
+				replace_all(substring,"'","&apos;");
+				replace_all(substring,"\n"," ");
+				trim(substring);
+				trimDoubleSpaces(substring);
+				math_contents.push_back(substring);
+				substring.clear();
+				replace_part(s, a, b+6, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()-1));
+				a = s.find("<math>",a+1);
+			}
+
+			pre_contents.clear();
+			a = s.find("<pre>");
+			while (a != (int) string::npos)
+			{
+				b = s.find("</pre>",a);
+				if (b == (int) string::npos)
+					b = s.length()+1;
+				substring = s.substr(a+5,b-a-5);
+				exchangeSGMLEntities(substring); // &amp; -> &
+				replace_all(substring,"&","&amp;");
+				for (c=0;c< (int) math_contents.size();c++)
 				{
-					open--;
-					b+=2;
+					replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+c),"<math>"+math_contents[c]+"</math>");
 				}
-				if (open==0)
+				// special treatment for nowiki in math (when both in pre)
+				replace_all(substring,dswiki_magic_nowiki_open,"");
+				replace_all(substring,dswiki_magic_nowiki_close,"");
+				for (c=0;c< (int) nowiki_contents.size();c++)
 				{
-					substring = s.substr(a+2,b-a-4);
-					replace_all(substring,"\n"," ");
-					replace_part(s,a+2,b-3,substring);
-					break;
+					replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+c),nowiki_contents[c]);
 				}
+				replace_all(substring,"<","&lt;");
+				replace_all(substring,">","&gt;");
+				replace_all(substring,"\"","&quot;");
+				replace_all(substring,"'","&apos;");
+				trimSpacesBeforeLinebreaks(substring);
+				pre_contents.push_back(substring);
+				replace_part(s, a, b+5, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+pre_contents.size()-1));
+				a = s.find("<pre>",a+1);
 			}
-			a = s.find("{{",b);
-		}
-
-		// Remove HTML-Comments
-		a = s.find("<!--");
-		while (a != (int) string::npos)
-		{
-			b = s.find("-->",a);
-			if (b == (int) string::npos)
-				b = s.length() - 1;
-			else
-				b += 2;
-
-			replace_part(s, a, b, "");
-			a = s.find("<!--",a+1);
-		}
 
 
-		// Everything was separated out
-
-		// Help 'make_tag_list' and mask literal '&' and '<'
-		a = s.find("&");
-		while (a != (int) string::npos)
-		{
-			for (b=0;b<MAX_NAMED_ENTITIES;b++)
+			// every '<source ...>' tag we find here, is NOT contained in a nowiki, math or pre environment, that's sure
+			source_contents.clear();
+			a = s.find("<source");
+			while (a != (int) string::npos)
 			{
-				if (s.substr(a,entities[b].entity.length()) == entities[b].entity)
+				c = s.find(">",a);
+				if (c== (int) string::npos)
 					break;
+				b = s.find("</source>",c);
+				if (b == (int) string::npos)
+					b = s.length()+1;
+				substring = s.substr(c+1,b-c-1);
+				replace_all(substring,"&","&amp;");
+				for (d=0;d< (int) pre_contents.size();d++)
+				{
+					replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+d),"&lt;pre&gt;"+pre_contents[d]+"&lt;/pre&gt;");
+				}
+				for (d=0;d< (int) math_contents.size();d++)
+				{
+					replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+d),"&lt;math&gt;"+math_contents[d]+"&lt;/math&gt;");
+				}
+				for (d=0;d< (int) nowiki_contents.size();d++)
+				{
+					replace_all(substring,dswiki_magic_phrase+FromUTF(magic_offset+d),"&lt;nowiki&gt;"+nowiki_contents[d]+"&lt;/nowiki&gt;");
+				}
+				replace_all(substring,"<","&lt;");
+				replace_all(substring,">","&gt;");
+				replace_all(substring,"\"","&quot;");
+				replace_all(substring,"'","&apos;");
+				trimSpacesBeforeLinebreaks(substring);
+				source_contents.push_back(s.substr(a+7,c-a-6)+substring);
+				replace_part(s, a, b+8, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+pre_contents.size()+source_contents.size()-1));
+				a = s.find("<source",a+1);
 			}
-			if (b==MAX_NAMED_ENTITIES)
-			{
-				s.replace(a,1,"&amp;");
-			}
-			a = s.find("&",a+1);
-		}
-		a = s.find("<");
-		while (a != (int) string::npos)
-		{
-			for (b=0;b< (int) allowed_html.size();b++)
-			{
-				if ((s.substr(a+1,allowed_html[b].length()) == allowed_html[b])
-								 ||(s.substr(a+1,allowed_html[b].length()+1) == "/"+allowed_html[b]))
-					break;
-			}
-			if (b== (int) allowed_html.size())
-			{
-				s.replace(a,1,"&lt;");
-			}
-			a = s.find("<",a+1);
-		}
 
-		// Now we remove evil HTML
-		vector<TXML> taglist;
-		make_tag_list(s, taglist);
-		sanitize_html(s, taglist);
+			// In the remaining text, we exchange all uncritical named SGML-entities,
+			// As, for example, "&apos;" should not be interpretated as wiki-markup, we must exclude it
+			exchangeSGMLEntities(s,true);
 
-		trimSpacesBeforeLinebreaks(s);
+			// remove linebreaks from within multi-line template tags, so that parse_line can process them as a normal tag
+			a = s.find("{{");
+			while (a != (int) string::npos)
+			{
+				int open = 1;
+				for (b=a+2; b+1 < (int) s.length(); b++)
+				{
+					if (s[b] == '{' && s[b+1] == '{')
+					{
+						open++;
+						b+=2;
+					}
+					if (s[b] == '}' && s[b+1] == '}')
+					{
+						open--;
+						b+=2;
+					}
+					if (open==0)
+					{
+						substring = s.substr(a+2,b-a-4);
+						replace_all(substring,"\n"," ");
+						replace_part(s,a+2,b-3,substring);
+						break;
+					}
+				}
+				a = s.find("{{",b);
+			}
 
-		// Now evaluate each line
-		_globals->getPercentIndicator()->update(0);
-		a = 0;
-		b = s.find("\n",a);
-		while (b != (int) string::npos)
-		{
-			_globals->getPercentIndicator()->update(b*100/s.length());
-			substring = s.substr(a,b-a);
-			parse_line(substring);
-			replace_part(s,a,b,substring+"\n");
-			a += substring.length()+1;
+			// Remove HTML-Comments
+			a = s.find("<!--");
+			while (a != (int) string::npos)
+			{
+				b = s.find("-->",a);
+				if (b == (int) string::npos)
+					b = s.length() - 1;
+				else
+					b += 2;
+
+				replace_part(s, a, b, "");
+				a = s.find("<!--",a+1);
+			}
+
+
+			// Everything was separated out
+
+			// Help 'make_tag_list' and mask literal '&' and '<'
+			a = s.find("&");
+			while (a != (int) string::npos)
+			{
+				for (b=0;b<MAX_NAMED_ENTITIES;b++)
+				{
+					if (s.substr(a,entities[b].entity.length()) == entities[b].entity)
+						break;
+				}
+				if (b==MAX_NAMED_ENTITIES)
+				{
+					s.replace(a,1,"&amp;");
+				}
+				a = s.find("&",a+1);
+			}
+			a = s.find("<");
+			while (a != (int) string::npos)
+			{
+				for (b=0;b< (int) allowed_html.size();b++)
+				{
+					if ((s.substr(a+1,allowed_html[b].length()) == allowed_html[b])
+										||(s.substr(a+1,allowed_html[b].length()+1) == "/"+allowed_html[b]))
+						break;
+				}
+				if (b== (int) allowed_html.size())
+				{
+					s.replace(a,1,"&lt;");
+				}
+				a = s.find("<",a+1);
+			}
+
+			// Now we remove evil HTML
+			vector<TXML> taglist;
+			make_tag_list(s, taglist);
+			sanitize_html(s, taglist);
+
+			trimSpacesBeforeLinebreaks(s);
+
+			// Now evaluate each line
+			_globals->getPercentIndicator()->update(0);
+			a = 0;
 			b = s.find("\n",a);
-		}
-		_globals->getPercentIndicator()->update(100);
-		substring = s.substr(a);
-		parse_line(substring);
-		replace_part(s,a,s.length()-1,substring);
+			while (b != (int) string::npos)
+			{
+				_globals->getPercentIndicator()->update(b*100/s.length());
+				substring = s.substr(a,b-a);
+				parse_line(substring);
+				replace_part(s,a,b,substring+"\n");
+				a += substring.length()+1;
+				b = s.find("\n",a);
+			}
+			_globals->getPercentIndicator()->update(100);
+			substring = s.substr(a);
+			parse_line(substring);
+			replace_part(s,a,s.length()-1,substring);
 
-		string end;
+			string end;
 
-		// Cleanup lists
-		end = fix_list(end);
-		if (!end.empty())
-			s += end;
+			// Cleanup lists
+			end = fix_list(end);
+			if (!end.empty())
+				s += end;
 
-    	// Cleanup tables
-		end.clear();
-		while (tables.size())
-		{
-			end += tables[tables.size() - 1].close();
-			tables.pop_back();
-		}
-		if (!end.empty())
-			s += end;
+			// Cleanup tables
+			end.clear();
+			while (tables.size())
+			{
+				end += tables[tables.size() - 1].close();
+				tables.pop_back();
+			}
+			if (!end.empty())
+				s += end;
 
-		// recombine
-		for (a=0;a< (int) source_contents.size();a++)
-		{
-			replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+pre_contents.size()+a),
-						"<source"+source_contents[a]+"</source>");
+			// recombine
+			for (a=0;a< (int) source_contents.size();a++)
+			{
+				replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+pre_contents.size()+a),
+							"<source"+source_contents[a]+"</source>");
+			}
+			source_contents.clear();
+			for (a=0;a< (int) pre_contents.size();a++)
+			{
+				replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+a),"<pre>"+pre_contents[a]+"</pre>");
+			}
+			pre_contents.clear();
+			for (a=0;a< (int) math_contents.size();a++)
+			{
+				replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+a),"<math>"+math_contents[a]+"</math>");
+			}
+			math_contents.clear();
+			for (a=0;a< (int) nowiki_contents.size();a++)
+			{
+				replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+a),nowiki_contents[a]);
+			}
+			nowiki_contents.clear();
+			replace_all(s,dswiki_magic_nowiki_open,"&lt;nowiki&gt;"); // 'special' normal treatment for nowiki in math
+			replace_all(s,dswiki_magic_nowiki_close,"&lt;/nowiki&gt;");
+			break;
 		}
-		source_contents.clear();
-		for (a=0;a< (int) pre_contents.size();a++)
+		case MEDIUM_PARSE:
 		{
-			replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+math_contents.size()+a),"<pre>"+pre_contents[a]+"</pre>");
+			replace_all(s,"&","&amp;");
+			replace_all(s,"<","&lt;");
+			replace_all(s,">","&gt;");
+			replace_all(s,"\"","&quot;");
+			replace_all(s,"'","&apos;");
+
+			a = 0;
+			b = s.find("\n",a);
+			while (b != (int) string::npos)
+			{
+				_globals->getPercentIndicator()->update(b*100/s.length());
+				substring = s.substr(a,b-a);
+				parse_line(substring);
+				replace_part(s,a,b,substring+"\n");
+				a += substring.length()+1;
+				b = s.find("\n",a);
+			}
+			_globals->getPercentIndicator()->update(100);
+			substring = s.substr(a);
+			parse_line(substring);
+			replace_part(s,a,s.length()-1,substring);
+
+			string end;
+
+			// Cleanup lists
+			end = fix_list(end);
+			if (!end.empty())
+				s += end;
+
+			// Cleanup tables
+			end.clear();
+			while (tables.size())
+			{
+				end += tables[tables.size() - 1].close();
+				tables.pop_back();
+			}
+			if (!end.empty())
+				s += end;
+
+			break;
 		}
-		pre_contents.clear();
-		for (a=0;a< (int) math_contents.size();a++)
+		case TEXT_PARSE:
 		{
-			replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()+a),"<math>"+math_contents[a]+"</math>");
+			_globals->getStatusbar()->display("l="+val(s.length()));
+			_globals->getPercentIndicator()->update(0);
+			replace_all(s,"&","&amp;");
+			_globals->getStatusbar()->display("l="+val(s.length()));
+			_globals->getPercentIndicator()->update(17);
+			replace_all(s,"<","&lt;");
+			_globals->getStatusbar()->display("l="+val(s.length()));
+			_globals->getPercentIndicator()->update(33);
+			replace_all(s,">","&gt;");
+			_globals->getStatusbar()->display("l="+val(s.length()));
+			_globals->getPercentIndicator()->update(50);
+			replace_all(s,"\"","&quot;");
+			_globals->getStatusbar()->display("l="+val(s.length()));
+			_globals->getPercentIndicator()->update(67);
+			replace_all(s,"'","&apos;");
+			_globals->getStatusbar()->display("l="+val(s.length()));
+			_globals->getPercentIndicator()->update(83);
+			replace_all(s,"\n\n","\n<p />\n");
+			_globals->getStatusbar()->display("l="+val(s.length()));
+			_globals->getPercentIndicator()->update(100);
+			break;
 		}
-		math_contents.clear();
-		for (a=0;a< (int) nowiki_contents.size();a++)
-		{
-			replace_all(s,dswiki_magic_phrase+FromUTF(magic_offset+a),nowiki_contents[a]);
-		}
-		nowiki_contents.clear();
-		replace_all(s,dswiki_magic_nowiki_open,"&lt;nowiki&gt;"); // 'special' normal treatment for nowiki in math
-		replace_all(s,dswiki_magic_nowiki_close,"&lt;/nowiki&gt;");
-	}
-	else
-	{
-		_globals->getStatusbar()->display("l="+val(s.length()));
-		_globals->getPercentIndicator()->update(0);
-		replace_all(s,"&","&amp;");
-		_globals->getStatusbar()->display("l="+val(s.length()));
-		_globals->getPercentIndicator()->update(17);
-		replace_all(s,"<","&lt;");
-		_globals->getStatusbar()->display("l="+val(s.length()));
-		_globals->getPercentIndicator()->update(33);
-		replace_all(s,">","&gt;");
-		_globals->getStatusbar()->display("l="+val(s.length()));
-		_globals->getPercentIndicator()->update(50);
-		replace_all(s,"\"","&quot;");
-		_globals->getStatusbar()->display("l="+val(s.length()));
-		_globals->getPercentIndicator()->update(67);
-		replace_all(s,"'","&apos;");
-		_globals->getStatusbar()->display("l="+val(s.length()));
-		_globals->getPercentIndicator()->update(83);
-		replace_all(s,"\n\n","\n<p />\n");
-		_globals->getStatusbar()->display("l="+val(s.length()));
-		_globals->getPercentIndicator()->update(100);
 	}
 
 	s.insert(0,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<text>");

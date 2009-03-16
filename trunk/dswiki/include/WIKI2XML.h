@@ -21,8 +21,9 @@ class TTableInfo
 class WIKI2XML
 {
 	public:
+		enum {FULL_PARSE,MEDIUM_PARSE,TEXT_PARSE};
 		WIKI2XML();
-		void parse(string & s, bool interpreteWikiMarkup);
+		void parse(string & s, int type);
 		void setGlobals(Globals* globals);
 	private:
 		void doQuotes(string & l);

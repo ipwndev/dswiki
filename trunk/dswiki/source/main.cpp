@@ -91,7 +91,7 @@ int main(int argc, char ** argv)
 	bool updatePercent			= false;
 	bool suggestInRealTime		= true;
 
-	bool textBrowserMode		= true; // TODO false in the release
+	bool textBrowserMode		= false; // TODO false in the release
 
 	int stylusDownLine			= 0;
 
@@ -481,7 +481,7 @@ int main(int argc, char ** argv)
 						markup = new Markup();
 						g->setMarkup(markup);
 						markup->setGlobals(g);
-						markup->parse(markupstr,false);
+						markup->parse(markupstr,WIKI2XML::TEXT_PARSE);
 						updateContent_force = true;
 						updatePercent = true;
 						updateStatusbar = true;
@@ -550,10 +550,11 @@ int main(int argc, char ** argv)
 				string bookmark = g->loadBookmark();
 				if (!bookmark.empty())
 				{
-					search_title = bookmark;
-					forcedLine = 0;
-					setNewHistoryItem = true;
 					loadArticle = true;
+					search_title = bookmark;
+					search_anchor.clear();
+					setNewHistoryItem = true;
+					forcedLine = 0;
 				}
 				updateContent_force = true;
 			}
@@ -567,16 +568,34 @@ int main(int argc, char ** argv)
 				stylusPosition.y = Stylus.Y;
 				stylusDownLine = markup->currentLine();
 
-/*				if (IsInArea(ContentWin0.AbsoluteBound,stylusPosition))
+				if (IsInArea(ContentWin0.AbsoluteBound,stylusPosition))
 				{
 					if (markup->evaluateClick(Stylus.X,Stylus.Y) )
 					{
 						markup->getCurrentLink(search_title,search_anchor);
-						forcedLine = 0;
-						setNewHistoryItem = true;
-						loadArticle = true;
+
+						if (!search_title.empty())
+						{
+							setNewHistoryItem = true;
+							loadArticle = true;
+							forcedLine = 0;
+						}
+						else if (!search_anchor.empty())
+						{
+							markup->showArticle();
+							markup->jumpToAnchor(search_anchor);
+							h->updateCurrentLine(markup->currentLine());
+							updateContent_force = true;
+						}
+						else
+						{
+							setNewHistoryItem = true;
+							loadArticle = true;
+							forcedLine = 0;
+						}
+
 					}
-				}*/
+				}
 			}
 		}
 		else if (Stylus.Held)
@@ -830,14 +849,15 @@ int main(int argc, char ** argv)
 				markup = new Markup();
 				g->setMarkup(markup);
 				markup->setGlobals(g);
-				markup->parse(markupstr);
+				markup->parse(markupstr, WIKI2XML::FULL_PARSE);
 
 				if (!markup->LoadOK())
 				{
+					// first fallback
 					delete markup;
 
 					g->getStatusbar()->displayErrorClearAfter("XML-Parsing failed!",60);
-					g->getStatusbar()->displayClearAfter("Printing the original markup...",60);
+					g->getStatusbar()->displayClearAfter("Printing a simpler markup...",60);
 
 					markupstr.clear();
 					g->getWikiMarkupGetter()->getMarkup(markupstr, currentTitle);
@@ -846,7 +866,25 @@ int main(int argc, char ** argv)
 					markup = new Markup();
 					g->setMarkup(markup);
 					markup->setGlobals(g);
-					markup->parse(markupstr, false);
+					markup->parse(markupstr, WIKI2XML::MEDIUM_PARSE);
+
+					if (!markup->LoadOK())
+					{
+						// second fallback
+						delete markup;
+
+						g->getStatusbar()->displayErrorClearAfter("XML-Parsing failed!",60);
+						g->getStatusbar()->displayClearAfter("Printing the pure markup...",60);
+
+						markupstr.clear();
+						g->getWikiMarkupGetter()->getMarkup(markupstr, currentTitle);
+						markupstr.insert(0,redirectMessage);
+
+						markup = new Markup();
+						g->setMarkup(markup);
+						markup->setGlobals(g);
+						markup->parse(markupstr, WIKI2XML::TEXT_PARSE);
+					}
 				}
 
 				g->getStatusbar()->displayClearAfter("Processing complete",30);

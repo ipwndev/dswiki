@@ -8,6 +8,7 @@
 #include "api.h"
 #include "chrlib.h"
 #include "tinyxml.h"
+#include "WIKI2XML.h"
 
 class Globals;
 
@@ -19,7 +20,7 @@ class Markup
 		Markup();
 		~Markup();
 
-		void	parse(string & Str, bool interpreteWikiMarkup = true);
+		void	parse(string & Str, int type = WIKI2XML::FULL_PARSE);
 		bool	LoadOK();
 
 		void	draw(bool force = false);
