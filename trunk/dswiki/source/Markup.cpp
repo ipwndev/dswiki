@@ -30,6 +30,7 @@ Markup::Markup()
 	_numberOfLines = 0;
 	_currentLine = 0;
 	_lastDisplayedLine = 0;
+	_numNodes = 0;
 
 	index.clear();
 	indexMarkup = NULL;
@@ -106,9 +107,8 @@ void Markup::postProcessDOM()
 	for (_end = _root; _end->LastChild(); _end = _end->LastChild() );
 
 	// count the nodes
-	int numNodes = 0;
 	for (TiXmlNode* currentNode = _root; currentNode; currentNode = NextNode(currentNode) )
-		numNodes++;
+		_numNodes++;
 
 	// create the index from the document structure (headings)
 	vector <TiXmlNode*>	index_tmp;
@@ -180,6 +180,7 @@ void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool si
 	int VSLeft = VS->Left;
 	CharStat CopyCS;
 	int indent = 0;
+	int numCurr = 0;
 
 	for (TiXmlNode* currentNode = firstNode; currentNode && (CharArea->Start.y < (int) VS->Height); currentNode = NextNode(currentNode) )
 	{
@@ -188,6 +189,7 @@ void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool si
 		if (simulationPass)
 		{
 			CopyCS.Fx = SIMULATE;
+			_globals->getPercentIndicator()->update( (numCurr++) * 100 / _numNodes );
 		}
 
 		if (currentNode->Type() == TiXmlNode::TEXT)
@@ -247,10 +249,16 @@ void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool si
 						string outputPart = content.substr(numOut,outputCount);
 						trimRight(outputPart);
 
-						currentElement->SetAttribute(("l"+val(boxNr)).c_str(),lineNumber+boxNr);
-						currentElement->SetAttribute(("s"+val(boxNr)).c_str(), oneLine.Left + CharAreaSim_Backup.Start.x);
+						int start = oneLine.Left + CharAreaSim_Backup.Start.x;
 						iPrint(outputPart,&oneLine,&CopyCS,&CharAreaSim_Backup,-1);
-						currentElement->SetAttribute(("e"+val(boxNr)).c_str(), oneLine.Left + CharAreaSim_Backup.Start.x);
+						int   end = oneLine.Left + CharAreaSim_Backup.Start.x;
+
+						if (end > start)
+						{
+							currentElement->SetAttribute(("l"+val(boxNr)).c_str(), lineNumber + boxNr);
+							currentElement->SetAttribute(("s"+val(boxNr)).c_str(), start);
+							currentElement->SetAttribute(("e"+val(boxNr)).c_str(), end);
+						}
 
 						numOut += outputCount;
 						boxNr++;
@@ -267,10 +275,10 @@ void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool si
 				while(currentNode->LastChild())
 					currentNode = currentNode->LastChild();
 			}
-			else if (name == "wi")
-			{
+// 			else if (name == "wi")
+// 			{
 				// an image, we have to keep track of all its clickable bounding boxes (for future versions with image support) TODO
-				VS->Left = VSLeft + indent;
+/*				VS->Left = VSLeft + indent;
 				VS->Width = ContentWin0.Width - indent;
 				InitVS(VS);
 
@@ -279,7 +287,7 @@ void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool si
 				while(currentNode->LastChild())
 					currentNode = currentNode->LastChild();
 			}
-			if (name == "wt")
+			else if (name == "wt")
 			{
 				// a template, we have to keep track of all its clickable bounding boxes (for future versions) TODO
 				VS->Left = VSLeft + indent;
@@ -290,7 +298,7 @@ void Markup::Paint(TiXmlNode* firstNode, VirScreen* VS, BLOCK* CharArea, bool si
 				iPrint("<template snipped>",VS,&CopyCS,CharArea,-1);
 				while(currentNode->LastChild())
 					currentNode = currentNode->LastChild();
-			}
+			}*/
 			else if (name == "li")
 			{
 				// element of a list, print either an asterisk or the correct enumeration number
@@ -482,9 +490,9 @@ string Markup::pureText(TiXmlNode* pParent)
 
 				return ret;
 			}
-			else if (name=="wi")
+/*			else if (name=="wi")
 			{
-			}
+			}*/
 			else
 			{
 				string ret;
@@ -827,15 +835,15 @@ bool Markup::evaluateClick(int absolute_x, int absolute_y)
 				string name = pAttrib->Name();
 				if (name[0] == 'l' && name.length() > 1 && name.find_last_not_of("0123456789") == 0)
 				{
-				// we found a link part line attribute
+					// we found a link part line attribute
 					if ( (pAttrib->QueryIntValue(&ival) == TIXML_SUCCESS) && (line == ival) )
 					{
-					// we found a link part on the correct line
+						// we found a link part on the correct line
 						string line_ident = name.substr(1);
 						int s = -1;
 						int e = -1;
 
-					// get the bounding box
+						// get the bounding box
 						TiXmlAttribute* offsetsAttrib = currentLink->FirstAttribute();
 						while (offsetsAttrib)
 						{

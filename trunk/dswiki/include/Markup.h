@@ -79,6 +79,7 @@ class Markup
 		int						_numberOfLines;
 		int						_currentLine;
 		int						_lastDisplayedLine;
+		int						_numNodes;
 
 		map <string,TiXmlNode*>	index;
 		string					indexMarkupStr;

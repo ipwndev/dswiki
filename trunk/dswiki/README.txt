@@ -17,25 +17,6 @@ this dump is outdated, and the Wikipedia has grown dramatically
 since then, so compression was absolutely necessary. In addition,
 most homebrew programs can't handle UTF-8.
 
- DSwiki is based on
-====================
-
--- NewDictS       <http://tvgame360.com.tw/viewthread.php?tid=21913&extra=&page=1>
-                    Thanks to sesa for graphics-/unicode- and font-routines
-
--- Wiki2Touch     <http://code.google.com/p/wiki2touch/>
-                    Thanks to Tom Haukap for the file format and index routines
-
--- libbzip2       <http://bzip.org/>
-
--- UCS fonts      <http://www.cl.cam.ac.uk/~mgk25/ucs-fonts.html>
-                    Thanks to Markus Kuhn
-
- + some other fonts
-
- + Titlegraphic   <http://www.stefanie-gronau.de>
-                    Thanks to my beloved wife
-
  Features
 ==========
 
@@ -45,77 +26,15 @@ most homebrew programs can't handle UTF-8.
    and appended letters are supported to create the same look as
    in the online version. Subpage links are supported.
 -- Very good Unicode/UTF8-Support (as much - or as little - as the
-   underlying font covers).
--- Fast and easy searchable index.
+   underlying font covers)
+-- Fast and easy searchable index
 -- Bookmarks
 
- Planned Features
-==================
+ Usage
+=======
 
--- Much better markup display
--- Improved Search (advanced input)
--- Navigation by document structure (jump to headlines or
-   jump from link to link as in text browsers)
--- "Find as you type" inside an article
--- Memory saving font handling, switching between fonts on the fly
--- Customization
-
- Use
-=====
-
-At the moment DSwiki can't do more than display mostly unformatted
-wiki markup of articles (but word and line breaks and a proportional
-font make it easy readable).
-
-DSwiki works as follows:
-
-
- *** Navigation ***
-
-      Up/Down: Scroll one line backward/forward
-
-   Left/Right: Scroll one page backward/forward
-
-          L/R: Go one page back/forward in history
-
-       Select: Choose another available wiki
-
- *** Loading Articles ***
-
-A random article will be loaded at the start.
-
-            A: Go to another random article
-
-       Stylus: Follow a link on the bottom screen
-
- *** Bookmarks ***
-
-The current article name can be added to the bookmarks
-by tapping the star-with-green-arrow symbol.
-
-The normal star symbol will display the bookmarks.
-
-The bookmarks can be found in a file called 'bookmarks.txt'
-in the dswiki folder.
-
- *** Searching Articles ***
-
-            X: Index-assisted search on/off
-
-               Articles names (no unicode yet) can be entered
-               on the keyboard.
-
-               The D-Pad navigates through the index.
-               The L/R-buttons do bigger steps.
-
-               The current highlighted article name can be loaded
-               either by
-                * touching the green checkmark symbol
-                * pressing A
-                * touching Enter on the virtual keyboard
-
-               Most icons should be self-explanatory
-
+Just take the tutorial at the first start, or start it any time later
+from the menu.
 
  Installation
 ==============
@@ -136,14 +55,35 @@ in the dswiki folder.
 
    into /dswiki. This directory must exist in the root directory of your flash card.
 
- Bugs/Issues
-=============
+ Planned Features
+==================
 
--- In some cases, image captions are not parsed correctly (no caption given, links
-   in the caption).
+-- Improved Search (advanced input)
+-- "Find as you type" inside an article
+-- Switching between fonts on the fly
+-- Customization
 
--- Loading of very long articles may fail
+ DSwiki is based on
+====================
+
+-- NewDictS       <http://tvgame360.com.tw/viewthread.php?tid=21913&extra=&page=1>
+                    Thanks to sesa for graphics-/unicode- and font-routines
+
+-- Wiki2Touch     <http://code.google.com/p/wiki2touch/>
+                    Thanks to Tom Haukap for the file format and index routines
+
+-- libbzip2       <http://bzip.org/>
+
+-- UCS fonts      <http://www.cl.cam.ac.uk/~mgk25/ucs-fonts.html>
+                    Thanks to Markus Kuhn
+
+ + some other fonts
+
+ + Titlegraphic   <http://www.stefanie-gronau.de>
+                    Thanks to my beloved wife
 
 
-Have Fun!
+ Have Fun!
+===========
+
 OlliPolli
