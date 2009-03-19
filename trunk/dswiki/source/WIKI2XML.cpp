@@ -475,8 +475,8 @@ void WIKI2XML::parse_external_freelink(string & l, int &from)
 	replacement += xml_embed(url, "url");
 	replacement += xml_embed(url, "title");
 	replacement = xml_embed(replacement, "wl", "type=\"ext\" protocol=\"" + protocol + "\"");
-	replace_part(l, a, to, replacement);
-	from = a + replacement.length() - 1;
+	replace_part(l, a, to-1, replacement);
+	from = a + replacement.length();
 }
 
 
