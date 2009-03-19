@@ -81,6 +81,7 @@ int main(int argc, char ** argv)
 	bool loadNewWiki			= false;
 	bool loadInternalWiki		= false;
 	bool loadArticle			= false;
+	bool allowRandomArticle		= true;
 	bool search					= false;
 	bool showMenu				= false;
 
@@ -540,6 +541,7 @@ int main(int argc, char ** argv)
 			h->clear();
 
 			loadArticle = true;
+			allowRandomArticle = true;
 			loadNewWiki = false;
 		}
 
@@ -596,13 +598,6 @@ int main(int argc, char ** argv)
 							h->updateCurrentLine(markup->currentLine());
 							updateContent_force = true;
 						}
-						else
-						{
-							setNewHistoryItem = true;
-							loadArticle = true;
-							forcedLine = 0;
-						}
-
 					}
 				}
 			}
@@ -697,6 +692,7 @@ int main(int argc, char ** argv)
 			{
 				setNewHistoryItem = true;
 				loadArticle = true;
+				allowRandomArticle = true;
 				forcedLine = 0;
 			}
 		}
@@ -801,7 +797,7 @@ int main(int argc, char ** argv)
 				delete suchergebnis;
 			suchergebnis = NULL;
 
-			if (search_title.empty())
+			if (search_title.empty() && allowRandomArticle)
 			{
 				g->getStatusbar()->display("Searching random article...");
 				suchergebnis = t->getRandomArticle();
@@ -932,6 +928,7 @@ int main(int argc, char ** argv)
 			}
 
 			loadArticle = false;
+			allowRandomArticle = false;
 		}
 
 		if (updateTitle)
