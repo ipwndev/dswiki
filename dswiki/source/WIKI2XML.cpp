@@ -95,9 +95,9 @@ string TTableInfo::new_caption(string caption, string attributes)
 //
 // *****************************************************************************
 // *****************************************************************************
-const string dswiki_magic_phrase = "DЅωïƙɨ";
-const string dswiki_magic_nowiki_open  = "DЅωïƙɨИowiki";
-const string dswiki_magic_nowiki_close = "DЅωïƙɨ/Иowiki";
+const string dswiki_magic_phrase = "ÐЅωïƙɨ";
+const string dswiki_magic_nowiki_open  = "ÐЅωïƙɨИowikɨ";
+const string dswiki_magic_nowiki_close = "ÐЅωïƙɨ/Иowikɨ";
 const unsigned int magic_offset = 0xE000;
 
 
@@ -520,8 +520,8 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 	// stop when the alternative text or the end is reached
 	for (a = from + 2; a + 1 < (int) l.length(); a++)
 	{
-		if (l[a] == '<')
-			return;
+// 		if (l[a] == '<')
+// 			return;
 		if (l[a] == par_open)
 		{
 			from = a - 2;
@@ -537,7 +537,7 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 	{
 		if (l[a] == par_open && l[a + 1] == par_open)
 		{
-			parse_link(l, a);
+			parse_link(l, a, mode);
 		}
 		else if (l[a] == par_close && l[a + 1] == par_close)
 		{
@@ -618,7 +618,7 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 		x.text += xml_embed(p, "wp");
 	}
 
-	if (mode == 'L')		// Try link trail
+	if ( x.text == "wl" )		// Try link trail
 	{
 		string trail;
 		for (a = to + 2; a < (int) l.length() && is_text_char(l[a]); a++)
@@ -628,6 +628,10 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 			x.text += xml_embed(trail, "trail");
 	}
 
+	if (mode == 'T')
+	{
+		x.text = "&lt;Template snipped&gt;";
+	}
 	string replacement = x.get_string();
 	parse_line_sub(replacement);
 
@@ -763,7 +767,7 @@ void WIKI2XML::parse(string & s, int type)
 				trimDoubleSpaces(substring);
 				nowiki_contents.push_back(substring);
 				substring.clear();
-				replace_part(s, a, b+8, dswiki_magic_phrase+FromUTF(magic_offset+nowiki_contents.size()-1));
+				replace_part(s, a, b+8, dswiki_magic_phrase + FromUTF(magic_offset+nowiki_contents.size()-1));
 				a = s.find("<nowiki>",a+1);
 			}
 
@@ -874,18 +878,18 @@ void WIKI2XML::parse(string & s, int type)
 					if (s[b] == '{' && s[b+1] == '{')
 					{
 						open++;
-						b+=2;
+						b++;
 					}
-					if (s[b] == '}' && s[b+1] == '}')
+					else if (s[b] == '}' && s[b+1] == '}')
 					{
 						open--;
-						b+=2;
+						b++;
 					}
 					if (open==0)
 					{
-						substring = s.substr(a+2,b-a-4);
+						substring = s.substr(a+2,b-a-3);
 						replace_all(substring,"\n"," ");
-						replace_part(s,a+2,b-3,substring);
+						replace_part(s,a+2,b-2,substring);
 						break;
 					}
 				}
@@ -954,6 +958,7 @@ void WIKI2XML::parse(string & s, int type)
 			while (b != (int) string::npos)
 			{
 				_globals->getPercentIndicator()->update(b*100/s.length());
+				PA_ClearTextBg(1);
 				substring = s.substr(a,b-a);
 				parse_line(substring);
 				replace_part(s,a,b,substring+"\n");

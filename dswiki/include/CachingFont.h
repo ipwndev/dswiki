@@ -14,8 +14,8 @@
 
 #include <vector>
 
-#define UNICODEBLOCKS_STATIC 4
-#define UNICODEBLOCKS_TEMPORARY 2
+#define UNICODEBLOCKS_STATIC 6
+#define UNICODEBLOCKS_TEMPORARY 6
 
 class UnicodeBlock
 {

@@ -45,7 +45,7 @@ VirScreen PercentArea;
 // 1 = skip splashscreens, but normal open dialogs
 // 2 = direct loading of the given wiki
 #define DEBUG 0
-#define DEBUG_WIKI_NR 0
+#define DEBUG_WIKI_NR 2
 
 #define STRESSTEST 0
 
@@ -65,7 +65,7 @@ int main(int argc, char ** argv)
 	markupstr.reserve(1048576); // Reserve 1.0 MiB for the markup, all transformations MUST be made in-place
 
 
-// 	string search_title			= "Temp";
+// 	string search_title			= "Gold";
 	string search_title			= "";
 	string search_anchor		= "";
 	bool setNewHistoryItem		= true;
@@ -442,6 +442,15 @@ int main(int argc, char ** argv)
 
 	while(1) // main loop
 	{
+		if (debug)
+		{
+			struct mallinfo info = mallinfo();
+
+			PA_OutputText(1,0,3,"  Memory in use: %07d bytes", info.usmblks + info.uordblks);
+			PA_OutputText(1,0,4,"Total heap size: %07d bytes", info.arena);
+			PA_OutputText(1,0,5," Memory in free: %07d bytes", info.fsmblks + info.fordblks);
+		}
+
 		if (chooseNewWiki)
 		{
 			// Pops up a dialog to select a new dump or a file from FAT.
@@ -854,6 +863,11 @@ int main(int argc, char ** argv)
 				if (!markup->LoadOK())
 				{
 					// first fallback
+					if (debug)
+					{
+						// TODO
+					}
+
 					delete markup;
 
 					g->getStatusbar()->displayErrorClearAfter("XML-Parsing failed!",60);
@@ -871,6 +885,11 @@ int main(int argc, char ** argv)
 					if (!markup->LoadOK())
 					{
 						// second fallback
+						if (debug)
+						{
+							// TODO
+						}
+
 						delete markup;
 
 						g->getStatusbar()->displayErrorClearAfter("XML-Parsing failed!",60);
