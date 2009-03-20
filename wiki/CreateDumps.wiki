@@ -33,6 +33,6 @@ Under Windows, run {{{indexer.exe <filename>}}} from the command line, under Lin
   * articles.ao1
   * articles.ao2
 
-==Install==
+=Install=
 
 For every file, change "articles" into a better name for your dump. Copy all files into the directory /dswiki of your flash card.
