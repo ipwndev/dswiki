@@ -42,6 +42,7 @@ class Markup
 		void	jumpToAnchor(string anchor);
 		void	selectPreviousLink();
 		void	selectNextLink();
+		bool	hasSelectedLink();
 		void	unselect();
 		bool	evaluateClick(int x, int y);
 

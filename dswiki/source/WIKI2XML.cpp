@@ -393,7 +393,6 @@ string WIKI2XML::fix_list(string & l)
 	if (list.empty() && newlist.empty())
 		return "";
 
-	bool someClosed = false;
 	bool someOpened = false;
 
 	// The common part, if any
@@ -401,7 +400,6 @@ string WIKI2XML::fix_list(string & l)
 
 	if ( common < (int) list.length() )
 	{
-		someClosed = true;
 		for (a = common; a < (int) list.length(); a++)
 			pre.insert(0, get_list_tag(list[a], false));	// Close old list tags
 	}
@@ -501,7 +499,7 @@ void WIKI2XML::parse_external_link(string & l, int &from)
 
 	replacement = xml_embed(replacement, "wl", "type=\"ext\" protocol=\"" + protocol + "\"");
 	replace_part(l, from, to, replacement);
-	from = from + replacement.length() - 1;
+	from = from + replacement.length();
 }
 
 
@@ -618,7 +616,7 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 		x.text += xml_embed(p, "wp");
 	}
 
-	if ( x.text == "wl" )		// Try link trail
+	if ( x.name == "wl" )		// Try link trail
 	{
 		string trail;
 		for (a = to + 2; a < (int) l.length() && is_text_char(l[a]); a++)
@@ -632,6 +630,7 @@ void WIKI2XML::parse_link(string & l, int &from, char mode)
 	{
 		x.text = "&lt;Template snipped&gt;";
 	}
+
 	string replacement = x.get_string();
 	parse_line_sub(replacement);
 
@@ -705,7 +704,7 @@ void WIKI2XML::parse_line(string & l)
 	else if (l[0] == ' ')	// Pre-formatted text
 	{
 		for (a = 0; a < (int) l.length() && l[a] == ' '; a++);
-		if (a== (int) l.length())
+		if (a == (int) l.length())
 		{
 			l.clear();
 			l += "<pre></pre>";

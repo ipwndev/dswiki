@@ -30,7 +30,7 @@ ADD_LIBS += bz2
 # icon for your project, too!
 #---------------------------------------------------------------------------------
 
-TEXT1	:=DSwiki 0.3alpha1
+TEXT1	:=DSwiki 0.3alpha2
 TEXT2	:=Offline Wiki-Reader
 TEXT3	:=by OlliPolli
 ICON	:= -b $(CURDIR)/../logo.bmp
