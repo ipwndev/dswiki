@@ -60,6 +60,17 @@ Markup::~Markup()
 
 void Markup::parse(string & Str, int type)
 {
+// 	int numOut = 0;
+// 	PA_Clear16bitBg(0);
+// 	numOut = SimPrint(Str,&DnScreen,PA_RGB(0,0,0));
+// 	PA_WaitFor(Pad.Newpress.Anykey);
+// 	while (numOut<Str.length())
+// 	{
+// 		PA_Clear16bitBg(0);
+// 		numOut += SimPrint(Str.substr(numOut),&DnScreen,PA_RGB(0,0,0));
+// 		PA_WaitFor(Pad.Newpress.Anykey);
+// 	}
+
 	// Transform the wikimarkup-string into proper XML-markup
 	_globals->getStatusbar()->display("WikiMarkup->XML");
 	WIKI2XML* w2x = new WIKI2XML();
@@ -71,7 +82,7 @@ void Markup::parse(string & Str, int type)
 	w2x = NULL;
 	_globals->getStatusbar()->display("WikiMarkup->XML done");
 
-// 	int numOut = 0;
+// 	numOut = 0;
 // 	PA_Clear16bitBg(0);
 // 	numOut = SimPrint(Str,&DnScreen,PA_RGB(0,0,0));
 // 	PA_WaitFor(Pad.Newpress.Anykey);
@@ -1028,6 +1039,11 @@ void Markup::jumpToAnchor(string anchor)
 {
 	if ( index.find(anchor) != index.end() )
 		bringElementToTop((TiXmlElement*) index[anchor]);
+}
+
+bool Markup::hasSelectedLink()
+{
+	return (_currentHighlightedLink != NULL);
 }
 
 void Markup::unselect()
