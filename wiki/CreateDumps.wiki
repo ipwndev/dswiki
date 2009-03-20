@@ -11,7 +11,18 @@ Download the compressed XML dump from http://download.wikimedia.org/.
 
 E.g. for the Wikipedia on Esperanto, go to http://download.wikimedia.org/eowiki/ and change into the directory with the highest date string (in my experience, _latest_ does not necessarily mean latest). Download the ...-pages-articles.xml.bz2 version! The other files do not include the necessary data, or have too much data in them.
 
-==Reindexing the file==
+=Wikia.com Dumps=
+
+wikia.com is a service that hosts mediawiki powered wikis, covering every possible topic and interest.
+
+== Download ==
+The complete download list from wikia.com can be found under this address: [http://wikistats.wikia.com/dbdumps/dbdumps.html]
+
+~~For projects hosted on http://wikia.com, you can follow [http://forum.palib.info/index.php?topic=5616.msg40881#msg40881 this] guide if you are using windows, or [http://forum.palib.info/index.php?topic=5616.msg40501#msg40501 these] short instructions under Linux (and maybe Mac OS X).~~
+
+The latest version of the indexer allows the direct indexing of any dumpfile, so it's not required to repack the archive first. So the index process is the same as mentioned below.
+
+=Reindexing the file=
 
 Download the latest indexer from http://code.google.com/p/dswiki/downloads/list and unpack it into the same directory that contains the article file.
 
@@ -24,8 +35,4 @@ Under Windows, run {{{indexer.exe <filename>}}} from the command line, under Lin
 
 ==Install==
 
-For every file, change "articles" into a better name for your dump. Copy all files into the root directory of your flash card.
-
-=Wikia.com Dumps=
-
-For projects hosted on http://wikia.com, you can follow [http://forum.palib.info/index.php?topic=5616.msg40881#msg40881 this] guide if you are using windows, or [http://forum.palib.info/index.php?topic=5616.msg40501#msg40501 these] short instructions under Linux (and maybe Mac OS X).
+For every file, change "articles" into a better name for your dump. Copy all files into the directory /dswiki of your flash card.
